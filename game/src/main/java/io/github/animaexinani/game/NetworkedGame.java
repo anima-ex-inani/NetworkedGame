@@ -3,6 +3,10 @@ package io.github.animaexinani.game;
 import io.github.animaexinani.engine.Application;
 import io.github.animaexinani.engine.ApplicationOptions;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.Point;
+import io.github.animaexinani.engine.point.PointF;
+import io.github.animaexinani.engine.rendering.drawable.Geometry;
+import io.github.animaexinani.engine.vertex.Vertex;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 
@@ -13,11 +17,14 @@ public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
     private final Window mainWindow;
 
+    private final Geometry colorTriangle;
+
     @Override
     protected boolean iterate() {
         var renderer = this.mainWindow.getRenderer();
 
         renderer.clear(Color.BLACK);
+        renderer.draw(this.colorTriangle);
 
         renderer.present();
 
@@ -50,5 +57,22 @@ public final class NetworkedGame extends Application {
 
         var windowFactory = super.windowFactory();
         this.mainWindow = windowFactory.createWindow(windowOptions);
+
+        var clientSize = this.mainWindow.clientSize();
+
+        var width = clientSize.width();
+        var height = clientSize.height();
+        var centerX = width / 2.0f;
+        var centerY = height / 2.0f;
+
+        var vertices = new Vertex[] {
+            new Vertex(new PointF(centerX, centerY - 200.0f), new Point(0, 0), new Color(1.0f, 0.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(centerX - 173.2f, centerY + 100.0f), new Point(0, 0), new Color(0.0f, 1.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(centerX + 173.2f, centerY + 100.0f), new Point(0, 0), new Color(0.0f, 0.0f, 1.0f, 1.0f))
+        };
+
+        var indices = new int[] { 0, 1, 2 };
+
+        this.colorTriangle = new Geometry(vertices, indices, null);
     }
 }

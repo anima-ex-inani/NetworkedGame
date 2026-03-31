@@ -6,7 +6,8 @@ import java.nio.IntBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.github.animaexinani.engine.rendering.Drawable;
+import io.github.animaexinani.engine.rendering.drawable.Drawable;
+import io.github.animaexinani.engine.size.Size;
 import io.github.animaexinani.engine.texture.Texture;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.*;
@@ -49,6 +50,20 @@ public final class WindowWithRenderer implements Window, Renderer {
     private final Cleanable cleanable;
 
     @Override
+    public Size clientSize() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+
+            SdlOperationFailedException.throwOnFailure(
+                SDLVideo.SDL_GetWindowSize(this.state.windowHandle, w, h)
+            );
+
+            return new Size(w.get(0), h.get(0));
+        }
+    }
+
+    @Override
     public void clear(Color color) {
         float red = color.red();
         float green = color.green();
@@ -78,7 +93,7 @@ public final class WindowWithRenderer implements Window, Renderer {
     public void draw(@NotNull Drawable drawable) {
         Objects.requireNonNull(drawable);
 
-        Texture texture = drawable.getTexture();
+        Texture texture = drawable.texture();
         SDL_Texture nativeTexture;
         if (texture instanceof NativeTexture texture1) {
             nativeTexture = texture1.getBackingTexture();
@@ -90,8 +105,8 @@ public final class WindowWithRenderer implements Window, Renderer {
             throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
         }
 
-        var vertices = drawable.getVertices();
-        var drawableIndices = drawable.getIndices();
+        var vertices = drawable.vertices();
+        var drawableIndices = drawable.indices();
 
         try (var stack = MemoryStack.stackPush()) {
             FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
@@ -111,7 +126,7 @@ public final class WindowWithRenderer implements Window, Renderer {
             }
             color.position(0);
 
-            var indices = IntBuffer.wrap(drawable.getIndices());
+            var indices = IntBuffer.wrap(drawable.indices());
 
             FloatBuffer uv;
             int uvStride;

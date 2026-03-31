@@ -1,6 +1,7 @@
 package io.github.animaexinani.engine.windowing;
 
 import io.github.animaexinani.engine.rendering.Renderer;
+import io.github.animaexinani.engine.size.Size;
 
 public interface Window extends AutoCloseable {
     /**
@@ -10,4 +11,6 @@ public interface Window extends AutoCloseable {
      * @implSpec The renderer returned by this method should be owned by the window.
      */
     Renderer getRenderer();
+
+    Size clientSize();
 }

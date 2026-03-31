@@ -1,4 +1,4 @@
-package io.github.animaexinani.engine.rendering;
+package io.github.animaexinani.engine.rendering.drawable;
 
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
@@ -6,9 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Drawable {
-    @NotNull Vertex @NotNull [] getVertices();
+    @NotNull Vertex @NotNull [] vertices();
 
-    int @NotNull [] getIndices();
+    int @NotNull [] indices();
 
-    @Nullable Texture getTexture();
+    @Nullable Texture texture();
 }
