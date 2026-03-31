@@ -87,7 +87,7 @@ public abstract class Application implements AutoCloseable, Runnable {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_NAME_STRING, options.getName())
+                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_NAME_STRING, options.name())
             );
         }
         catch (SdlOperationFailedException e) {
@@ -96,7 +96,7 @@ public abstract class Application implements AutoCloseable, Runnable {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_VERSION_STRING, options.getVersion())
+                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_VERSION_STRING, options.version())
             );
         }
         catch (SdlOperationFailedException e) {
@@ -105,11 +105,53 @@ public abstract class Application implements AutoCloseable, Runnable {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_IDENTIFIER_STRING, options.getIdentifier())
+                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_IDENTIFIER_STRING, options.identifier())
             );
         }
         catch (SdlOperationFailedException e) {
             throw new MetadataInitializationException("Failed to set application identifier", e);
+        }
+
+        if (Objects.nonNull(options.creator())) {
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                    SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_CREATOR_STRING, options.creator())
+                );
+            }
+            catch (SdlOperationFailedException e) {
+                throw new MetadataInitializationException("Failed to set application creator", e);
+            }
+        }
+
+        if (Objects.nonNull(options.copyright())) {
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                    SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_COPYRIGHT_STRING, options.copyright())
+                );
+            }
+            catch (SdlOperationFailedException e) {
+                throw new MetadataInitializationException("Failed to set application copyright", e);
+            }
+        }
+
+        if (Objects.nonNull(options.url())) {
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                    SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_URL_STRING, options.url())
+                );
+            }
+            catch (SdlOperationFailedException e) {
+                throw new MetadataInitializationException("Failed to set application URL", e);
+            }
+        }
+
+        try {
+            SdlOperationFailedException.throwOnFailure(
+                SDLInit.SDL_SetAppMetadataProperty(SDLInit.SDL_PROP_APP_METADATA_TYPE_STRING, "game")
+            );
+        }
+        catch (SdlOperationFailedException e) {
+            throw new MetadataInitializationException("Failed to set application type", e);
         }
 
         this.state = new State();
