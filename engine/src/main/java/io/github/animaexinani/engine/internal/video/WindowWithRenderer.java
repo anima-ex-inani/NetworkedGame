@@ -50,10 +50,10 @@ public final class WindowWithRenderer implements Window, Renderer {
 
     @Override
     public void clear(Color color) {
-        float red = color.getRed();
-        float green = color.getGreen();
-        float blue = color.getBlue();
-        float alpha = color.getAlpha();
+        float red = color.red();
+        float green = color.green();
+        float blue = color.blue();
+        float alpha = color.alpha();
 
         try {
             SdlOperationFailedException.throwOnFailure(
@@ -104,10 +104,10 @@ public final class WindowWithRenderer implements Window, Renderer {
             var color = SDL_FColor.calloc(vertices.length, stack);
             for (int i = 0; i < vertices.length; i++) {
                 var currentColor = color.position(i);
-                currentColor.r(vertices[i].color().getRed());
-                currentColor.g(vertices[i].color().getGreen());
-                currentColor.b(vertices[i].color().getBlue());
-                currentColor.a(vertices[i].color().getAlpha());
+                currentColor.r(vertices[i].color().red());
+                currentColor.g(vertices[i].color().green());
+                currentColor.b(vertices[i].color().blue());
+                currentColor.a(vertices[i].color().alpha());
             }
             color.position(0);
 
