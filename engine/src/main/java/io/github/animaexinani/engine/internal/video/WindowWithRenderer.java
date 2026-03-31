@@ -1,12 +1,15 @@
 package io.github.animaexinani.engine.internal.video;
 
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.lwjgl.sdl.SDLInit;
-import org.lwjgl.sdl.SDLRender;
-import org.lwjgl.sdl.SDLVideo;
-import org.lwjgl.sdl.SDL_MainThreadCallback;
+import io.github.animaexinani.engine.rendering.Drawable;
+import io.github.animaexinani.engine.texture.Texture;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.sdl.*;
 
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
@@ -14,6 +17,7 @@ import io.github.animaexinani.engine.internal.SdlOperationFailedException;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.windowing.Window;
+import org.lwjgl.system.MemoryStack;
 
 public final class WindowWithRenderer implements Window, Renderer {
     private static final class State implements Runnable {
@@ -67,6 +71,86 @@ public final class WindowWithRenderer implements Window, Renderer {
         }
         catch (SdlOperationFailedException e) {
             throw new RenderingOperationFailedException("Failed to clear back buffer", e);
+        }
+    }
+
+    @Override
+    public void draw(@NotNull Drawable drawable) {
+        Objects.requireNonNull(drawable);
+
+        Texture texture = drawable.getTexture();
+        SDL_Texture nativeTexture;
+        if (texture instanceof NativeTexture texture1) {
+            nativeTexture = texture1.getBackingTexture();
+        }
+        else if (Objects.isNull(texture)) {
+            nativeTexture = null;
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+        }
+
+        var vertices = drawable.getVertices();
+        var drawableIndices = drawable.getIndices();
+
+        try (var stack = MemoryStack.stackPush()) {
+            FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
+            for (int i = 0; i < vertices.length; i++) {
+                xy.put(i * 2, vertices[i].position().x());
+                xy.put(i * 2 + 1, vertices[i].position().y());
+            }
+
+
+            var color = SDL_FColor.calloc(vertices.length, stack);
+            for (int i = 0; i < vertices.length; i++) {
+                var currentColor = color.position(i);
+                currentColor.r(vertices[i].color().getRed());
+                currentColor.g(vertices[i].color().getGreen());
+                currentColor.b(vertices[i].color().getBlue());
+                currentColor.a(vertices[i].color().getAlpha());
+            }
+            color.position(0);
+
+            var indices = IntBuffer.wrap(drawable.getIndices());
+
+            FloatBuffer uv;
+            int uvStride;
+            if (Objects.isNull(texture)) {
+                uv = null;
+                uvStride = 0;
+            }
+            else {
+                uv = stack.mallocFloat(vertices.length * 2);
+                uvStride = 8; // float * 2
+
+                for (int i = 0; i < vertices.length; i++) {
+                    var vertexUv = texture.getUvOfPoint(vertices[i].uv());
+                    uv.put(i * 2, vertexUv.x());
+                    uv.put(i * 2 + 1, vertexUv.y());
+                }
+            }
+
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                    SDLRender.SDL_RenderGeometryRaw(
+                        this.state.rendererHandle,
+                        nativeTexture,
+                        xy,
+                        8, // float * 2
+                        color,
+                        SDL_FColor.SIZEOF,
+                        uv,
+                        uvStride,
+                        vertices.length,
+                        indices,
+                        drawableIndices.length,
+                        4 // int
+                    )
+                );
+            }
+            catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to render object", e);
+            }
         }
     }
 
