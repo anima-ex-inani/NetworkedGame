@@ -1,6 +1,7 @@
 package io.github.animaexinani.engine.internal.video;
 
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
@@ -8,7 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.Size;
+import io.github.animaexinani.engine.texture.PixelFormat;
 import io.github.animaexinani.engine.texture.Texture;
+import io.github.animaexinani.engine.texture.TextureCreationException;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.*;
 
@@ -60,6 +63,37 @@ public final class WindowWithRenderer implements Window, Renderer {
             );
 
             return new Size(w.get(0), h.get(0));
+        }
+    }
+
+    @Override
+    public Texture createTexture(@NotNull Size textureSize, @NotNull PixelFormat pixelFormat, @NotNull ByteBuffer pixelBuffer) {
+        Objects.requireNonNull(textureSize);
+        Objects.requireNonNull(pixelBuffer);
+
+        var nativePixelFormat = switch (pixelFormat) {
+            case RGBA_8888 -> SDLPixels.SDL_PIXELFORMAT_RGBA8888;
+            case ARGB_8888 -> SDLPixels.SDL_PIXELFORMAT_ARGB8888;
+            case BGRA_8888 -> SDLPixels.SDL_PIXELFORMAT_BGRA8888;
+            case ABGR_8888 -> SDLPixels.SDL_PIXELFORMAT_ABGR8888;
+            case RGBA_F16 -> SDLPixels.SDL_PIXELFORMAT_RGBA64_FLOAT;
+            case ARGB_F16 -> SDLPixels.SDL_PIXELFORMAT_ARGB64_FLOAT;
+            case BGRA_F16 -> SDLPixels.SDL_PIXELFORMAT_BGRA64_FLOAT;
+            case ABGR_F16 -> SDLPixels.SDL_PIXELFORMAT_ABGR64_FLOAT;
+            case RGBA_F32 -> SDLPixels.SDL_PIXELFORMAT_RGBA128_FLOAT;
+            case ARGB_F32 -> SDLPixels.SDL_PIXELFORMAT_ARGB128_FLOAT;
+            case BGRA_F32 -> SDLPixels.SDL_PIXELFORMAT_BGRA128_FLOAT;
+            case ABGR_F32 -> SDLPixels.SDL_PIXELFORMAT_ABGR128_FLOAT;
+        };
+        var pitch = pixelFormat.calculatePitch(textureSize.width());
+        try (var surface = SdlOperationFailedException.throwOnFailure(
+            SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
+        )) {
+            var nativeTexture = SdlOperationFailedException.throwOnFailure(SDLRender.SDL_CreateTextureFromSurface(this.state.rendererHandle, surface));
+            return new NativeTexture(nativeTexture);
+        }
+        catch (SdlOperationFailedException e) {
+            throw new TextureCreationException("Failed to create texture", e);
         }
     }
 
