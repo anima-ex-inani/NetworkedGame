@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.github.animaexinani.engine.assets.AssetManager;
-import io.github.animaexinani.engine.assets.internal.AssetManagerImpl;
+import io.github.animaexinani.engine.internal.assets.AssetManagerImpl;
 import io.github.animaexinani.engine.windowing.WindowFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
