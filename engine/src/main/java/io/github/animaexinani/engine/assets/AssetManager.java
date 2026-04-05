@@ -1,6 +1,6 @@
 package io.github.animaexinani.engine.assets;
 
-import io.github.animaexinani.engine.assets.internal.AssetManagerImpl;
+import io.github.animaexinani.engine.internal.assets.AssetManagerImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

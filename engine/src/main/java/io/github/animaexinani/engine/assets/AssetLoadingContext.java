@@ -1,6 +1,6 @@
 package io.github.animaexinani.engine.assets;
 
-import io.github.animaexinani.engine.assets.internal.AssetLoadingContextImpl;
+import io.github.animaexinani.engine.internal.assets.AssetLoadingContextImpl;
 
 import java.util.concurrent.Future;
 

@@ -1,4 +1,4 @@
-package io.github.animaexinani.engine.assets.internal;
+package io.github.animaexinani.engine.internal.assets;
 
 import io.github.animaexinani.engine.assets.*;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +10,6 @@ import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 public final class AssetManagerImpl extends AssetManager {
     private final ExecutorService assetLoadingExecutor = Executors.newCachedThreadPool();

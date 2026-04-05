@@ -1,4 +1,4 @@
-package io.github.animaexinani.engine.assets.internal;
+package io.github.animaexinani.engine.internal.assets;
 
 import io.github.animaexinani.engine.assets.Asset;
 import io.github.animaexinani.engine.assets.AssetKey;
