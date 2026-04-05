@@ -4,6 +4,8 @@ import java.lang.ref.Cleaner;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.github.animaexinani.engine.assets.AssetManager;
+import io.github.animaexinani.engine.assets.internal.AssetManagerImpl;
 import io.github.animaexinani.engine.windowing.WindowFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +54,7 @@ public abstract class Application implements AutoCloseable, Runnable {
         }
     }
 
+    private final AssetManagerImpl assetManager = new AssetManagerImpl();
     private final State state;
     private final Cleaner.Cleanable cleanable;
 
@@ -65,6 +68,10 @@ public abstract class Application implements AutoCloseable, Runnable {
     @NotNull
     protected final WindowFactory windowFactory() {
         return this.state.videoSubsystem();
+    }
+
+    protected final @NotNull AssetManager assetManager() {
+        return this.assetManager;
     }
 
     /**
