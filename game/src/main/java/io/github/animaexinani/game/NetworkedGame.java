@@ -9,6 +9,7 @@ import io.github.animaexinani.engine.rendering.drawable.Geometry;
 import io.github.animaexinani.engine.vertex.Vertex;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
+import io.github.animaexinani.game.assets.ResourceLoader;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,5 +76,7 @@ public final class NetworkedGame extends Application {
         var indices = new int[] { 0, 1, 2 };
 
         this.colorTriangle = new Geometry(vertices, indices, null);
+
+        this.assetManager().registerLoader(new ResourceLoader());
     }
 }
