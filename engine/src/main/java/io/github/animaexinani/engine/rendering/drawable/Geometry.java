@@ -12,7 +12,7 @@ public final class Geometry implements Drawable {
 
     @Override
     public Vertex @NotNull [] vertices() {
-        return vertices;
+        return this.vertices;
     }
 
     public void vertices(@NotNull Vertex @NotNull [] vertices) {
@@ -26,7 +26,7 @@ public final class Geometry implements Drawable {
     private int @NotNull [] indices;
 
     public int @NotNull [] indices() {
-        return indices;
+        return this.indices;
     }
 
     public void indices(int @NotNull [] indices) {
@@ -37,7 +37,7 @@ public final class Geometry implements Drawable {
     private @Nullable Texture texture;
 
     public @Nullable Texture texture() {
-        return texture;
+        return this.texture;
     }
 
     public void texture(@Nullable Texture texture) {

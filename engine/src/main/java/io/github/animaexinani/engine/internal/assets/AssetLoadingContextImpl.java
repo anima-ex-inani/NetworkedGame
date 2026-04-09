@@ -18,7 +18,7 @@ public final class AssetLoadingContextImpl extends AssetLoadingContext {
 
     @Override
     public <T extends Asset> Future<T> loadSubAsset(AssetKey<T> key) {
-        return manager.loadSubasset(key, this);
+        return this.manager.loadSubasset(key, this);
     }
 
     public AssetLoadingContextImpl(@NotNull AssetManagerImpl manager, @NotNull AssetKey<?> @NotNull [] loadStack) {

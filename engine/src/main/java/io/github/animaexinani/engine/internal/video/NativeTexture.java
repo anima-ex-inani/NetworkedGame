@@ -20,7 +20,7 @@ public class NativeTexture implements Texture {
         @Override
         public void run() {
             this.cleaned.setRelease(true);
-            SDLRender.SDL_DestroyTexture(texture);
+            SDLRender.SDL_DestroyTexture(this.texture);
             this.texture.close();
         }
 

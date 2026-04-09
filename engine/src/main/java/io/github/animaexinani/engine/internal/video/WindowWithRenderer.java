@@ -35,9 +35,9 @@ public final class WindowWithRenderer implements Window, Renderer {
             this.cleaned.setRelease(true);
 
             SdlOperationFailedException.throwOnFailure(
-                SDLInit.SDL_RunOnMainThread(cleanCallback, 0, true)
+                SDLInit.SDL_RunOnMainThread(this.cleanCallback, 0, true)
             );
-            cleanCallback.close();
+            this.cleanCallback.close();
         }
 
         public NativeState(long windowHandle, long rendererHandle) {

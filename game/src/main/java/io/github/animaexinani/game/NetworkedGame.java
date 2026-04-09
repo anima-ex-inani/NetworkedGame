@@ -50,9 +50,10 @@ public final class NetworkedGame extends Application {
         }
     }
 
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.1", "io.github.animaexinani.networkedgame");
+
     public NetworkedGame() {
-        var appOptions = new ApplicationOptions("Networked Game", "0.1.0-alpha.1", "io.github.animaexinani.networkedgame");
-        super(appOptions);
+        super(NetworkedGame.OPTIONS);
 
         var windowOptions = new WindowOptions("Networked Game", 960, 720);
         windowOptions.setResizable(true);

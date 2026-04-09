@@ -11,7 +11,7 @@ public interface Texture extends AutoCloseable {
 
     @NotNull
     default PointF getUvOfPoint(@NotNull Point point) {
-        var size = getSize();
+        var size = this.getSize();
         var u = (float)point.x() / (float)size.width();
         var v = (float)point.y() / (float)size.height();
         return new PointF(u, v);

@@ -2,6 +2,18 @@ plugins {
     java
 }
 
+subprojects {
+    apply(plugin = "checkstyle")
+
+    configure<CheckstyleExtension> {
+        toolVersion = "13.4.0"
+        // Reference the root project directory explicitly
+        configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+        isIgnoreFailures = false
+        isShowViolations = true
+    }
+}
+
 // Determine the LWJGL natives classifier based on the current OS/arch
 val lwjglNatives: String by extra {
     val name = System.getProperty("os.name")!!

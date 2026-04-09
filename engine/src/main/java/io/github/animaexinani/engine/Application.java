@@ -191,7 +191,7 @@ public abstract class Application implements AutoCloseable, Runnable {
             throw new IllegalStateException("Attempted to run an already-running application");
         }
 
-        QuitEventListener listener = () -> running.setRelease(false);
+        QuitEventListener listener = () -> this.running.setRelease(false);
         this.eventDispatcher.register(QuitEventListener.class, listener);
 
         try {
@@ -201,7 +201,7 @@ public abstract class Application implements AutoCloseable, Runnable {
                     break;
                 }
 
-                var result = iterate();
+                var result = this.iterate();
                 if (!result) {
                     this.running.setRelease(false);
                 }

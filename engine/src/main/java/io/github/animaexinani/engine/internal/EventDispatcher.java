@@ -29,8 +29,8 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
 
         @Override
         public void run() {
-            cleaned.setRelease(true);
-            event.close();
+            this.cleaned.setRelease(true);
+            this.event.close();
             SDLInit.SDL_QuitSubSystem(SDLInit.SDL_INIT_EVENTS);
         }
 
@@ -71,14 +71,14 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
 
     @SuppressWarnings("unchecked")
     private <T extends EventListener> List<T> getListenersOfType(Class<T> type) {
-        return (List<T>)this.listeners.getOrDefault(type, NO_LISTENERS);
+        return (List<T>)this.listeners.getOrDefault(type, EventDispatcher.NO_LISTENERS);
     }
 
     public void processEvents() {
         while (SDLEvents.SDL_PollEvent(this.nativeState.event)) {
             switch (this.nativeState.event.type()) {
                 case SDLEvents.SDL_EVENT_QUIT -> {
-                    var quitListeners = getListenersOfType(QuitEventListener.class);
+                    var quitListeners = this.getListenersOfType(QuitEventListener.class);
                     quitListeners.forEach(QuitEventListener::onQuit);
                 }
                 default -> {
@@ -89,7 +89,7 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
     }
 
     public void forceClose() {
-        var quitListeners = getListenersOfType(QuitEventListener.class);
+        var quitListeners = this.getListenersOfType(QuitEventListener.class);
         quitListeners.forEach(QuitEventListener::onQuit);
     }
 

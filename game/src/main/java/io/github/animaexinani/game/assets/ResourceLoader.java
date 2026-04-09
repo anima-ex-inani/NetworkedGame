@@ -31,7 +31,7 @@ public final class ResourceLoader extends AssetLoader {
             }
 
             //noinspection unchecked
-            return (T) processMapping.get(key.type()).apply(stream);
+            return (T) this.processMapping.get(key.type()).apply(stream);
         }
     }
 }
