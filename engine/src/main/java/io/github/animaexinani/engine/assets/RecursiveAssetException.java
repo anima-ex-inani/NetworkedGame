@@ -16,7 +16,7 @@ public class RecursiveAssetException extends IllegalStateException {
         return Arrays.stream(keys).map(Object::toString).collect(Collectors.joining(" -> ", "Circular dependency detected:", ""));
     }
 
-    public RecursiveAssetException(@NotNull AssetKey<?>... keys) {
+    public RecursiveAssetException(@NotNull AssetKey<?> @NotNull ... keys) {
         super(formatAssetCycle(keys));
         this.keys = keys;
     }

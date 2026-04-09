@@ -20,10 +20,6 @@ public record ApplicationOptions(
     }
 
     public ApplicationOptions(@NotNull String name, @NotNull String version, @NotNull String identifier) {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(version);
-        Objects.requireNonNull(identifier);
-
         this(name, version, identifier, null, null, null);
     }
 }

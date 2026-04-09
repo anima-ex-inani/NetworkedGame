@@ -1,8 +1,10 @@
 package io.github.animaexinani.engine.internal.video;
 
 import java.lang.ref.Cleaner;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLInit;
 import org.lwjgl.sdl.SDLRender;
 import org.lwjgl.system.MemoryStack;
@@ -15,8 +17,8 @@ import io.github.animaexinani.engine.windowing.WindowFactory;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 
 public final class VideoSubsystem implements AutoCloseable, WindowFactory {
-    private static final class State implements Runnable {
-        private AtomicBoolean cleaned;
+    private static final class NativeState implements Runnable {
+        private final AtomicBoolean cleaned;
         
         @Override
         public void run() {
@@ -24,7 +26,7 @@ public final class VideoSubsystem implements AutoCloseable, WindowFactory {
             SDLInit.SDL_QuitSubSystem(SDLInit.SDL_INIT_VIDEO);
         }
 
-        public State() {
+        public NativeState() {
             SdlOperationFailedException.throwOnFailure(
                 SDLInit.SDL_InitSubSystem(SDLInit.SDL_INIT_VIDEO)
             );
@@ -32,11 +34,17 @@ public final class VideoSubsystem implements AutoCloseable, WindowFactory {
         }
     }
 
-    private State state;
-    private Cleaner.Cleanable cleanable;
+    private final NativeState nativeState;
+    private final Cleaner.Cleanable cleanable;
 
     @Override
-    public Window createWindow(WindowOptions options) {
+    public @NotNull Window createWindow(@NotNull WindowOptions options) {
+        Objects.requireNonNull(options);
+
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to create a window after the video subsystem has been closed");
+        }
+
         try (var stack = MemoryStack.stackPush()) {
             var windowHandleBuffer = stack.mallocPointer(1);
             var rendererHandleBuffer = stack.mallocPointer(1);
@@ -65,12 +73,12 @@ public final class VideoSubsystem implements AutoCloseable, WindowFactory {
     }
 
     public VideoSubsystem() {
-        this.state = new State();
-        this.cleanable = GlobalCleaner.register(this, this.state);
+        this.nativeState = new NativeState();
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         this.cleanable.clean();
     }
 }

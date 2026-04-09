@@ -24,42 +24,48 @@ import io.github.animaexinani.engine.windowing.Window;
 import org.lwjgl.system.MemoryStack;
 
 public final class WindowWithRenderer implements Window, Renderer {
-    private static final class State implements Runnable {
+    private static final class NativeState implements Runnable {
         private final long windowHandle;
         private final long rendererHandle;
+        private final SDL_MainThreadCallback cleanCallback;
         private final AtomicBoolean cleaned;
 
         @Override
         public void run() {
-            var cleanCallback = SDL_MainThreadCallback.create(_ -> {
-                SDLRender.SDL_DestroyRenderer(this.rendererHandle);
-                SDLVideo.SDL_DestroyWindow(this.windowHandle);
-            });
-
             this.cleaned.setRelease(true);
+
             SdlOperationFailedException.throwOnFailure(
                 SDLInit.SDL_RunOnMainThread(cleanCallback, 0, true)
             );
+            cleanCallback.close();
         }
 
-        public State(long windowHandle, long rendererHandle) {
+        public NativeState(long windowHandle, long rendererHandle) {
             this.windowHandle = windowHandle;
             this.rendererHandle = rendererHandle;
             this.cleaned = new AtomicBoolean(false);
+            this.cleanCallback = SDL_MainThreadCallback.create(_ -> {
+                SDLRender.SDL_DestroyRenderer(this.rendererHandle);
+                SDLVideo.SDL_DestroyWindow(this.windowHandle);
+            });
         }
     }
 
-    private final State state;
+    private final NativeState nativeState;
     private final Cleanable cleanable;
 
     @Override
-    public Size clientSize() {
+    public @NotNull Size clientSize() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to get client size of a closed window");
+        }
+
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
 
             SdlOperationFailedException.throwOnFailure(
-                SDLVideo.SDL_GetWindowSize(this.state.windowHandle, w, h)
+                SDLVideo.SDL_GetWindowSize(this.nativeState.windowHandle, w, h)
             );
 
             return new Size(w.get(0), h.get(0));
@@ -67,7 +73,11 @@ public final class WindowWithRenderer implements Window, Renderer {
     }
 
     @Override
-    public Texture createTexture(@NotNull Size textureSize, @NotNull PixelFormat pixelFormat, @NotNull ByteBuffer pixelBuffer) {
+    public @NotNull Texture createTexture(@NotNull Size textureSize, @NotNull PixelFormat pixelFormat, @NotNull ByteBuffer pixelBuffer) {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to create a texture after the renderer has been closed");
+        }
+
         Objects.requireNonNull(textureSize);
         Objects.requireNonNull(pixelBuffer);
 
@@ -89,7 +99,7 @@ public final class WindowWithRenderer implements Window, Renderer {
         try (var surface = SdlOperationFailedException.throwOnFailure(
             SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
         )) {
-            var nativeTexture = SdlOperationFailedException.throwOnFailure(SDLRender.SDL_CreateTextureFromSurface(this.state.rendererHandle, surface));
+            var nativeTexture = SdlOperationFailedException.throwOnFailure(SDLRender.SDL_CreateTextureFromSurface(this.nativeState.rendererHandle, surface));
             return new NativeTexture(nativeTexture);
         }
         catch (SdlOperationFailedException e) {
@@ -98,7 +108,13 @@ public final class WindowWithRenderer implements Window, Renderer {
     }
 
     @Override
-    public void clear(Color color) {
+    public void clear(@NotNull Color color) {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to clear the backbuffer of a closed renderer");
+        }
+
+        Objects.requireNonNull(color);
+
         float red = color.red();
         float green = color.green();
         float blue = color.blue();
@@ -106,7 +122,7 @@ public final class WindowWithRenderer implements Window, Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_SetRenderDrawColorFloat(this.state.rendererHandle, red, green, blue, alpha)
+                SDLRender.SDL_SetRenderDrawColorFloat(this.nativeState.rendererHandle, red, green, blue, alpha)
             );
         }
         catch (SdlOperationFailedException e) {
@@ -115,7 +131,7 @@ public final class WindowWithRenderer implements Window, Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderClear(this.state.rendererHandle)
+                SDLRender.SDL_RenderClear(this.nativeState.rendererHandle)
             );
         }
         catch (SdlOperationFailedException e) {
@@ -125,6 +141,10 @@ public final class WindowWithRenderer implements Window, Renderer {
 
     @Override
     public void draw(@NotNull Drawable drawable) {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to render with closed renderer");
+        }
+
         Objects.requireNonNull(drawable);
 
         Texture texture = drawable.texture();
@@ -182,7 +202,7 @@ public final class WindowWithRenderer implements Window, Renderer {
             try {
                 SdlOperationFailedException.throwOnFailure(
                     SDLRender.SDL_RenderGeometryRaw(
-                        this.state.rendererHandle,
+                        this.nativeState.rendererHandle,
                         nativeTexture,
                         xy,
                         8, // float * 2
@@ -205,9 +225,13 @@ public final class WindowWithRenderer implements Window, Renderer {
 
     @Override
     public void present() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to present the backbuffer of a closed renderer");
+        }
+
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderPresent(this.state.rendererHandle)
+                SDLRender.SDL_RenderPresent(this.nativeState.rendererHandle)
             );
         }
         catch (SdlOperationFailedException e) {
@@ -216,13 +240,17 @@ public final class WindowWithRenderer implements Window, Renderer {
     }
 
     @Override
-    public Renderer getRenderer() {
+    public @NotNull Renderer getRenderer() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to get renderer of a closed window");
+        }
+
         return this;
     }
 
     public WindowWithRenderer(long windowHandle, long rendererHandle) {
-        this.state = new State(windowHandle, rendererHandle);
-        this.cleanable = GlobalCleaner.register(this, this.state);
+        this.nativeState = new NativeState(windowHandle, rendererHandle);
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
     }
 
     @Override

@@ -18,56 +18,41 @@ import io.github.animaexinani.engine.internal.video.VideoSubsystem;
 import io.github.animaexinani.engine.listeners.QuitEventListener;
 
 public abstract class Application implements AutoCloseable, Runnable {
-    private static final class State implements Runnable {
-        @NotNull
-        private final EventDispatcher eventDispatcher;        
-
-        @NotNull
-        public EventDispatcher eventDispatcher() {
-            return this.eventDispatcher;
-        }
-
-        @Nullable
-        private VideoSubsystem videoSubsystem;
-
-        @NotNull
-        public VideoSubsystem videoSubsystem() {
-            if (this.videoSubsystem == null) {
-                this.videoSubsystem = new VideoSubsystem();
-            }
-
-            return this.videoSubsystem;
-        }
-
+    private static final class NativeState implements Runnable {
         private final AtomicBoolean cleaned;
         
         @Override
         public void run() {
             this.cleaned.setRelease(true);
-            this.eventDispatcher.close();
             SDLInit.SDL_Quit();
         }
 
-        public State() {
-            this.eventDispatcher = new EventDispatcher();
+        public NativeState() {
             this.cleaned = new AtomicBoolean(false);
         }
     }
 
-    private final AssetManagerImpl assetManager = new AssetManagerImpl();
-    private final State state;
+    private final @NotNull AssetManagerImpl assetManager = new AssetManagerImpl();
+    private final @NotNull EventDispatcher eventDispatcher;
+
+    private @Nullable VideoSubsystem videoSubsystem;
+    private final NativeState nativeState;
     private final Cleaner.Cleanable cleanable;
 
     private final AtomicBoolean running;
 
     @NotNull
     protected final EventRegistry eventRegistry() {
-        return this.state.eventDispatcher();
+        return this.eventDispatcher;
     }
 
     @NotNull
     protected final WindowFactory windowFactory() {
-        return this.state.videoSubsystem();
+        if (this.videoSubsystem == null) {
+            this.videoSubsystem = new VideoSubsystem();
+        }
+
+        return this.videoSubsystem;
     }
 
     protected final @NotNull AssetManager assetManager() {
@@ -161,8 +146,9 @@ public abstract class Application implements AutoCloseable, Runnable {
             throw new MetadataInitializationException("Failed to set application type", e);
         }
 
-        this.state = new State();
-        this.cleanable = GlobalCleaner.register(this, this.state);
+        this.nativeState = new NativeState();
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
+        this.eventDispatcher = new EventDispatcher();
 
         this.running = new AtomicBoolean(false);
     }
@@ -178,6 +164,10 @@ public abstract class Application implements AutoCloseable, Runnable {
             throw new IllegalStateException("Attempted to close a running application");
         }
 
+        if (this.videoSubsystem != null) {
+            this.videoSubsystem.close();
+        }
+        this.eventDispatcher.close();
         this.cleanable.clean();
     }
 
@@ -193,7 +183,7 @@ public abstract class Application implements AutoCloseable, Runnable {
      */
     @Override
     public void run() {
-        if (this.state.cleaned.getAcquire()) {
+        if (this.nativeState.cleaned.getAcquire()) {
             throw new IllegalStateException("Attempted to run an already-closed application");
         }
 
@@ -202,12 +192,11 @@ public abstract class Application implements AutoCloseable, Runnable {
         }
 
         QuitEventListener listener = () -> running.setRelease(false);
-        var eventDispatcher = this.state.eventDispatcher();
-        eventDispatcher.register(QuitEventListener.class, listener);
+        this.eventDispatcher.register(QuitEventListener.class, listener);
 
         try {
             while (this.running.getAcquire()) {
-                eventDispatcher.processEvents();
+                this.eventDispatcher.processEvents();
                 if (!this.running.getAcquire()) {
                     break;
                 }
@@ -219,7 +208,7 @@ public abstract class Application implements AutoCloseable, Runnable {
             }
         }
         finally {
-            eventDispatcher.remove(QuitEventListener.class, listener);
+            this.eventDispatcher.remove(QuitEventListener.class, listener);
             this.running.setRelease(false);
         }
     }

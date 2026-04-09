@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 public final class GlobalCleaner {
     private static final Cleaner CLEANER = Cleaner.create();
 
-    public static Cleaner.Cleanable register(@NotNull Object obj, @NotNull Runnable action) {
+    public static @NotNull Cleaner.Cleanable register(@NotNull Object obj, @NotNull Runnable action) {
         return CLEANER.register(obj, action);
     }
 

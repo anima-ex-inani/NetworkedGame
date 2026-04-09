@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLEvents;
@@ -20,24 +21,28 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
     private final Map<Class<? extends EventListener>, List<EventListener>> listeners = new ConcurrentHashMap<>();
     private static final List<EventListener> NO_LISTENERS = List.of();
 
-    private static final class State implements Runnable {
+    private static final class NativeState implements Runnable {
         @NotNull
         private final SDL_Event event;
 
+        private final AtomicBoolean cleaned;
+
         @Override
         public void run() {
+            cleaned.setRelease(true);
             event.close();
             SDLInit.SDL_QuitSubSystem(SDLInit.SDL_INIT_EVENTS);
         }
 
-        public State() {
+        public NativeState() {
             SdlOperationFailedException.throwOnFailure(SDLInit.SDL_InitSubSystem(SDLInit.SDL_INIT_EVENTS));
             this.event = SDL_Event.create();
+            this.cleaned = new AtomicBoolean(false);
         }
     }
 
     @NotNull
-    private final State state;
+    private final EventDispatcher.NativeState nativeState;
 
     @NotNull
     private final Cleaner.Cleanable cleanable;
@@ -70,8 +75,8 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
     }
 
     public void processEvents() {
-        while (SDLEvents.SDL_PollEvent(this.state.event)) {
-            switch (this.state.event.type()) {
+        while (SDLEvents.SDL_PollEvent(this.nativeState.event)) {
+            switch (this.nativeState.event.type()) {
                 case SDLEvents.SDL_EVENT_QUIT -> {
                     var quitListeners = getListenersOfType(QuitEventListener.class);
                     quitListeners.forEach(QuitEventListener::onQuit);
@@ -89,8 +94,8 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
     }
 
     public EventDispatcher() {
-        this.state = new State();
-        this.cleanable = GlobalCleaner.register(this, this.state);
+        this.nativeState = new NativeState();
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
     }
 
     @Override

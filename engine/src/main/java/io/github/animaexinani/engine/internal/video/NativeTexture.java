@@ -11,7 +11,7 @@ import java.lang.ref.Cleaner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NativeTexture implements Texture {
-    private static final class State implements Runnable {
+    private static final class NativeState implements Runnable {
         @NotNull
         private final SDL_Texture texture;
 
@@ -19,18 +19,18 @@ public class NativeTexture implements Texture {
 
         @Override
         public void run() {
-            cleaned.setRelease(true);
+            this.cleaned.setRelease(true);
             SDLRender.SDL_DestroyTexture(texture);
-            texture.close();
+            this.texture.close();
         }
 
-        public State(@NotNull SDL_Texture texture) {
+        public NativeState(@NotNull SDL_Texture texture) {
             this.cleaned = new AtomicBoolean(false);
             this.texture = texture;
         }
     }
 
-    private final State state;
+    private final NativeState nativeState;
     private final Cleaner.Cleanable cleanable;
 
     @Override
@@ -39,21 +39,25 @@ public class NativeTexture implements Texture {
     }
 
     public SDL_Texture getBackingTexture() {
-        return this.state.texture;
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to get backing texture of a closed texture");
+        }
+
+        return this.nativeState.texture;
     }
 
     @Override
     @NotNull
     public Size getSize() {
-        if (this.state.cleaned.getAcquire()) {
+        if (this.nativeState.cleaned.getAcquire()) {
             throw new IllegalStateException("Attempted to get size of a closed texture");
         }
 
-        return new Size(this.state.texture.w(), this.state.texture.h());
+        return new Size(this.nativeState.texture.w(), this.nativeState.texture.h());
     }
 
     public NativeTexture(@NotNull SDL_Texture texture) {
-        this.state = new State(texture);
-        this.cleanable = GlobalCleaner.register(this, this.state);
+        this.nativeState = new NativeState(texture);
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
     }
 }
