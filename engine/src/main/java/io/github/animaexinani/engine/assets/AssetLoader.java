@@ -1,5 +1,7 @@
 package io.github.animaexinani.engine.assets;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 public abstract class AssetLoader {
@@ -9,7 +11,7 @@ public abstract class AssetLoader {
      * @return <code>true</code> if the loader supports loading the asset, <code>false</code> otherwise.
      * @param <T> The type of the asset to check
      */
-    public abstract <T extends Asset> boolean supports(Class<T> type);
+    public abstract <T extends Asset> boolean supports(@NotNull Class<T> type);
 
     /**
      * Loads an asset.
@@ -21,9 +23,8 @@ public abstract class AssetLoader {
      *
      * @implSpec
      * If the loader does not support loading the format of the asset (e.g.: a texture loader which does not support
-     * JPEG images), this function should throw an {@link UnsupportedFormatException}. The engine will catch these
-     * exceptions to delegate loading to a different loader.
+     * JPEG images), this function should throw an {@link UnsupportedFormatException}.
      */
-    public abstract <T extends Asset> T load(AssetKey<T> key, AssetLoadingContext context)
+    public abstract <T extends Asset> T load(@NotNull AssetKey<T> key, @NotNull AssetLoadingContext context)
         throws IOException;
 }

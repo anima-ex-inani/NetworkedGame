@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.nio.file.NoSuchFileException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class AssetManagerImpl extends AssetManager {
     private final ExecutorService assetLoadingExecutor = Executors.newCachedThreadPool();
 
-    private final Map<@NotNull AssetKey<? extends Asset>, @NotNull Future<? extends Asset>> pendingAssetLoads = new ConcurrentHashMap<>();
+    private final Map<@NotNull AssetKey<? extends Asset>, @NotNull CompletableFuture<? extends Asset>> pendingAssetLoads = new ConcurrentHashMap<>();
 
     private static final class KeyedSoftReference<T extends Asset> extends SoftReference<T> {
         private final AssetKey<T> key;
@@ -51,7 +52,7 @@ public final class AssetManagerImpl extends AssetManager {
 
     private <T extends Asset> @NotNull CompletableFuture<T> fetchAsset(@NotNull AssetKey<T> key, @NotNull AssetLoadingContextImpl context) {
         return CompletableFuture.supplyAsync(() -> {
-            var loaderExceptions = new ArrayList<UnsupportedFormatException>(loaders.size());
+            var loaderExceptions = new ArrayList<Exception>(loaders.size());
             for (var loader : loaders) {
                 if (!loader.supports(key.type())) {
                     continue;
@@ -62,15 +63,12 @@ public final class AssetManagerImpl extends AssetManager {
                     cacheAsset(key, asset);
                     return asset;
                 }
-                catch (UnsupportedFormatException e) {
+                catch (UnsupportedFormatException | IOException e) {
                     loaderExceptions.add(e);
-                }
-                catch (IOException e) {
-                    throw new CompletionException(e);
                 }
             }
 
-            var finalException = new UnsupportedOperationException("No loader found for " + key);
+            var finalException = new NoSuchFileException(key.key(), null, "No loader could load the asset");
             for (var exception : loaderExceptions) {
                 finalException.addSuppressed(exception);
             }
@@ -78,7 +76,7 @@ public final class AssetManagerImpl extends AssetManager {
         }, assetLoadingExecutor);
     }
 
-    private <T extends Asset> @NotNull Future<T> loadAsset(@NotNull AssetKey<T> key, @NotNull AssetLoadingContextImpl context) {
+    private <T extends Asset> @NotNull CompletableFuture<T> loadAsset(@NotNull AssetKey<T> key, @NotNull AssetLoadingContextImpl context) {
         var future = new CompletableFuture<T>();
         @SuppressWarnings("unchecked") var existingFuture = (CompletableFuture<T>)pendingAssetLoads.putIfAbsent(key, future);
 

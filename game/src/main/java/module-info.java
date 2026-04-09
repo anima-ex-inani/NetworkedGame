@@ -3,4 +3,5 @@ module io.github.animaexinani.game {
 
     requires io.github.animaexinani.engine;
     requires java.logging;
+    requires java.desktop;
 }

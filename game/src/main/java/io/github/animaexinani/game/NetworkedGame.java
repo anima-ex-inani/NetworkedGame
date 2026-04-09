@@ -39,6 +39,7 @@ public final class NetworkedGame extends Application {
         catch (Exception e) {
             LOGGER.log(Level.SEVERE, e, () -> "Unhandled exception when closing window");
         }
+
         super.close();
     }
 
