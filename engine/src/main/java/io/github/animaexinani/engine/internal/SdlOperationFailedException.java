@@ -13,6 +13,14 @@ public final class SdlOperationFailedException extends RuntimeException {
         throw new SdlOperationFailedException(SDLError.SDL_GetError());
     }
 
+    public static long throwOnFailure(long result) {
+        if (result == 0) {
+            throw new SdlOperationFailedException(SDLError.SDL_GetError());
+        }
+
+        return result;
+    }
+
     @Contract(value = "null -> fail; _ -> param1", pure = true)
     public static <T> T throwOnFailure(T result) {
         if (result != null) {

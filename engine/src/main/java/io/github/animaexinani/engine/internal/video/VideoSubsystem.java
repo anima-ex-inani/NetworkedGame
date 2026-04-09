@@ -6,9 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLInit;
-import org.lwjgl.sdl.SDLRender;
-import org.lwjgl.system.MemoryStack;
-
+import org.lwjgl.sdl.SDLVideo;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
 import io.github.animaexinani.engine.internal.SdlOperationFailedException;
 import io.github.animaexinani.engine.windowing.Window;
@@ -45,30 +43,20 @@ public final class VideoSubsystem implements AutoCloseable, WindowFactory {
             throw new IllegalStateException("Attempted to create a window after the video subsystem has been closed");
         }
 
-        try (var stack = MemoryStack.stackPush()) {
-            var windowHandleBuffer = stack.mallocPointer(1);
-            var rendererHandleBuffer = stack.mallocPointer(1);
+        try {
+            var windowHandle = SdlOperationFailedException.throwOnFailure(
+                SDLVideo.SDL_CreateWindow(
+                    options.getTitle(),
+                    options.getClientWidth(),
+                    options.getClientHeight(),
+                    options.getWindowFlags()
+                )
+            );
 
-            try {
-                SdlOperationFailedException.throwOnFailure(
-                    SDLRender.SDL_CreateWindowAndRenderer(
-                        options.getTitle(),
-                        options.getClientWidth(),
-                        options.getClientHeight(),
-                        options.getWindowFlags(),
-                        windowHandleBuffer,
-                        rendererHandleBuffer
-                    )
-                );
-            }
-            catch (SdlOperationFailedException e) {
-                throw new WindowCreationFailedException("Failed to create window", e);
-            }
-
-            var windowHandle = windowHandleBuffer.get();
-            var rendererHandle = rendererHandleBuffer.get();
-
-            return new WindowWithRenderer(windowHandle, rendererHandle);
+            return new NativeWindow(windowHandle);
+        }
+        catch (SdlOperationFailedException e) {
+            throw new WindowCreationFailedException("Failed to create window", e);
         }
     }
 
