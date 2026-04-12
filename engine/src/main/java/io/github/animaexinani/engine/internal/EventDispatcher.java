@@ -15,7 +15,8 @@ import org.lwjgl.sdl.SDLInit;
 import org.lwjgl.sdl.SDL_Event;
 
 import io.github.animaexinani.engine.EventRegistry;
-import io.github.animaexinani.engine.listeners.*;
+import io.github.animaexinani.engine.listeners.KeyboardListener;
+import io.github.animaexinani.engine.listeners.QuitEventListener;
 
 public final class EventDispatcher implements EventRegistry, AutoCloseable {
     private final Map<Class<? extends EventListener>, List<EventListener>> listeners = new ConcurrentHashMap<>();
@@ -81,6 +82,17 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
                     var quitListeners = this.getListenersOfType(QuitEventListener.class);
                     quitListeners.forEach(QuitEventListener::onQuit);
                 }
+                case SDLEvents.SDL_EVENT_KEY_DOWN -> {
+                    var keyListeners = this.getListenersOfType(KeyboardListener.class);
+                    int scancode = this.nativeState.event.key().scancode();
+                    keyListeners.forEach(l -> l.onKeyDown(scancode));
+                }
+                case SDLEvents.SDL_EVENT_KEY_UP -> {
+                    var keyListeners = this.getListenersOfType(KeyboardListener.class);
+                    int scancode = this.nativeState.event.key().scancode();
+                    keyListeners.forEach(l -> l.onKeyUp(scancode));
+                }
+
                 default -> {
                     // Intentionally empty.
                 }
