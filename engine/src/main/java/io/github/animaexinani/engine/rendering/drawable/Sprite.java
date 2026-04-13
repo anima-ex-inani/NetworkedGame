@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A class representing a drawable sprite that can be transformed.
@@ -33,7 +34,9 @@ public class Sprite implements Drawable, Transformable {
 
     private @NotNull Rect textureRect;
 
-    private @NotNull Vertex @Nullable [] vertexCache;
+    private @NotNull Vertex @NotNull [] vertexCache;
+
+    private boolean vertexCacheDirty;
 
     private static final int @NotNull [] INDICES = {0, 1, 2, 1, 2, 3};
 
@@ -55,12 +58,13 @@ public class Sprite implements Drawable, Transformable {
         this.tint = Color.WHITE;
         this.texture = texture;
         this.textureRect = textureRect;
-        this.vertexCache = null;
+        this.vertexCache = new Vertex[4];
+        this.vertexCacheDirty = true;
     }
 
     @Override
     public @NotNull Vertex @NotNull [] vertices() {
-        if (this.vertexCache == null) {
+        if (this.vertexCacheDirty) {
             var currentTransform = this.transform();
 
             var topLeftPosition = currentTransform.transform(PointF.ZERO);
@@ -68,12 +72,12 @@ public class Sprite implements Drawable, Transformable {
             var bottomLeftPosition = currentTransform.transform(new PointF(0.0F, this.textureRect.height()));
             var bottomRightPosition = currentTransform.transform(new PointF(this.textureRect.width(), this.textureRect.height()));
 
-            this.vertexCache = new Vertex[] {
-                new Vertex(topLeftPosition, this.textureRect.topLeft(), this.tint),
-                new Vertex(topRightPosition, this.textureRect.topRight(), this.tint),
-                new Vertex(bottomLeftPosition, this.textureRect.bottomLeft(), this.tint),
-                new Vertex(bottomRightPosition, this.textureRect.bottomRight(), this.tint)
-            };
+            this.vertexCache[0] = new Vertex(topLeftPosition, this.textureRect.topLeft(), this.tint);
+            this.vertexCache[1] = new Vertex(topRightPosition, this.textureRect.topRight(), this.tint);
+            this.vertexCache[2] = new Vertex(bottomLeftPosition, this.textureRect.bottomLeft(), this.tint);
+            this.vertexCache[3] = new Vertex(bottomRightPosition, this.textureRect.bottomRight(), this.tint);
+
+            this.vertexCacheDirty = false;
         }
 
         return this.vertexCache;
@@ -130,7 +134,7 @@ public class Sprite implements Drawable, Transformable {
 
             this.textureRect = textureRect;
             this.origin = new PointF(px * this.textureRect.width(), py * this.textureRect.height());
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 
@@ -145,7 +149,7 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.translation.equals(translation)) {
             this.translation = translation;
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 
@@ -158,7 +162,7 @@ public class Sprite implements Drawable, Transformable {
     public void rotation(float rotation) {
         if (this.rotation != rotation) {
             this.rotation = rotation;
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 
@@ -173,7 +177,7 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.origin.equals(pivot)) {
             this.origin = pivot;
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 
@@ -188,7 +192,7 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.scale.equals(scale)) {
             this.scale = scale;
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 
@@ -196,7 +200,7 @@ public class Sprite implements Drawable, Transformable {
     public void reset() {
         Transformable.super.reset();
         this.origin = new PointF(this.textureRect.width() / 2.0F, this.textureRect.height() / 2.0F);
-        this.vertexCache = null;
+        this.vertexCacheDirty = true;
     }
 
     /**
@@ -219,7 +223,7 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.tint.equals(tint)) {
             this.tint = tint;
-            this.vertexCache = null;
+            this.vertexCacheDirty = true;
         }
     }
 }
