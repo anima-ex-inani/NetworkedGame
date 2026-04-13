@@ -125,7 +125,11 @@ public class Sprite implements Drawable, Transformable {
         Objects.requireNonNull(textureRect);
 
         if (!this.textureRect.equals(textureRect)) {
+            var px = this.origin.x() / this.textureRect.width();
+            var py = this.origin.y() / this.textureRect.height();
+
             this.textureRect = textureRect;
+            this.origin = new PointF(px * this.textureRect.width(), py * this.textureRect.height());
             this.vertexCache = null;
         }
     }
@@ -159,7 +163,7 @@ public class Sprite implements Drawable, Transformable {
     }
 
     @Override
-    public PointF pivot() {
+    public @NotNull PointF pivot() {
         return this.origin;
     }
 
