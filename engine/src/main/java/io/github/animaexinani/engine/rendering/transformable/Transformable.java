@@ -45,7 +45,7 @@ public interface Transformable {
      *
      * @return The pivot point.
      */
-    PointF pivot();
+    @NotNull PointF pivot();
 
     /**
      * Sets the pivot point of this object.
