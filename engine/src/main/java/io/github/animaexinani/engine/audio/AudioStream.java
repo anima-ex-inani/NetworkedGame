@@ -1,5 +1,6 @@
 package io.github.animaexinani.engine.audio;
 
+import io.github.animaexinani.engine.assets.Asset;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
@@ -9,7 +10,18 @@ import java.nio.ByteBuffer;
 /**
  * A stream of audio samples.
  */
-public abstract class AudioStream implements Closeable {
+public abstract class AudioStream implements Closeable, Asset {
+    /**
+     * Checks if the stream is closed.
+     * @return <code>true</code> if the stream is closed, <code>false</code> otherwise.
+     */
+    protected abstract boolean closed();
+
+    @Override
+    public boolean isValid() {
+        return !this.closed();
+    }
+
     /**
      * The sample format of the audio stream.
      *
