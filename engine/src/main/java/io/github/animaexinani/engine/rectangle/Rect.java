@@ -2,6 +2,7 @@ package io.github.animaexinani.engine.rectangle;
 
 import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.size.Size;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -20,6 +21,7 @@ public record Rect(int left, int top, int width, int height) {
      *
      * @return A {@link Point} representing the top-left corner.
      */
+    @Contract("-> new")
     public @NotNull Point topLeft() {
         return new Point(this.left, this.top);
     }
@@ -29,6 +31,7 @@ public record Rect(int left, int top, int width, int height) {
      *
      * @return A {@link Point} representing the top-right corner.
      */
+    @Contract("-> new")
     public @NotNull Point topRight() {
         return new Point(this.left + this.width, this.top);
     }
@@ -38,6 +41,7 @@ public record Rect(int left, int top, int width, int height) {
      *
      * @return A {@link Point} representing the bottom-left corner.
      */
+    @Contract("-> new")
     public @NotNull Point bottomLeft() {
         return new Point(this.left, this.top + this.height);
     }
@@ -47,6 +51,7 @@ public record Rect(int left, int top, int width, int height) {
      *
      * @return A {@link Point} representing the bottom-right corner.
      */
+    @Contract("-> new")
     public @NotNull Point bottomRight() {
         return new Point(this.left + this.width, this.top + this.height);
     }
@@ -56,6 +61,7 @@ public record Rect(int left, int top, int width, int height) {
      *
      * @return A {@link Size} representing the width and height of the rectangle.
      */
+    @Contract("-> new")
     public @NotNull Size size() {
         return new Size(this.width, this.height);
     }
@@ -68,6 +74,7 @@ public record Rect(int left, int top, int width, int height) {
      * @return A new {@link Rect} instance.
      * @throws NullPointerException if {@code topLeft} or {@code size} is null.
      */
+    @Contract("_, _ -> new")
     public static @NotNull Rect of(@NotNull Point topLeft, @NotNull Size size) {
         Objects.requireNonNull(topLeft);
         Objects.requireNonNull(size);

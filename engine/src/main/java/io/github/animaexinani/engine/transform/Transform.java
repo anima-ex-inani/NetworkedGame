@@ -128,6 +128,7 @@ public record Transform(
      *     .then(Transform.translation(pivot.x(), pivot.y()));
      * }</pre>
      */
+    @Contract("_, _, _ -> new")
     public static @NotNull Transform scale(float x, float y, @NotNull PointF pivot) {
         Objects.requireNonNull(pivot);
 
