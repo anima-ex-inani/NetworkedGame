@@ -22,6 +22,13 @@ public interface Transformable {
 
     void scale(@NotNull SizeF scale);
 
+    default void reset() {
+        this.translation(PointF.ZERO);
+        this.rotation(0);
+        this.scale(SizeF.ONE);
+        this.pivot(PointF.ZERO);
+    }
+
     default @NotNull Transform transform() {
         SizeF scale = this.scale();
         PointF translation = this.translation();
