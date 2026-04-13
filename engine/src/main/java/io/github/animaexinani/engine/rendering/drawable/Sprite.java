@@ -65,7 +65,7 @@ public class Sprite implements Drawable, Transformable {
 
             var topLeftPosition = currentTransform.transform(PointF.ZERO);
             var topRightPosition = currentTransform.transform(new PointF(this.textureRect.width(), 0.0F));
-            var bottomLeftPosition = currentTransform.transform(PointF.ZERO);
+            var bottomLeftPosition = currentTransform.transform(new PointF(0.0F, this.textureRect.height()));
             var bottomRightPosition = currentTransform.transform(new PointF(this.textureRect.width(), this.textureRect.height()));
 
             this.vertexCache = new Vertex[] {
