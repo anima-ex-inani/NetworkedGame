@@ -1,0 +1,8 @@
+reviews:
+  enable_prompt_for_ai_agents: false
+  auto_review:
+    enabled: true
+    auto_incremental_review: false
+chat:
+  art: false
+  auto_reply: false
