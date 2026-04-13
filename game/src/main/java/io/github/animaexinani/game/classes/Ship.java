@@ -1,11 +1,13 @@
 package io.github.animaexinani.game.classes;
-
+import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rendering.Renderer;
+import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.drawable.Geometry;
+import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
 
-public class Ship {
+public class Ship implements Drawable {
     // state
     private float x;
     private float y;
@@ -18,16 +20,27 @@ public class Ship {
     private static final float TURN_SPEED = 0.05f;
     private static final float FRICTION = 0.98f;
     private static final float MAX_SPEED = 12.0f;
+    
     // visuals
     private Geometry geometry;
 
-    public Ship(float startX, float startY, Geometry startingGeometry) {
+    // Removed the Geometry parameter from the constructor
+    public Ship(float startX, float startY) {
         this.x = startX;
         this.y = startY;
         this.angle = 0.0f; 
         this.velocityX = 0.0f;
         this.velocityY = 0.0f;
-        this.geometry = startingGeometry;
+        
+        // Create the initial geometry directly inside the class
+        Vertex[] vertices = new Vertex[] {
+            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(1.0f, 0.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(0.0f, 1.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(0.0f, 0.0f, 1.0f, 1.0f))
+        };
+        int[] indices = new int[] { 0, 1, 2 };
+        
+        this.geometry = new Geometry(vertices, indices, null);
     }
 
     public void turnLeft() {
@@ -103,7 +116,19 @@ public class Ship {
         this.geometry.vertices(verts);
     }
 
-    public void draw(Renderer renderer) {
-        renderer.draw(this.geometry);
+    // implement the Drawable interface methods
+    @Override
+    public Vertex[] vertices() {
+        return this.geometry.vertices();
+    }
+
+    @Override
+    public int[] indices() {
+        return this.geometry.indices();
+    }
+
+    @Override
+    public Texture texture() {
+        return this.geometry.texture();
     }
 }
