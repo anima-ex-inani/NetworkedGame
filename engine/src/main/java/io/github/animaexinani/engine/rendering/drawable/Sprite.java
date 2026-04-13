@@ -8,10 +8,8 @@ import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A class representing a drawable sprite that can be transformed.
