@@ -1,4 +1,5 @@
 reviews:
+  profile: chill
   enable_prompt_for_ai_agents: false
   auto_review:
     enabled: true
