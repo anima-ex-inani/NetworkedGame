@@ -12,6 +12,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+/**
+ * A class representing a drawable sprite that can be transformed.
+ * <p>
+ * A sprite consists of a texture and a region of that texture to display.
+ * </p>
+ */
 public class Sprite implements Drawable, Transformable {
     private @NotNull PointF translation;
 
@@ -31,6 +37,13 @@ public class Sprite implements Drawable, Transformable {
 
     private static final int @NotNull [] INDICES = {0, 1, 2, 1, 2, 3};
 
+    /**
+     * Creates a new sprite with the given texture and texture region.
+     *
+     * @param texture     The texture to use for the sprite.
+     * @param textureRect The region of the texture to display.
+     * @throws NullPointerException if {@code texture} or {@code textureRect} is null.
+     */
     public Sprite(@NotNull Texture texture, @NotNull Rect textureRect) {
         Objects.requireNonNull(texture);
         Objects.requireNonNull(textureRect);
@@ -71,21 +84,43 @@ public class Sprite implements Drawable, Transformable {
         return Sprite.INDICES;
     }
 
+    /**
+     * Gets the texture used by this sprite.
+     *
+     * @return The texture.
+     */
     @Override
     public @NotNull Texture texture() {
         return this.texture;
     }
 
+    /**
+     * Sets the texture used by this sprite.
+     *
+     * @param texture The new texture.
+     * @throws NullPointerException if {@code texture} is null.
+     */
     public void texture(@NotNull Texture texture) {
         Objects.requireNonNull(texture);
 
         this.texture = texture;
     }
 
+    /**
+     * Gets the texture region displayed by this sprite.
+     *
+     * @return The texture region.
+     */
     public Rect textureRect() {
         return this.textureRect;
     }
 
+    /**
+     * Sets the texture region displayed by this sprite.
+     *
+     * @param textureRect The new texture region.
+     * @throws NullPointerException if {@code textureRect} is null.
+     */
     public void textureRect(@NotNull Rect textureRect) {
         Objects.requireNonNull(textureRect);
 
@@ -160,10 +195,21 @@ public class Sprite implements Drawable, Transformable {
         this.vertexCache = null;
     }
 
+    /**
+     * Gets the tint color of this sprite.
+     *
+     * @return The tint color.
+     */
     public Color tint() {
         return this.tint;
     }
 
+    /**
+     * Sets the tint color of this sprite.
+     *
+     * @param tint The new tint color.
+     * @throws NullPointerException if {@code tint} is null.
+     */
     public void tint(@NotNull Color tint) {
         Objects.requireNonNull(tint);
 

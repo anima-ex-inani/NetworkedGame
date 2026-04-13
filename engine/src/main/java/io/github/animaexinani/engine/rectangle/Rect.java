@@ -6,27 +6,68 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * A record representing a rectangle with integer coordinates and dimensions.
+ *
+ * @param left   The x-coordinate of the left edge of the rectangle.
+ * @param top    The y-coordinate of the top edge of the rectangle.
+ * @param width  The width of the rectangle. Must be non-negative.
+ * @param height The height of the rectangle. Must be non-negative.
+ */
 public record Rect(int left, int top, int width, int height) {
+    /**
+     * Gets the top-left corner of the rectangle.
+     *
+     * @return A {@link Point} representing the top-left corner.
+     */
     public @NotNull Point topLeft() {
         return new Point(this.left, this.top);
     }
 
+    /**
+     * Gets the top-right corner of the rectangle.
+     *
+     * @return A {@link Point} representing the top-right corner.
+     */
     public @NotNull Point topRight() {
         return new Point(this.left + this.width, this.top);
     }
 
+    /**
+     * Gets the bottom-left corner of the rectangle.
+     *
+     * @return A {@link Point} representing the bottom-left corner.
+     */
     public @NotNull Point bottomLeft() {
         return new Point(this.left, this.top + this.height);
     }
 
+    /**
+     * Gets the bottom-right corner of the rectangle.
+     *
+     * @return A {@link Point} representing the bottom-right corner.
+     */
     public @NotNull Point bottomRight() {
         return new Point(this.left + this.width, this.top + this.height);
     }
 
+    /**
+     * Gets the size of the rectangle.
+     *
+     * @return A {@link Size} representing the width and height of the rectangle.
+     */
     public @NotNull Size size() {
         return new Size(this.width, this.height);
     }
 
+    /**
+     * Creates a new rectangle from a top-left point and a size.
+     *
+     * @param topLeft The top-left corner of the rectangle.
+     * @param size    The size of the rectangle.
+     * @return A new {@link Rect} instance.
+     * @throws NullPointerException if {@code topLeft} or {@code size} is null.
+     */
     public static @NotNull Rect of(@NotNull Point topLeft, @NotNull Size size) {
         Objects.requireNonNull(topLeft);
         Objects.requireNonNull(size);

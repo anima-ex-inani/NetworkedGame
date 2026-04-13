@@ -6,10 +6,31 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * A record representing a 2D affine transformation matrix.
+ * <p>
+ * The matrix is stored in row-major order:
+ * </p>
+ * <pre>
+ * | m00 m01 m02 |
+ * | m10 m11 m12 |
+ * |  0   0   1  |
+ * </pre>
+ *
+ * @param m00 The value at row 0, column 0 (horizontal scale/rotation).
+ * @param m01 The value at row 0, column 1 (horizontal shear/rotation).
+ * @param m02 The value at row 0, column 2 (horizontal translation).
+ * @param m10 The value at row 1, column 0 (vertical shear/rotation).
+ * @param m11 The value at row 1, column 1 (vertical scale/rotation).
+ * @param m12 The value at row 1, column 2 (vertical translation).
+ */
 public record Transform(
     float m00, float m01, float m02,
     float m10, float m11, float m12
 ) {
+    /**
+     * The identity transformation.
+     */
     public static final @NotNull Transform IDENTITY = new Transform(
         1.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f
@@ -54,12 +75,14 @@ public record Transform(
      * This is equivalent to the following code:
      *
      * <pre>{@code
-     * return Transform.translation(-pivot.x(), -pivot.y())
+     * Transform.translation(-pivot.x(), -pivot.y())
      *     .then(Transform.rotation(angle))
      *     .then(Transform.translation(pivot.x(), pivot.y()));
      * }</pre>
      */
     public static @NotNull Transform rotation(float angle, @NotNull PointF pivot) {
+        Objects.requireNonNull(pivot);
+
         float cos = (float) StrictMath.cos(angle);
         float sin = (float) StrictMath.sin(angle);
 
@@ -88,7 +111,26 @@ public record Transform(
         );
     }
 
+    /**
+     * Creates a new transform that scales the object by the given factors around a pivot point.
+     *
+     * @param x     The factor to scale the object in the x-axis.
+     * @param y     The factor to scale the object in the y-axis.
+     * @param pivot The pivot point around which to scale the object.
+     * @return The new transform.
+     *
+     * @apiNote
+     * This is equivalent to the following code:
+     *
+     * <pre>{@code
+     * Transform.translation(-pivot.x(), -pivot.y())
+     *     .then(Transform.scale(x, y))
+     *     .then(Transform.translation(pivot.x(), pivot.y()));
+     * }</pre>
+     */
     public static @NotNull Transform scale(float x, float y, @NotNull PointF pivot) {
+        Objects.requireNonNull(pivot);
+
         float px = pivot.x();
         float py = pivot.y();
 
@@ -116,8 +158,17 @@ public record Transform(
         );
     }
 
+    /**
+     * Transforms the given point using this transformation matrix.
+     *
+     * @param point The point to transform.
+     * @return The transformed point.
+     * @throws NullPointerException if {@code point} is null.
+     */
     @Contract("_ -> new")
     public @NotNull PointF transform(@NotNull PointF point) {
+        Objects.requireNonNull(point);
+
         return new PointF(
             this.m00 * point.x() + this.m01 * point.y() + this.m02,
             this.m10 * point.x() + this.m11 * point.y() + this.m12
