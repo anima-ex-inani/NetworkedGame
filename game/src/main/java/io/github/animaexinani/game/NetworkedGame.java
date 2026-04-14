@@ -22,9 +22,9 @@ public final class NetworkedGame extends Application {
     // instantiate Input System
     private final InputSystem inputSystem;
 
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.1", "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.2", "io.github.animaexinani.networkedgame");
 
-    private long lastTime = System.nanoTime();
+    private long lastTime = 0;
     private double accumulator = 0.0;
     
     // // 20 Ticks Per Second = 0.05 seconds per tick
@@ -60,6 +60,10 @@ public final class NetworkedGame extends Application {
             if (this.inputSystem.isKeyPressed(InputMap.KEY_D)) {
                 this.playerShip.turnRight(dt);
             }
+            // TODO: Wire KEY_SPACE once projectiles are implemented
+            // if (this.inputSystem.isKeyPressed(InputMap.KEY_SPACE)) {
+            //     this.playerShip.firePrimary(dt);
+            // }
 
             // physics and math happen strictly at 20 TPS
             this.playerShip.update(dt, currentWidth, currentHeight);
@@ -118,5 +122,7 @@ public final class NetworkedGame extends Application {
         
         // tell the engine to send key presses to the inputSystem, not 'this'
         this.eventRegistry().register(KeyboardListener.class, this.inputSystem);
+        // reset the clock right before the constructor finishes!
+        this.lastTime = System.nanoTime();
     }
 }

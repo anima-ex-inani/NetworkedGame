@@ -24,6 +24,14 @@ public class Ship implements Drawable {
     // visuals
     private Geometry geometry;
 
+    // define the ship's basic shape relative to its center (0,0)
+        // [0] = Nose (pointing right), [1] = Back Left, [2] = Back Right
+        private static final float[][] LOCAL_COORDS= {
+            { 30.0f, 0.0f },
+            { -15.0f, -15.0f },
+            { -15.0f, 15.0f }
+        };
+
     // Removed the Geometry parameter from the constructor
     public Ship(float startX, float startY) {
         this.x = startX;
@@ -34,9 +42,9 @@ public class Ship implements Drawable {
         
         // Create the initial geometry directly inside the class
         Vertex[] vertices = new Vertex[] {
-            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(1.0f, 0.0f, 0.0f, 1.0f)),
-            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(0.0f, 1.0f, 0.0f, 1.0f)),
-            new Vertex(new PointF(0, 0), new Point(0, 0), new Color(0.0f, 0.0f, 1.0f, 1.0f))
+            new Vertex(new PointF(startX + 30.0f, startY), new Point(0, 0), new Color(1.0f, 0.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(startX - 15.0f, startY - 15.0f), new Point(0, 0), new Color(0.0f, 1.0f, 0.0f, 1.0f)),
+            new Vertex(new PointF(startX - 15.0f, startY + 15.0f), new Point(0, 0), new Color(0.0f, 0.0f, 1.0f, 1.0f))
         };
         int[] indices = new int[] { 0, 1, 2 };
         
@@ -85,21 +93,13 @@ public class Ship implements Drawable {
 
         // update the Geometry Vertices
         Vertex[] verts = this.geometry.vertices();
-        
-        // define the ship's basic shape relative to its center (0,0)
-        // [0] = Nose (pointing right), [1] = Back Left, [2] = Back Right
-        float[][] localCoords = {
-            { 30.0f, 0.0f },
-            { -15.0f, -15.0f },
-            { -15.0f, 15.0f }
-        };
 
         float cosA = (float) Math.cos(this.angle);
         float sinA = (float) Math.sin(this.angle);
 
         for (int i = 0; i < 3; i++) {
-            float localX = localCoords[i][0];
-            float localY = localCoords[i][1];
+            float localX = LOCAL_COORDS[i][0];
+            float localY = LOCAL_COORDS[i][1];
 
             // apply 2D Rotation Matrix
             float rotatedX = (localX * cosA) - (localY * sinA);
