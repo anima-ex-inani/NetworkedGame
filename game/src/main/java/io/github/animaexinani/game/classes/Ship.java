@@ -16,10 +16,10 @@ public class Ship implements Drawable {
     private float velocityY;
 
     // physics constants
-    private static final float THRUST_POWER = 0.5f;
-    private static final float TURN_SPEED = 0.05f;
-    private static final float FRICTION = 0.98f;
-    private static final float MAX_SPEED = 12.0f;
+    private static final float THRUST_POWER = 1500.0f; 
+    private static final float TURN_SPEED = 5.0f;    
+    private static final float FRICTION = 0.98f;     
+    private static final float MAX_SPEED = 720.0f;   
     
     // visuals
     private Geometry geometry;
@@ -43,23 +43,24 @@ public class Ship implements Drawable {
         this.geometry = new Geometry(vertices, indices, null);
     }
 
-    public void turnLeft() {
-        this.angle -= TURN_SPEED;
+    public void turnLeft(float dt) {
+        this.angle -= TURN_SPEED * dt;
     }
 
-    public void turnRight() {
-        this.angle += TURN_SPEED;
+    public void turnRight(float dt) {
+        this.angle += TURN_SPEED * dt;
     }
 
-    public void applyThrust() {
-        this.velocityX += (float) Math.cos(this.angle) * THRUST_POWER;
-        this.velocityY += (float) Math.sin(this.angle) * THRUST_POWER;
+    public void applyThrust(float dt) {
+        this.velocityX += (float) Math.cos(this.angle) * THRUST_POWER * dt;
+        this.velocityY += (float) Math.sin(this.angle) * THRUST_POWER * dt;
     }
 
-    public void update() {
+    public void update(float dt, float screenWidth, float screenHeight) {
         // apply friction and momentum
-        this.velocityX *= FRICTION;
-        this.velocityY *= FRICTION;
+        float frictionThisFrame = (float) Math.pow(FRICTION, dt * 60.0f);
+        this.velocityX *= frictionThisFrame;
+        this.velocityY *= frictionThisFrame;
 
         // vector clamping math
         // calculate the length of the velocity vector by Pythagoras theory
@@ -72,15 +73,15 @@ public class Ship implements Drawable {
             this.velocityY *= scale;
         }
 
-        this.x += this.velocityX;
-        this.y += this.velocityY;
+        this.x += this.velocityX * dt;
+        this.y += this.velocityY * dt;
 
         // screen wrap logic
-        if (this.x > 960.0f) this.x = 0.0f;
-        else if (this.x < 0.0f) this.x = 960.0f;
+        if (this.x > screenWidth) this.x = 0.0f;
+        else if (this.x < 0.0f) this.x = screenWidth;
         
-        if (this.y > 720.0f) this.y = 0.0f;
-        else if (this.y < 0.0f) this.y = 720.0f;
+        if (this.y > screenHeight) this.y = 0.0f;
+        else if (this.y < 0.0f) this.y = screenHeight;
 
         // update the Geometry Vertices
         Vertex[] verts = this.geometry.vertices();

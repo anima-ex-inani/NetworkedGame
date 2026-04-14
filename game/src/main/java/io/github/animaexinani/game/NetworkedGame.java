@@ -24,25 +24,54 @@ public final class NetworkedGame extends Application {
 
     private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.1", "io.github.animaexinani.networkedgame");
 
+    private long lastTime = System.nanoTime();
+    private double accumulator = 0.0;
+    
+    // // 20 Ticks Per Second = 0.05 seconds per tick
+    // private static final double TIME_STEP = 1.0 / 20.0;
+    private static final double TIME_STEP = 1.0 / 60.0;
+
     @Override
     protected boolean iterate() {
+        long currentTime = System.nanoTime();
+        // divide by 1 billion to convert nanoseconds to seconds
+        float frameTime = (currentTime - this.lastTime) / 1_000_000_000.0f;
+        this.lastTime = currentTime;
+
+        // prevent the "Spiral of Death" if the window is dragged or minimized
+        if (frameTime > 0.25f) frameTime = 0.25f; 
+
+        // pour that time into our bucket
+        this.accumulator += frameTime;
+
+        var clientSize = this.mainWindow.clientSize();
+        float currentWidth = clientSize.width();
+        float currentHeight = clientSize.height();
+
+        while (this.accumulator >= TIME_STEP) {
+            float dt = (float) TIME_STEP; // We pass the exact fixed step to the physics
+
+            if (this.inputSystem.isKeyPressed(InputMap.KEY_W)) {
+                this.playerShip.applyThrust(dt);
+            }
+            if (this.inputSystem.isKeyPressed(InputMap.KEY_A)) {
+                this.playerShip.turnLeft(dt);
+            }
+            if (this.inputSystem.isKeyPressed(InputMap.KEY_D)) {
+                this.playerShip.turnRight(dt);
+            }
+
+            // physics and math happen strictly at 20 TPS
+            this.playerShip.update(dt, currentWidth, currentHeight);
+
+            // remove one tick's worth of time from the bucket
+            this.accumulator -= TIME_STEP;
+        }
+
+        // 4. the Render Loop
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
 
-        if (this.inputSystem.isKeyPressed(InputMap.KEY_W)) {
-            this.playerShip.applyThrust();
-        }
-        if (this.inputSystem.isKeyPressed(InputMap.KEY_A)) {
-            this.playerShip.turnLeft();
-        }
-        if (this.inputSystem.isKeyPressed(InputMap.KEY_D)) {
-            this.playerShip.turnRight();
-        }
-
-        // physics and math
-        this.playerShip.update();
-
-        // pass the ship directly to the renderer
         renderer.draw(this.playerShip);
 
         renderer.present();
