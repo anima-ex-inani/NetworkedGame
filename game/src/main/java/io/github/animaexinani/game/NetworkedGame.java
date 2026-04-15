@@ -22,13 +22,14 @@ public final class NetworkedGame extends Application {
     // instantiate Input System
     private final InputSystem inputSystem;
 
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.2", "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.3", "io.github.animaexinani.networkedgame");
 
     private long lastTime = 0;
     private double accumulator = 0.0;
     
     // // 20 Ticks Per Second = 0.05 seconds per tick
     // private static final double TIME_STEP = 1.0 / 20.0;
+    // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
 
     @Override

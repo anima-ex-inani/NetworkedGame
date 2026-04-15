@@ -1,11 +1,9 @@
 package io.github.animaexinani.engine.listeners;
 
-import java.util.EventListener;
+import java.util.EventListener; 
+
+import io.github.animaexinani.engine.events.KeyEvent;
 
 public interface KeyboardListener extends EventListener {
-    // fired the moment the physical key is pressed
-    void onKeyDown(int scancode);
-
-    // fired the moment the physical key is released
-    void onKeyUp(int scancode);
+    void onKeyEvent(KeyEvent event);
 }
