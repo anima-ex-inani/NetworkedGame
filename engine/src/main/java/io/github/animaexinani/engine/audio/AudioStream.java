@@ -24,10 +24,15 @@ public abstract class AudioStream implements Closeable, Asset {
 
     /**
      * The sample format of the audio stream.
-     *
      * @return The sample format.
      */
     public abstract SampleFormat sampleFormat();
+
+    /**
+     * The number of samples in the stream.
+     * @return The number of samples.
+     */
+    public abstract long sampleCount();
 
     /**
      * Retrieves a buffer of audio samples from the stream.
@@ -41,6 +46,10 @@ public abstract class AudioStream implements Closeable, Asset {
      * Once this method is called, the audio system will no longer use any previously returned buffers, so reusing the
      * same buffer with contents modified to contain the newly requested samples is allowed.
      * </p>
+     * <p>
+     * If the combination of {@code offset} and {@code sampleCount} would go beyond the end of the stream, the returned
+     * buffer should end at the end of the stream. No padding should be added to the buffer to fill the gap.
+     * </p>
      */
-    public abstract @NotNull ByteBuffer getSamples(int offset, int sampleCount) throws IOException;
+    public abstract @NotNull ByteBuffer getSamples(long offset, long sampleCount) throws IOException;
 }
