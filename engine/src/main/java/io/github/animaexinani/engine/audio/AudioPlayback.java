@@ -30,12 +30,14 @@ public abstract class AudioPlayback implements AutoCloseable {
             long firstPartCount = streamSampleCount - this.sampleOffset;
             long secondPartCount = sampleCount - firstPartCount;
 
-            ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
-            ByteBuffer secondPartBuffer = this.stream.getSamples(0, secondPartCount);
+            ByteBuffer totalBuffer = ByteBuffer.allocate((int) (sampleCount * this.stream.sampleFormat().bytes()));
 
-            ByteBuffer totalBuffer = ByteBuffer.allocate(firstPartBuffer.remaining() + secondPartBuffer.remaining());
+            ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
             totalBuffer.put(firstPartBuffer);
+
+            ByteBuffer secondPartBuffer = this.stream.getSamples(0, secondPartCount);
             totalBuffer.put(secondPartBuffer);
+
             totalBuffer.flip();
 
             this.sampleOffset = secondPartCount;
