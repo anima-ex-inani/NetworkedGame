@@ -7,6 +7,7 @@ module io.github.animaexinani.engine {
     exports io.github.animaexinani.engine;
     exports io.github.animaexinani.engine.assets;
     exports io.github.animaexinani.engine.color;
+    exports io.github.animaexinani.engine.events;
     exports io.github.animaexinani.engine.listeners;
     exports io.github.animaexinani.engine.point;
     exports io.github.animaexinani.engine.rectangle;

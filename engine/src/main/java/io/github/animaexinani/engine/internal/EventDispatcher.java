@@ -15,7 +15,9 @@ import org.lwjgl.sdl.SDLInit;
 import org.lwjgl.sdl.SDL_Event;
 
 import io.github.animaexinani.engine.EventRegistry;
-import io.github.animaexinani.engine.listeners.*;
+import io.github.animaexinani.engine.listeners.KeyboardListener;
+import io.github.animaexinani.engine.listeners.QuitEventListener;
+import io.github.animaexinani.engine.events.KeyEvent;
 
 public final class EventDispatcher implements EventRegistry, AutoCloseable {
     private final Map<Class<? extends EventListener>, List<EventListener>> listeners = new ConcurrentHashMap<>();
@@ -81,6 +83,31 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
                     var quitListeners = this.getListenersOfType(QuitEventListener.class);
                     quitListeners.forEach(QuitEventListener::onQuit);
                 }
+                case SDLEvents.SDL_EVENT_KEY_DOWN -> {
+                    var keyListeners = this.getListenersOfType(KeyboardListener.class);
+                    
+                    // 1. Get the data from SDL
+                    int scancode = this.nativeState.event.key().scancode();
+                    boolean isRepeat = this.nativeState.event.key().repeat();
+                    
+                    // 2. Determine if it's a new press or a held repeat
+                    var action = isRepeat ? KeyEvent.Action.REPEAT : KeyEvent.Action.PRESS;
+                    
+                    // 3. Package it into our clean Event Object and send it out!
+                    var keyEvent = new KeyEvent(scancode, action);
+                    keyListeners.forEach(l -> l.onKeyEvent(keyEvent));
+                }
+                case SDLEvents.SDL_EVENT_KEY_UP -> {
+                    var keyListeners = this.getListenersOfType(KeyboardListener.class);
+                    
+                    // 1. Get the data from SDL
+                    int scancode = this.nativeState.event.key().scancode();
+                    
+                    // 2. Package it as a RELEASE event and send it out!
+                    var keyEvent = new KeyEvent(scancode, KeyEvent.Action.RELEASE);
+                    keyListeners.forEach(l -> l.onKeyEvent(keyEvent));
+                }
+
                 default -> {
                     // Intentionally empty.
                 }
