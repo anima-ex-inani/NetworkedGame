@@ -11,8 +11,10 @@ import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
 import io.github.animaexinani.game.classes.Ship;
-import io.github.animaexinani.game.util.function.InputMap;
-import io.github.animaexinani.game.util.function.InputSystem;
+import io.github.animaexinani.engine.input.GameAction;
+import io.github.animaexinani.engine.input.GameInputListener;
+import io.github.animaexinani.engine.input.InputBindings;
+import io.github.animaexinani.engine.input.RebindingController;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
@@ -20,7 +22,9 @@ public final class NetworkedGame extends Application {
     private final Ship playerShip;
 
     // instantiate Input System
-    private final InputSystem inputSystem;
+    private final GameInputListener inputListener;
+    private final RebindingController rebindingController;
+
 
     private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.3", "io.github.animaexinani.networkedgame");
 
@@ -52,13 +56,13 @@ public final class NetworkedGame extends Application {
         while (this.accumulator >= TIME_STEP) {
             float dt = (float) TIME_STEP; // We pass the exact fixed step to the physics
 
-            if (this.inputSystem.isKeyPressed(InputMap.KEY_W)) {
+            if (this.inputListener.isHeld(GameAction.MOVE_UP)) {
                 this.playerShip.applyThrust(dt);
             }
-            if (this.inputSystem.isKeyPressed(InputMap.KEY_A)) {
+            if (this.inputListener.isHeld(GameAction.MOVE_LEFT)) {
                 this.playerShip.turnLeft(dt);
             }
-            if (this.inputSystem.isKeyPressed(InputMap.KEY_D)) {
+            if (this.inputListener.isHeld(GameAction.MOVE_RIGHT)) {
                 this.playerShip.turnRight(dt);
             }
             // TODO: Wire KEY_SPACE once projectiles are implemented
@@ -117,12 +121,17 @@ public final class NetworkedGame extends Application {
         this.playerShip = new Ship(centerX, centerY);
 
         // actually create the InputSystem object in memory
-        this.inputSystem = new InputSystem();
+        var bindings = InputBindings.defaultBindings();
+        this.inputListener = new GameInputListener(bindings);
+        this.rebindingController = new RebindingController(bindings);
+
 
         this.assetManager().registerLoader(new ResourceLoader());
         
         // tell the engine to send key presses to the inputSystem, not 'this'
-        this.eventRegistry().register(KeyboardListener.class, this.inputSystem);
+        this.eventRegistry().register(KeyboardListener.class, this.inputListener);
+        this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
+
         // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();
     }

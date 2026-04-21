@@ -16,4 +16,5 @@ module io.github.animaexinani.engine {
     exports io.github.animaexinani.engine.texture;
     exports io.github.animaexinani.engine.vertex;
     exports io.github.animaexinani.engine.windowing;
+    exports io.github.animaexinani.engine.input;
 }
