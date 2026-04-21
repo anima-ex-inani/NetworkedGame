@@ -2,6 +2,8 @@ package io.github.animaexinani.engine.input;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,19 +18,28 @@ public final class GameInputListener implements KeyboardListener {
 
     private final Set<GameAction> heldActions = EnumSet.noneOf(GameAction.class);
 
+    private final Map<Integer, GameAction> pressedScancodes = new HashMap<>();
+
     public GameInputListener(@NotNull InputBindings bindings) {
         this.bindings = bindings;
     }
 
     @Override
     public void onKeyEvent(@NotNull KeyEvent event) {
-        bindings.resolve(event.scancode()).ifPresent(action -> {
-            switch (event.action()) {
-                case PRESS   -> heldActions.add(action);
-                case RELEASE -> heldActions.remove(action);
-                case REPEAT  -> {}
+        switch (event.action()) {
+            case PRESS -> bindings.resolve(event.scancode()).ifPresent(action -> {
+                pressedScancodes.put(event.scancode(), action);
+                heldActions.add(action);
+            });
+            case RELEASE -> {
+                var action = pressedScancodes.remove(event.scancode());
+                // Only remove the action from heldActions when no other scancode is still holding it down.
+                if (action != null && !pressedScancodes.containsValue(action)) {
+                    heldActions.remove(action);
+                }
             }
-        });
+            case REPEAT -> {}
+        }
     }
 
     public boolean isHeld(@NotNull GameAction action) {
@@ -40,6 +51,7 @@ public final class GameInputListener implements KeyboardListener {
     }
 
     public void releaseAll() {
+        pressedScancodes.clear();
         heldActions.clear();
     }
 

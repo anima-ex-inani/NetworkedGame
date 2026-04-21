@@ -17,9 +17,12 @@ public final class InputBindings {
     private final Map<Integer, GameAction> bindings = new HashMap<>();
 
 
-    // Binds a scancode to a GameAction,
+    // Binds a scancode to a GameAction
     public void bind(int scancode, @NotNull GameAction action) {
+        // Remove the old scancode that was pointing to this action, if any.
+        bindings.values().removeIf(a -> a == action);
         bindings.put(scancode, action);
+
     }
 
     // unbind scancode
