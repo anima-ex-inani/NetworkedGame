@@ -20,7 +20,7 @@ public final class InputBindings {
     // Binds a scancode to a GameAction
     public void bind(int scancode, @NotNull GameAction action) {
         // Remove the old scancode that was pointing to this action, if any.
-        bindings.values().removeIf(a -> a == action);
+        bindings.entrySet().removeIf(entry -> entry.getValue() == action);
         bindings.put(scancode, action);
 
     }
