@@ -3,21 +3,26 @@ package io.github.animaexinani.game;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.geometry.Vector2;
+import org.dyn4j.world.World;
+
 import io.github.animaexinani.engine.Application;
 import io.github.animaexinani.engine.ApplicationOptions;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.input.GameAction;
+import io.github.animaexinani.engine.input.GameInputListener;
+import io.github.animaexinani.engine.input.InputBindings;
+import io.github.animaexinani.engine.input.RebindingController;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
 import io.github.animaexinani.game.classes.Ship;
-import io.github.animaexinani.engine.input.GameAction;
-import io.github.animaexinani.engine.input.GameInputListener;
-import io.github.animaexinani.engine.input.InputBindings;
-import io.github.animaexinani.engine.input.RebindingController;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
+    private final World<Body> physicsWorld;
     private final Window mainWindow;
     private final Ship playerShip;
 
@@ -35,7 +40,7 @@ public final class NetworkedGame extends Application {
     // private static final double TIME_STEP = 1.0 / 20.0;
     // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
-
+    
     @Override
     protected boolean iterate() {
         long currentTime = System.nanoTime();
@@ -69,6 +74,9 @@ public final class NetworkedGame extends Application {
             // if (this.inputSystem.isKeyPressed(InputMap.KEY_SPACE)) {
             //     this.playerShip.firePrimary(dt);
             // }
+
+            // Calculate forces, collisions, and movement
+            this.physicsWorld.update(dt);
 
             // physics and math happen strictly at 20 TPS
             this.playerShip.update(dt, currentWidth, currentHeight);
@@ -117,14 +125,20 @@ public final class NetworkedGame extends Application {
         var clientSize = this.mainWindow.clientSize();
         var centerX = clientSize.width() / 2.0f;
         var centerY = clientSize.height() / 2.0f;
+        // Initialize the world with 0 gravity
+        this.physicsWorld = new World<>();
+        this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
+
+        // A limit of 150.0 allows objects to travel up to 9,000 pixels per second at 60 FPS!
+        this.physicsWorld.getSettings().setMaximumTranslation(150.0);
 
         this.playerShip = new Ship(centerX, centerY);
+        this.physicsWorld.addBody(this.playerShip.getBody());
 
         // actually create the InputSystem object in memory
         var bindings = InputBindings.defaultBindings();
         this.inputListener = new GameInputListener(bindings);
         this.rebindingController = new RebindingController(bindings);
-
 
         this.assetManager().registerLoader(new ResourceLoader());
         
