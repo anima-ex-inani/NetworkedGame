@@ -69,7 +69,7 @@ public final class GPURenderer implements Renderer {
         };
         var pitch = pixelFormat.calculatePitch(textureSize.width());
         try (var surface = SdlOperationFailedException.throwOnFailure(
-            SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
+                SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
         )) {
             var nativeTexture = SdlOperationFailedException.throwOnFailure(SDLRender.SDL_CreateTextureFromSurface(this.nativeState.handle, surface));
             return new NativeTexture(nativeTexture);
@@ -93,7 +93,7 @@ public final class GPURenderer implements Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_SetRenderDrawColorFloat(this.nativeState.handle, red, green, blue, alpha)
+                    SDLRender.SDL_SetRenderDrawColorFloat(this.nativeState.handle, red, green, blue, alpha)
             );
         } catch (SdlOperationFailedException e) {
             throw new RenderingOperationFailedException("Failed to set clear color", e);
@@ -101,7 +101,7 @@ public final class GPURenderer implements Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderClear(this.nativeState.handle)
+                    SDLRender.SDL_RenderClear(this.nativeState.handle)
             );
         } catch (SdlOperationFailedException e) {
             throw new RenderingOperationFailedException("Failed to clear back buffer", e);
@@ -126,28 +126,32 @@ public final class GPURenderer implements Renderer {
             throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
         }
 
-        var vertices = drawable.vertices();
-        var drawableIndices = drawable.indices();
+        int vertexCount = drawable.vertexCount();
+        int indexCount = drawable.indexCount();
 
         try (var stack = MemoryStack.stackPush()) {
-            FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
-            for (int i = 0; i < vertices.length; i++) {
-                xy.put(i * 2, vertices[i].position().x());
-                xy.put(i * 2 + 1, vertices[i].position().y());
+            FloatBuffer xy = stack.mallocFloat(vertexCount * 2);
+            for (int i = 0; i < vertexCount; i++) {
+                xy.put(i * 2, drawable.vertexAt(i).position().x());
+                xy.put(i * 2 + 1, drawable.vertexAt(i).position().y());
             }
 
-
-            var color = SDL_FColor.calloc(vertices.length, stack);
-            for (int i = 0; i < vertices.length; i++) {
+            var color = SDL_FColor.calloc(vertexCount, stack);
+            for (int i = 0; i < vertexCount; i++) {
                 var currentColor = color.position(i);
-                currentColor.r(vertices[i].color().red());
-                currentColor.g(vertices[i].color().green());
-                currentColor.b(vertices[i].color().blue());
-                currentColor.a(vertices[i].color().alpha());
+                currentColor.r(drawable.vertexAt(i).color().red());
+                currentColor.g(drawable.vertexAt(i).color().green());
+                currentColor.b(drawable.vertexAt(i).color().blue());
+                currentColor.a(drawable.vertexAt(i).color().alpha());
             }
             color.position(0);
 
-            var indices = IntBuffer.wrap(drawable.indices());
+            int[] indexArray = new int[indexCount];
+            for (int i = 0; i < indexCount; i++) {
+                indexArray[i] = drawable.indexAt(i);
+            }
+
+            IntBuffer indices = IntBuffer.wrap(indexArray);
 
             FloatBuffer uv;
             int uvStride;
@@ -155,11 +159,11 @@ public final class GPURenderer implements Renderer {
                 uv = null;
                 uvStride = 0;
             } else {
-                uv = stack.mallocFloat(vertices.length * 2);
-                uvStride = 8; // float * 2
+                uv = stack.mallocFloat(vertexCount * 2);
+                uvStride = Float.BYTES * 2;
 
-                for (int i = 0; i < vertices.length; i++) {
-                    var vertexUv = texture.getUvOfPoint(vertices[i].uv());
+                for (int i = 0; i < vertexCount; i++) {
+                    var vertexUv = texture.getUvOfPoint(drawable.vertexAt(i).uv());
                     uv.put(i * 2, vertexUv.x());
                     uv.put(i * 2 + 1, vertexUv.y());
                 }
@@ -167,20 +171,20 @@ public final class GPURenderer implements Renderer {
 
             try {
                 SdlOperationFailedException.throwOnFailure(
-                    SDLRender.SDL_RenderGeometryRaw(
-                        this.nativeState.handle,
-                        nativeTexture,
-                        xy,
-                        Float.BYTES * 2,
-                        color,
-                        SDL_FColor.SIZEOF,
-                        uv,
-                        uvStride,
-                        vertices.length,
-                        indices,
-                        drawableIndices.length,
-                        Integer.BYTES
-                    )
+                        SDLRender.SDL_RenderGeometryRaw(
+                                this.nativeState.handle,
+                                nativeTexture,
+                                xy,
+                                Float.BYTES * 2,
+                                color,
+                                SDL_FColor.SIZEOF,
+                                uv,
+                                uvStride,
+                                vertexCount,
+                                indices,
+                                indexCount,
+                                Integer.BYTES
+                        )
                 );
             } catch (SdlOperationFailedException e) {
                 throw new RenderingOperationFailedException("Failed to render object", e);
@@ -196,7 +200,7 @@ public final class GPURenderer implements Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderPresent(this.nativeState.handle)
+                    SDLRender.SDL_RenderPresent(this.nativeState.handle)
             );
         } catch (SdlOperationFailedException e) {
             throw new RenderingOperationFailedException("Failed to present back buffer", e);
