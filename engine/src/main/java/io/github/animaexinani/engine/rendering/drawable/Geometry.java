@@ -19,8 +19,9 @@ public final class Geometry implements Drawable {
         }
         Objects.requireNonNull(indices);
 
-        this.vertices = vertices;
-        this.indices = indices;
+        validateIndices(vertices.length, indices);
+        this.vertices = vertices.clone();
+        this.indices = indices.clone();
         this.texture = texture;
     }
 
@@ -66,15 +67,26 @@ public final class Geometry implements Drawable {
         for (Vertex vertex : vertices) {
             Objects.requireNonNull(vertex);
         }
-        this.vertices = vertices;
+        validateIndices(vertices.length, this.indices);
+        this.vertices = vertices.clone();
     }
 
     public void setIndices(int @NotNull [] indices) {
         Objects.requireNonNull(indices);
-        this.indices = indices;
+        validateIndices(this.vertices.length, indices);
+        this.indices = indices.clone();
     }
 
     public void setTexture(@Nullable Texture texture) {
         this.texture = texture;
+    }
+
+    private static void validateIndices(int vertexCount, int[] indices) {
+        for (int index : indices) {
+            if (index < 0 || index >= vertexCount) {
+                throw new IllegalArgumentException(
+                        "Index " + index + " out of bounds for vertex count " + vertexCount);
+            }
+        }
     }
 }
