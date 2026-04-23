@@ -145,6 +145,16 @@ public final class GPURenderer implements Renderer {
                 xy.put(i * 2 + 1, pos.y());
             }
 
+            FloatBuffer uv;
+            int uvStride;
+            if (Objects.isNull(texture)) {
+                uv = null;
+                uvStride = 0;
+            } else {
+                uv = stack.mallocFloat(vertexCount * 2);
+                uvStride = Float.BYTES * 2;
+            }
+
             var color = SDL_FColor.calloc(vertexCount, stack);
             for (int i = 0; i < vertexCount; i++) {
                 var v = vertexCache[i];
@@ -153,6 +163,11 @@ public final class GPURenderer implements Renderer {
                 currentColor.g(v.color().green());
                 currentColor.b(v.color().blue());
                 currentColor.a(v.color().alpha());
+                if (!Objects.isNull(uv)) {
+                    var vertexUv = texture.getUvOfPoint(v.uv());
+                    uv.put(i * 2, vertexUv.x());
+                    uv.put(i * 2 + 1, vertexUv.y());
+                }
             }
             color.position(0);
 
@@ -162,22 +177,6 @@ public final class GPURenderer implements Renderer {
             }
 
             IntBuffer indices = IntBuffer.wrap(indexArray);
-
-            FloatBuffer uv;
-            int uvStride;
-            if (Objects.isNull(texture)) {
-                uv = null;
-                uvStride = 0;
-            } else {
-                uv = stack.mallocFloat(vertexCount * 2);
-                uvStride = Float.BYTES * 2;
-
-                for (int i = 0; i < vertexCount; i++) {
-                    var vertexUv = texture.getUvOfPoint(vertexCache[i].uv());
-                    uv.put(i * 2, vertexUv.x());
-                    uv.put(i * 2 + 1, vertexUv.y());
-                }
-            }
 
             try {
                 SdlOperationFailedException.throwOnFailure(
