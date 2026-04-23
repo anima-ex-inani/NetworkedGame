@@ -9,5 +9,5 @@ public interface AudioSystem {
      * @param stream The audio stream to bind.
      * @return A playback object that can be used to control the audio stream.
      */
-    AudioPlayback bindAudio(AudioStream stream);
+    AudioPlayback bindAudio(AudioSource stream);
 }

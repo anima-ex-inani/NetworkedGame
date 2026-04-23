@@ -14,7 +14,7 @@ import java.util.Objects;
  * Closing the playback should unbind the audio stream from the audio system.
  */
 public abstract class AudioPlayback implements AutoCloseable {
-    private final @NotNull AudioStream stream;
+    private final @NotNull AudioSource stream;
 
     /**
      * Gets the sample format of the underlying audio stream.
@@ -24,13 +24,22 @@ public abstract class AudioPlayback implements AutoCloseable {
         return this.stream.sampleFormat();
     }
 
+    protected int streamChannelCount() {
+        return this.stream.channelCount();
+    }
+
+    protected long streamSampleCount() {
+        return this.stream.sampleCount();
+    }
+
     protected @NotNull ByteBuffer fetchSamples(long sampleCount) throws IOException {
         long streamSampleCount = this.stream.sampleCount();
         if (this.sampleOffset + sampleCount > streamSampleCount && this.shouldLoop) {
             long firstPartCount = streamSampleCount - this.sampleOffset;
             long secondPartCount = sampleCount - firstPartCount;
 
-            ByteBuffer totalBuffer = ByteBuffer.allocate((int) (sampleCount * this.stream.sampleFormat().bytes()));
+            var bytesPerSample = this.streamSampleFormat().bytes() * this.streamChannelCount();
+            ByteBuffer totalBuffer = ByteBuffer.allocate((int)StrictMath.multiplyExact(sampleCount, bytesPerSample));
 
             ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
             totalBuffer.put(firstPartBuffer);
@@ -115,7 +124,7 @@ public abstract class AudioPlayback implements AutoCloseable {
      * This does not take ownership of the audio stream. The caller remains responsible for closing it when no longer
      * needed.
      */
-    protected AudioPlayback(@NotNull AudioStream stream) {
+    protected AudioPlayback(@NotNull AudioSource stream) {
         Objects.requireNonNull(stream);
 
         this.stream = stream;

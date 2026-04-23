@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A stream of audio samples.
+ * A source of audio samples.
  */
-public abstract class AudioStream implements Closeable, Asset {
+public abstract class AudioSource implements Closeable, Asset {
     /**
      * Checks if the stream is closed.
      * @return <code>true</code> if the stream is closed, <code>false</code> otherwise.
@@ -35,13 +35,30 @@ public abstract class AudioStream implements Closeable, Asset {
     public abstract long sampleCount();
 
     /**
+     * The number of channels in the stream.
+     * @return The number of channels.
+     */
+    public abstract int channelCount();
+
+    /**
+     * The sample rate of the stream.
+     * @return The sample rate.
+     */
+    public abstract int sampleRate();
+
+    /**
      * Retrieves a buffer of audio samples from the stream.
      *
      * @param offset      The offset of the first sample to retrieve.
      * @param sampleCount The number of samples to retrieve.
      * @return A buffer containing the requested samples.
      * @throws IOException if an I/O error occurs while reading the samples.
+     *
      * @implSpec The returned buffer should remain valid until either the next call to this method or the stream is closed.
+     * <p>
+     * This should return interleaved audio data. If the source contains planar audio data, it should be converted
+     * before this function returns said data.
+     * </p>
      * <p>
      * Once this method is called, the audio system will no longer use any previously returned buffers, so reusing the
      * same buffer with contents modified to contain the newly requested samples is allowed.
