@@ -62,7 +62,8 @@ public final class Geometry implements Drawable {
 
     // --- Setters ---
 
-    public void setVertices(@NotNull Vertex @NotNull [] vertices) {
+    // Replaces the entire vertex array.
+    public void vertices(@NotNull Vertex @NotNull [] vertices) {
         Objects.requireNonNull(vertices);
         for (Vertex vertex : vertices) {
             Objects.requireNonNull(vertex);
@@ -71,13 +72,38 @@ public final class Geometry implements Drawable {
         this.vertices = vertices.clone();
     }
 
-    public void setIndices(int @NotNull [] indices) {
+    // Replaces the vertex at the specified position.
+    public void vertex(int index, @NotNull Vertex vertex) {
+        if (index < 0 || index >= this.vertices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Vertex index " + index + " out of bounds for length " + this.vertices.length);
+        }
+        Objects.requireNonNull(vertex);
+        this.vertices[index] = vertex;
+    }
+
+    // Replaces the entire index array.
+    public void indices(int @NotNull [] indices) {
         Objects.requireNonNull(indices);
         validateIndices(this.vertices.length, indices);
         this.indices = indices.clone();
     }
 
-    public void setTexture(@Nullable Texture texture) {
+
+    // Replaces the index value at the specified position.
+    public void index(int index, int value) {
+        if (index < 0 || index >= this.indices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Index " + index + " out of bounds for length " + this.indices.length);
+        }
+        if (value < 0 || value >= this.vertices.length) {
+            throw new IllegalArgumentException(
+                    "Index " + value + " out of bounds for vertex count " + this.vertices.length);
+        }
+        this.indices[index] = value;
+    }
+
+    public void texture(@Nullable Texture texture) {
         this.texture = texture;
     }
 
