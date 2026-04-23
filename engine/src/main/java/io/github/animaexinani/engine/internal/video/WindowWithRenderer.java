@@ -21,6 +21,7 @@ import io.github.animaexinani.engine.internal.SdlOperationFailedException;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.engine.vertex.Vertex;
 import org.lwjgl.system.MemoryStack;
 
 public final class WindowWithRenderer implements Window, Renderer {
@@ -162,20 +163,27 @@ public final class WindowWithRenderer implements Window, Renderer {
         int vertexCount = drawable.vertexCount();
         int indexCount = drawable.indexCount();
 
+        Vertex[] vertexCache = new Vertex[vertexCount];
+        for (int i = 0; i < vertexCount; i++) {
+            vertexCache[i] = drawable.vertexAt(i);
+        }
+
         try (var stack = MemoryStack.stackPush()) {
             FloatBuffer xy = stack.mallocFloat(vertexCount * 2);
             for (int i = 0; i < vertexCount; i++) {
-                xy.put(i * 2, drawable.vertexAt(i).position().x());
-                xy.put(i * 2 + 1, drawable.vertexAt(i).position().y());
+                var pos = vertexCache[i].position();
+                xy.put(i * 2, pos.x());
+                xy.put(i * 2 + 1, pos.y());
             }
 
             var color = SDL_FColor.calloc(vertexCount, stack);
             for (int i = 0; i < vertexCount; i++) {
+                var v = vertexCache[i];
                 var currentColor = color.position(i);
-                currentColor.r(drawable.vertexAt(i).color().red());
-                currentColor.g(drawable.vertexAt(i).color().green());
-                currentColor.b(drawable.vertexAt(i).color().blue());
-                currentColor.a(drawable.vertexAt(i).color().alpha());
+                currentColor.r(v.color().red());
+                currentColor.g(v.color().green());
+                currentColor.b(v.color().blue());
+                currentColor.a(v.color().alpha());
             }
             color.position(0);
 
@@ -196,7 +204,7 @@ public final class WindowWithRenderer implements Window, Renderer {
                 uvStride = Float.BYTES * 2;
 
                 for (int i = 0; i < vertexCount; i++) {
-                    var vertexUv = texture.getUvOfPoint(drawable.vertexAt(i).uv());
+                    var vertexUv = texture.getUvOfPoint(vertexCache[i].uv());
                     uv.put(i * 2, vertexUv.x());
                     uv.put(i * 2 + 1, vertexUv.y());
                 }
