@@ -36,11 +36,11 @@ public final class InputBindings {
 
     public static InputBindings defaultBindings() {
         var b = new InputBindings();
-        b.bind(26, GameAction.MOVE_UP);
-        b.bind(22, GameAction.MOVE_DOWN);
-        b.bind(4,  GameAction.MOVE_LEFT);
-        b.bind(7,  GameAction.MOVE_RIGHT);
-        b.bind(9,  GameAction.ATTACK);
+        b.bind(26, GameAction.MOVE_UP);     // W
+        b.bind(22, GameAction.MOVE_DOWN);   // S
+        b.bind(4,  GameAction.MOVE_LEFT);   // A
+        b.bind(7,  GameAction.MOVE_RIGHT);  // D
+        b.bind(9,  GameAction.ATTACK);      // F
         return b;
     }
 }

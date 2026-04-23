@@ -3,10 +3,6 @@ package io.github.animaexinani.game;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.dyn4j.dynamics.Body;
-import org.dyn4j.geometry.Vector2;
-import org.dyn4j.world.World;
-
 import io.github.animaexinani.engine.Application;
 import io.github.animaexinani.engine.ApplicationOptions;
 import io.github.animaexinani.engine.color.Color;
@@ -18,20 +14,25 @@ import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
+import io.github.animaexinani.game.classes.Asteroid;
+import io.github.animaexinani.game.classes.Entity;
+import io.github.animaexinani.game.classes.GameWorld;
 import io.github.animaexinani.game.classes.Ship;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
-    private final World<Body> physicsWorld;
     private final Window mainWindow;
+    
+    // master world manager
+    private final GameWorld gameWorld;
+    // keep a direct reference to the player's ship specifically so we can route keyboard inputs to it
     private final Ship playerShip;
 
     // instantiate Input System
     private final GameInputListener inputListener;
     private final RebindingController rebindingController;
 
-
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.3", "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.4", "io.github.animaexinani.networkedgame");
 
     private long lastTime = 0;
     private double accumulator = 0.0;
@@ -70,26 +71,25 @@ public final class NetworkedGame extends Application {
             if (this.inputListener.isHeld(GameAction.MOVE_RIGHT)) {
                 this.playerShip.turnRight(dt);
             }
-            // TODO: Wire KEY_SPACE once projectiles are implemented
-            // if (this.inputSystem.isKeyPressed(InputMap.KEY_SPACE)) {
-            //     this.playerShip.firePrimary(dt);
-            // }
+            if (this.inputListener.isHeld(GameAction.ATTACK)) {
+                this.playerShip.fire(this.gameWorld);
+            }
 
-            // Calculate forces, collisions, and movement
-            this.physicsWorld.update(dt);
-
-            // physics and math happen strictly at 20 TPS
-            this.playerShip.update(dt, currentWidth, currentHeight);
-
+            // STEP THE ENTIRE GAME WORLD
+            // this single line calculates physics, handles wrapping, and updates visuals for everything.
+            this.gameWorld.update(dt, currentWidth, currentHeight);
+            
             // remove one tick's worth of time from the bucket
             this.accumulator -= TIME_STEP;
         }
 
-        // 4. the Render Loop
+        // the Render Loop
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
-
-        renderer.draw(this.playerShip);
+        
+        for (Entity entity : this.gameWorld.getEntities()) {
+            renderer.draw(entity);
+        }
 
         renderer.present();
         return true;
@@ -125,15 +125,17 @@ public final class NetworkedGame extends Application {
         var clientSize = this.mainWindow.clientSize();
         var centerX = clientSize.width() / 2.0f;
         var centerY = clientSize.height() / 2.0f;
-        // Initialize the world with 0 gravity
-        this.physicsWorld = new World<>();
-        this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
 
-        // A limit of 150.0 allows objects to travel up to 9,000 pixels per second at 60 FPS!
-        this.physicsWorld.getSettings().setMaximumTranslation(150.0);
+        // initialize the GameWorld
+        this.gameWorld = new GameWorld();
 
+        // create the Ship and register it with the World
         this.playerShip = new Ship(centerX, centerY);
-        this.physicsWorld.addBody(this.playerShip.getBody());
+        this.gameWorld.addEntity(this.playerShip);
+
+        // add test asteroid
+        Asteroid testAsteroid = new Asteroid(200.0f, 200.0f, 60.0, 30.0);
+        this.gameWorld.addEntity(testAsteroid);
 
         // actually create the InputSystem object in memory
         var bindings = InputBindings.defaultBindings();
