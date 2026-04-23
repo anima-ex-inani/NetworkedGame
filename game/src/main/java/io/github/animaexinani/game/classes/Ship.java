@@ -107,7 +107,7 @@ public class Ship implements Drawable {
             Vertex original = this.geometry.vertexAt(i);
             verts[i] = new Vertex(new PointF(rotatedX + this.x, rotatedY + this.y), original.uv(), original.color());
         }
-        this.geometry.setVertices(verts);
+        this.geometry.vertices(verts);
     }
 
     // implement the Drawable interface methods
