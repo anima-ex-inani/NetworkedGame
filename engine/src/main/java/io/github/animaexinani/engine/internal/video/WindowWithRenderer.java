@@ -187,11 +187,10 @@ public final class WindowWithRenderer implements Window, Renderer {
             }
             color.position(0);
 
-            int[] indexArray = new int[indexCount];
+            IntBuffer indices = stack.mallocInt(indexCount);
             for (int i = 0; i < indexCount; i++) {
-                indexArray[i] = drawable.indexAt(i);
+                indices.put(i, drawable.indexAt(i));
             }
-            IntBuffer indices = IntBuffer.wrap(indexArray);
 
             FloatBuffer uv;
             int uvStride;
