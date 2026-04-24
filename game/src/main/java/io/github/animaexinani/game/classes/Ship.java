@@ -46,7 +46,7 @@ public class Ship extends Entity {
 
     // factory method to keep the constructor clean
     private static Geometry createGeometry(float x, float y) {
-        Color shipColor = new Color(0.0f, 1.0f, 0.0f, 1.0f); // white, fully opaque
+        Color shipColor = new Color(0.0f, 1.0f, 0.0f, 1.0f); // green, fully opaque
         Vertex[] vertices = new Vertex[] {
             new Vertex(new PointF(x + 30.0f, y), new Point(0, 0), shipColor),
             new Vertex(new PointF(x - 15.0f, y + 15.0f), new Point(0, 0), shipColor),
