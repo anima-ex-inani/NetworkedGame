@@ -30,6 +30,7 @@ public abstract class Entity implements Drawable {
     }
 
     public void takeDamage(int damage) {
+        if (this.health <= 0) return; // already dead
         this.health -= damage;
         if (this.health <= 0) {
             this.onDestroy();
