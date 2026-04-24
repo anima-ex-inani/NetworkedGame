@@ -1,5 +1,6 @@
 package io.github.animaexinani.game;
 
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +33,7 @@ public final class NetworkedGame extends Application {
     private final GameInputListener inputListener;
     private final RebindingController rebindingController;
 
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.4", "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.5", "io.github.animaexinani.networkedgame");
 
     private long lastTime = 0;
     private double accumulator = 0.0;
@@ -116,7 +117,7 @@ public final class NetworkedGame extends Application {
     public NetworkedGame() {
         super(NetworkedGame.OPTIONS);
 
-        var windowOptions = new WindowOptions("Networked Game", 960, 720);
+        var windowOptions = new WindowOptions("Networked Game", 1920, 1080);
         windowOptions.setResizable(true);
 
         var windowFactory = super.windowFactory();
@@ -132,10 +133,22 @@ public final class NetworkedGame extends Application {
         // create the Ship and register it with the World
         this.playerShip = new Ship(centerX, centerY);
         this.gameWorld.addEntity(this.playerShip);
-
+        
         // add test asteroid
         Asteroid testAsteroid = new Asteroid(200.0f, 200.0f, 60.0, 30.0);
         this.gameWorld.addEntity(testAsteroid);
+
+        Random rand = new Random();
+
+        // Add four more random asteroids
+        for (int i = 0; i < 4; i++) {
+            float x = rand.nextFloat() * 960f;      // random X between 0 and screen width
+            float y = rand.nextFloat() * 720f;      // random Y between 0 and screen height
+            double vx = rand.nextDouble() * 100 - 50;  // random velocity X between -50 and 50
+            double vy = rand.nextDouble() * 100 - 50;  // random velocity Y between -50 and 50
+            Asteroid asteroid = new Asteroid(x, y, vx, vy);
+            this.gameWorld.addEntity(asteroid);
+        }
 
         // actually create the InputSystem object in memory
         var bindings = InputBindings.defaultBindings();

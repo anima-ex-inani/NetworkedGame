@@ -47,12 +47,12 @@ public class GameWorld {
         }
         
         // clean up the dead entities safely
-        for (Iterator<Entity> it = entities.iterator(); it.hasNext(); ) {
+        for (Iterator<Entity> it = this.entities.iterator(); it.hasNext(); ) {
             Entity e = it.next();
             if (e.isDead()) {
                 it.remove();
-                physicsWorld.removeBody(e.getBody());
-                if (e instanceof Bullet) bulletPool.recycle((Bullet) e);
+                this.physicsWorld.removeBody(e.getBody());
+                if (e instanceof Bullet) this.bulletPool.recycle((Bullet) e);
             }
         }
     }

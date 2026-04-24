@@ -20,9 +20,9 @@ public class Bullet extends Entity {
 
     // a tiny triangle
     private static final Vector2[] LOCAL_COORDS = {
-        new Vector2(5.0, 0.0),   // nose 
-        new Vector2(-3.0, 2.0),  // back left
-        new Vector2(-3.0, -2.0)  // back right
+        new Vector2(5.0, 0.0),   // front tip 
+        new Vector2(-2.0, 25.0),  // upper back arm
+        new Vector2(-2.0, -25.0)  // lower back arm
     };
 
     // bullets spawn "dead" by default so they can wait in the pool
@@ -86,7 +86,7 @@ public class Bullet extends Entity {
             this.health = 0; // auto-die after 2 seconds
         }
         
-        this.wrapPosition(screenWidth, screenHeight);
+        // No screen wrapping – bullets simply disappear after timeout
     }
 
     @Override
