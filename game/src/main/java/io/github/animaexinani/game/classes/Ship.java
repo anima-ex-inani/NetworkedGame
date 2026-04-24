@@ -7,6 +7,8 @@ import io.github.animaexinani.engine.rendering.drawable.Geometry;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
 
+import org.jetbrains.annotations.NotNull;
+
 public class Ship implements Drawable {
     // state
     private float x;
@@ -91,41 +93,42 @@ public class Ship implements Drawable {
         if (this.y > screenHeight) this.y = 0.0f;
         else if (this.y < 0.0f) this.y = screenHeight;
 
-        // update the Geometry Vertices
-        Vertex[] verts = this.geometry.vertices();
-
         float cosA = (float) Math.cos(this.angle);
         float sinA = (float) Math.sin(this.angle);
 
-        for (int i = 0; i < 3; i++) {
+        Vertex[] verts = new Vertex[this.geometry.vertexCount()];
+        for (int i = 0; i < verts.length; i++) {
             float localX = LOCAL_COORDS[i][0];
             float localY = LOCAL_COORDS[i][1];
 
-            // apply 2D Rotation Matrix
             float rotatedX = (localX * cosA) - (localY * sinA);
             float rotatedY = (localX * sinA) + (localY * cosA);
 
-            // translate to the ship's actual position on the screen
-            float finalX = rotatedX + this.x;
-            float finalY = rotatedY + this.y;
-
-            // overwrite the vertex position, but keep its original color and UV mapping
-            verts[i] = new Vertex(new PointF(finalX, finalY), verts[i].uv(), verts[i].color());
+            Vertex original = this.geometry.vertexAt(i);
+            verts[i] = new Vertex(new PointF(rotatedX + this.x, rotatedY + this.y), original.uv(), original.color());
         }
-
-        // tell the geometry object to save our new vertex positions
         this.geometry.vertices(verts);
     }
 
     // implement the Drawable interface methods
     @Override
-    public Vertex[] vertices() {
-        return this.geometry.vertices();
+    public int vertexCount() {
+        return this.geometry.vertexCount();
     }
 
     @Override
-    public int[] indices() {
-        return this.geometry.indices();
+    public @NotNull Vertex vertexAt(int index) {
+        return this.geometry.vertexAt(index);
+    }
+
+    @Override
+    public int indexCount() {
+        return this.geometry.indexCount();
+    }
+
+    @Override
+    public int indexAt(int index) {
+        return this.geometry.indexAt(index);
     }
 
     @Override

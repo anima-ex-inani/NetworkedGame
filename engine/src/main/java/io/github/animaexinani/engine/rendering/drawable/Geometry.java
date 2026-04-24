@@ -9,40 +9,8 @@ import java.util.Objects;
 
 public final class Geometry implements Drawable {
     private @NotNull Vertex @NotNull [] vertices;
-
-    @Override
-    public Vertex @NotNull [] vertices() {
-        return this.vertices;
-    }
-
-    public void vertices(@NotNull Vertex @NotNull [] vertices) {
-        Objects.requireNonNull(vertices);
-        for (Vertex vertex : vertices) {
-            Objects.requireNonNull(vertex);
-        }
-        this.vertices = vertices;
-    }
-
     private int @NotNull [] indices;
-
-    public int @NotNull [] indices() {
-        return this.indices;
-    }
-
-    public void indices(int @NotNull [] indices) {
-        Objects.requireNonNull(indices);
-        this.indices = indices;
-    }
-
     private @Nullable Texture texture;
-
-    public @Nullable Texture texture() {
-        return this.texture;
-    }
-
-    public void texture(@Nullable Texture texture) {
-        this.texture = texture;
-    }
 
     public Geometry(@NotNull Vertex @NotNull [] vertices, int @NotNull [] indices, @Nullable Texture texture) {
         Objects.requireNonNull(vertices);
@@ -51,8 +19,100 @@ public final class Geometry implements Drawable {
         }
         Objects.requireNonNull(indices);
 
-        this.vertices = vertices;
-        this.indices = indices;
+        validateIndices(vertices.length, indices);
+        this.vertices = vertices.clone();
+        this.indices = indices.clone();
         this.texture = texture;
+    }
+
+    // --- Drawable ---
+
+    @Override
+    public int vertexCount() {
+        return this.vertices.length;
+    }
+
+    @Override
+    public @NotNull Vertex vertexAt(int index) {
+        if (index < 0 || index >= this.vertices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Vertex index " + index + " out of bounds for length " + this.vertices.length);
+        }
+        return this.vertices[index];
+    }
+
+    @Override
+    public int indexCount() {
+        return this.indices.length;
+    }
+
+    @Override
+    public int indexAt(int index) {
+        if (index < 0 || index >= this.indices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Index " + index + " out of bounds for length " + this.indices.length);
+        }
+        return this.indices[index];
+    }
+
+    @Override
+    public @Nullable Texture texture() {
+        return this.texture;
+    }
+
+    // --- Setters ---
+
+    // Replaces the entire vertex array.
+    public void vertices(@NotNull Vertex @NotNull [] vertices) {
+        Objects.requireNonNull(vertices);
+        for (Vertex vertex : vertices) {
+            Objects.requireNonNull(vertex);
+        }
+        validateIndices(vertices.length, this.indices);
+        this.vertices = vertices.clone();
+    }
+
+    // Replaces the vertex at the specified position.
+    public void vertex(int index, @NotNull Vertex vertex) {
+        if (index < 0 || index >= this.vertices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Vertex index " + index + " out of bounds for length " + this.vertices.length);
+        }
+        Objects.requireNonNull(vertex);
+        this.vertices[index] = vertex;
+    }
+
+    // Replaces the entire index array.
+    public void indices(int @NotNull [] indices) {
+        Objects.requireNonNull(indices);
+        validateIndices(this.vertices.length, indices);
+        this.indices = indices.clone();
+    }
+
+
+    // Replaces the index value at the specified position.
+    public void index(int index, int value) {
+        if (index < 0 || index >= this.indices.length) {
+            throw new IndexOutOfBoundsException(
+                    "Index " + index + " out of bounds for length " + this.indices.length);
+        }
+        if (value < 0 || value >= this.vertices.length) {
+            throw new IllegalArgumentException(
+                    "Index " + value + " out of bounds for vertex count " + this.vertices.length);
+        }
+        this.indices[index] = value;
+    }
+
+    public void texture(@Nullable Texture texture) {
+        this.texture = texture;
+    }
+
+    private static void validateIndices(int vertexCount, int[] indices) {
+        for (int index : indices) {
+            if (index < 0 || index >= vertexCount) {
+                throw new IllegalArgumentException(
+                        "Index " + index + " out of bounds for vertex count " + vertexCount);
+            }
+        }
     }
 }

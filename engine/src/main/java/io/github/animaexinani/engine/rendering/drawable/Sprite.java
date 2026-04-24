@@ -61,7 +61,17 @@ public class Sprite implements Drawable, Transformable {
     }
 
     @Override
-    public @NotNull Vertex @NotNull [] vertices() {
+    public int vertexCount() {
+        return this.vertexCache.length;
+    }
+
+    @Override
+    public @NotNull Vertex vertexAt(int index) {
+        if (index < 0 || index >= this.vertexCache.length) {
+            throw new IndexOutOfBoundsException(
+                    "Vertex index " + index + " out of bounds for length " + this.vertexCache.length);
+        }
+
         if (this.vertexCacheDirty) {
             var currentTransform = this.transform();
 
@@ -78,12 +88,21 @@ public class Sprite implements Drawable, Transformable {
             this.vertexCacheDirty = false;
         }
 
-        return this.vertexCache;
+        return this.vertexCache[index];
     }
 
     @Override
-    public int @NotNull [] indices() {
-        return Sprite.INDICES;
+    public int indexCount() {
+        return Sprite.INDICES.length;
+    }
+
+    @Override
+    public int indexAt(int index) {
+        if (index < 0 || index >= Sprite.INDICES.length) {
+            throw new IndexOutOfBoundsException(
+                    "Index " + index + " out of bounds for length " + Sprite.INDICES.length);
+        }
+        return Sprite.INDICES[index];
     }
 
     /**
