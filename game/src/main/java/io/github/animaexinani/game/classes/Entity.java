@@ -41,6 +41,7 @@ public abstract class Entity implements Drawable {
     public void updateVisuals() {
         Transform transform = this.body.getTransform();
         Vertex[] verts = this.geometry.vertices();
+        assert verts.length == this.baseCoords.length : "Vertex and baseCoords arrays must match";
 
         double cosA = Math.cos(transform.getRotationAngle());
         double sinA = Math.sin(transform.getRotationAngle());
