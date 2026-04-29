@@ -5,7 +5,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.github.animaexinani.engine.assets.AssetManager;
+import io.github.animaexinani.engine.audio.AudioSystem;
 import io.github.animaexinani.engine.internal.assets.AssetManagerImpl;
+import io.github.animaexinani.engine.internal.audio.NativeAudioSystem;
 import io.github.animaexinani.engine.windowing.WindowFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,6 +38,7 @@ public abstract class Application implements AutoCloseable, Runnable {
     private final @NotNull EventDispatcher eventDispatcher;
 
     private @Nullable VideoSubsystem videoSubsystem;
+    private @Nullable NativeAudioSystem audioSystem;
     private final NativeState nativeState;
     private final Cleaner.Cleanable cleanable;
 
@@ -53,6 +56,21 @@ public abstract class Application implements AutoCloseable, Runnable {
         }
 
         return this.videoSubsystem;
+    }
+
+    /**
+     * Gets the application-wide audio system.
+     *
+     * @return The audio system instance.
+     * @implNote The subsystem is lazily initialized on first access.
+     */
+    @NotNull
+    protected final AudioSystem audioSystem() {
+        if (this.audioSystem == null) {
+            this.audioSystem = new NativeAudioSystem();
+        }
+
+        return this.audioSystem;
     }
 
     protected final @NotNull AssetManager assetManager() {
@@ -166,6 +184,9 @@ public abstract class Application implements AutoCloseable, Runnable {
 
         if (this.videoSubsystem != null) {
             this.videoSubsystem.close();
+        }
+        if (this.audioSystem != null) {
+            this.audioSystem.close();
         }
         this.eventDispatcher.close();
         this.cleanable.clean();
