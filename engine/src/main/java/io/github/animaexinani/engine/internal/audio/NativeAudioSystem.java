@@ -9,7 +9,12 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLInit;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,6 +44,29 @@ public final class NativeAudioSystem implements AudioSystem {
     private final NativeState nativeState;
     private final Cleaner.Cleanable cleanable;
 
+    private static final int MINIMUM_CLEAN_THRESHOLD = 20; 
+
+    private final Set<WeakReference<AudioPlayback>> playbackHandles;
+    private final ReferenceQueue<AudioPlayback> playbackHandlesRefQueue;
+    private int playbackHandlesCleanThreshold;
+
+    @SuppressWarnings("unchecked")
+    private void cleanPlaybackHandleReferences() {
+        synchronized (this.playbackHandles) {
+            var reference = (WeakReference<AudioPlayback>)this.playbackHandlesRefQueue.poll();
+            if (reference == null) {
+                return;
+            }
+
+            while (reference != null) {
+                this.playbackHandles.remove(reference);
+                reference = (WeakReference<AudioPlayback>)this.playbackHandlesRefQueue.poll();
+            }
+
+            this.playbackHandlesCleanThreshold = StrictMath.max(this.playbackHandles.size(), MINIMUM_CLEAN_THRESHOLD);
+        }
+    }
+
     /**
      * Creates a playback handle for the provided audio source.
      *
@@ -52,7 +80,16 @@ public final class NativeAudioSystem implements AudioSystem {
             throw new IllegalStateException("Attempted to bind audio after the audio subsystem has been closed");
         }
 
-        return new NativeAudioPlayback(stream);
+        var playback = new NativeAudioPlayback(stream);
+
+        synchronized (this.playbackHandles) {
+            this.playbackHandles.add(new WeakReference<AudioPlayback>(playback, this.playbackHandlesRefQueue));
+            if (this.playbackHandles.size() >= this.playbackHandlesCleanThreshold) {
+                this.cleanPlaybackHandleReferences();
+            }
+        }
+
+        return playback;
     }
 
     /**
@@ -61,6 +98,9 @@ public final class NativeAudioSystem implements AudioSystem {
     public NativeAudioSystem() {
         this.nativeState = new NativeState();
         this.cleanable = GlobalCleaner.register(this, this.nativeState);
+        this.playbackHandles = Collections.synchronizedSet(new HashSet<>());
+        this.playbackHandlesRefQueue = new ReferenceQueue<>();
+        this.playbackHandlesCleanThreshold = MINIMUM_CLEAN_THRESHOLD;
     }
 
     /**
@@ -68,6 +108,24 @@ public final class NativeAudioSystem implements AudioSystem {
      */
     @Override
     public void close() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            return;
+        }
+
+        synchronized (this.playbackHandles) {
+            for (var reference : this.playbackHandles) {
+                var playback = reference.get();
+                if (playback != null) {
+                    try {
+                        playback.close();
+                    } catch (Exception _) {
+                        // Intentionally ignored
+                    }
+                }
+                this.playbackHandles.clear();
+            }
+        }
+
         this.cleanable.clean();
     }
 }
