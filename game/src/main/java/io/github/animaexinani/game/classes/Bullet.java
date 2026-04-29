@@ -8,10 +8,7 @@ import org.dyn4j.geometry.Transform;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.point.Point;
-import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rendering.drawable.Geometry;
-import io.github.animaexinani.engine.vertex.Vertex;
+import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
 
 public class Bullet extends Entity {
     private static final double LIFE_SECONDS = 2.0;
@@ -25,9 +22,14 @@ public class Bullet extends Entity {
         new Vector2(-2.0, -25.0)  // lower back arm
     };
 
+    private static final Color BULLET_COLOR = new Color(1.0f, 1.0f, 0.0f, 1.0f); // yellow
+
     // bullets spawn "dead" by default so they can wait in the pool
     public Bullet() {
-        super(createBody(), createGeometry(), LOCAL_COORDS, 1);
+        // initialize at (0, 0). The pool's activate() method moves it later.
+        super(createBody(), 
+              GeometryFactory.createConvexPolygon(0.0f, 0.0f, LOCAL_COORDS, BULLET_COLOR), 
+              LOCAL_COORDS, 1);
         this.health = 0; // starts dead
     }
 
@@ -40,18 +42,6 @@ public class Bullet extends Entity {
         body.setMass(MassType.NORMAL);
         body.setBullet(true); // enables continuous collision detection!
         return body;
-    }
-
-    private static Geometry createGeometry() {
-        Vertex[] vertices = new Vertex[3];
-        Color yellow = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-        
-        for (int i=0; i<3; i++) {
-            vertices[i] = new Vertex(new PointF(0,0), new Point(0,0), yellow);
-        }
-        
-        int[] indices = new int[] { 0, 1, 2 };
-        return new Geometry(vertices, indices, null);
     }
 
     // called by the pool when fired

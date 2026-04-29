@@ -6,10 +6,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.point.Point;
-import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rendering.drawable.Geometry;
-import io.github.animaexinani.engine.vertex.Vertex;
+import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
 
 public class Asteroid extends Entity {
     // a simple 6-sided hexagon shape
@@ -22,8 +19,12 @@ public class Asteroid extends Entity {
         new Vector2(10.0, -15.0)
     };
 
+    private static final Color ASTEROID_COLOR = new Color(0.6f, 0.6f, 0.6f, 1.0f);
+
     public Asteroid(float startX, float startY, double velocityX, double velocityY) {
-        super(createBody(startX, startY, velocityX, velocityY), createGeometry(startX, startY), LOCAL_COORDS, 3);
+        super(createBody(startX, startY, velocityX, velocityY), 
+              GeometryFactory.createConvexPolygon(startX, startY, LOCAL_COORDS, ASTEROID_COLOR), 
+              LOCAL_COORDS, 3);
     }
 
     private static Body createBody(float x, float y, double vx, double vy) {
@@ -42,16 +43,6 @@ public class Asteroid extends Entity {
         body.setLinearVelocity(new Vector2(vx, vy));
         body.setAngularVelocity(Math.random() * 2.0 - 1.0); 
         return body;
-    }
-
-    private static Geometry createGeometry(float x, float y) {
-        Vertex[] vertices = new Vertex[6];
-        Color gray = new Color(0.6f, 0.6f, 0.6f, 1.0f);
-        for (int i = 0; i < 6; i++) {
-            vertices[i] = new Vertex(new PointF(x + (float)LOCAL_COORDS[i].x, y + (float)LOCAL_COORDS[i].y), new Point(0,0), gray);
-        }
-        int[] indices = new int[] { 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5 }; // Triangulate the hexagon
-        return new Geometry(vertices, indices, null);
     }
 
     public int getCollisionDamage() {

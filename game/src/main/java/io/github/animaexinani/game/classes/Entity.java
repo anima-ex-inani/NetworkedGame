@@ -17,6 +17,7 @@ public abstract class Entity implements Drawable {
 
     protected int health;
     protected final int maxHealth;
+    protected double damageCooldown = 0.0; // timer for invincibility
 
     public Entity(Body body, Geometry geometry, Vector2[] baseCoords, int maxHealth) {
         this.body = body;

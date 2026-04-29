@@ -7,10 +7,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.point.Point;
-import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rendering.drawable.Geometry;
-import io.github.animaexinani.engine.vertex.Vertex;
+import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
 
 public class Ship extends Entity {
     private static final double THRUST_POWER = 750.0; 
@@ -25,9 +22,12 @@ public class Ship extends Entity {
         new Vector2(-15.0, -15.0)
     };
 
+    private static final Color SHIP_COLOR = new Color(0.0f, 1.0f, 0.0f, 1.0f);
+
     public Ship(float startX, float startY) {
-        // pass everything to the entity constructor
-        super(createBody(startX, startY), createGeometry(startX, startY), LOCAL_COORDS, 100);
+        super(createBody(startX, startY), 
+              GeometryFactory.createConvexPolygon(startX, startY, LOCAL_COORDS, SHIP_COLOR), 
+              LOCAL_COORDS, 5);
     }
 
     // factory method to keep the constructor clean
@@ -42,18 +42,6 @@ public class Ship extends Entity {
         body.setLinearDamping(0.2);
         body.setAngularDamping(2.0);
         return body;
-    }
-
-    // factory method to keep the constructor clean
-    private static Geometry createGeometry(float x, float y) {
-        Color shipColor = new Color(0.0f, 1.0f, 0.0f, 1.0f); // green, fully opaque
-        Vertex[] vertices = new Vertex[] {
-            new Vertex(new PointF(x + 30.0f, y), new Point(0, 0), shipColor),
-            new Vertex(new PointF(x - 15.0f, y + 15.0f), new Point(0, 0), shipColor),
-            new Vertex(new PointF(x - 15.0f, y - 15.0f), new Point(0, 0), shipColor)
-        };
-        int[] indices = new int[] { 0, 1, 2 };
-        return new Geometry(vertices, indices, null);
     }
 
     public void turnLeft(float dt) { this.body.applyTorque(-TURN_TORQUE); }
@@ -91,6 +79,11 @@ public class Ship extends Entity {
             this.fireCooldown -= dt;
         }
 
+        // decrease i-frame timer
+        if (this.damageCooldown > 0) {
+            this.damageCooldown -= dt;
+        }
+
         Vector2 velocity = this.body.getLinearVelocity();
         if (velocity.getMagnitude() > MAX_SPEED) {
             velocity.normalize();
@@ -99,6 +92,23 @@ public class Ship extends Entity {
         }
 
         this.wrapPosition(screenWidth, screenHeight);
+    }
+
+    @Override
+    public void takeDamage(int damage) {
+        if (this.health <= 0) return; 
+        
+        // ship-specific I-frame check
+        if (this.damageCooldown > 0) return; 
+
+        this.health -= damage;
+        
+        // give the ship 1 second of invincibility
+        this.damageCooldown = 1.0; 
+
+        if (this.health <= 0) {
+            this.onDestroy();
+        }
     }
 
     @Override
