@@ -1,5 +1,6 @@
 reviews:
   profile: chill
+  request_changes_workflow: true
   enable_prompt_for_ai_agents: false
   auto_review:
     enabled: true
