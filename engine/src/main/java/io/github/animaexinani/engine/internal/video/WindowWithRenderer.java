@@ -154,6 +154,12 @@ public final class WindowWithRenderer implements Window, Renderer {
             throw new IllegalStateException("Attempted to render with closed renderer");
         }
 
+        // if a stateful transform was set, delegate to the matrix-driven draw method
+        if (this.currentTransform != null) {
+            this.draw(drawable, this.currentTransform);
+            return; 
+        }
+
         Objects.requireNonNull(drawable);
 
         Texture texture = drawable.texture();
@@ -237,7 +243,7 @@ public final class WindowWithRenderer implements Window, Renderer {
         if (this.nativeState.cleaned.getAcquire()) {
             throw new IllegalStateException("Attempted to render with closed renderer");
         }
-
+        
         Objects.requireNonNull(drawable);
         Objects.requireNonNull(transform);
 
