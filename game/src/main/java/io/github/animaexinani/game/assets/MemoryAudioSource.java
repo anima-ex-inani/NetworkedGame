@@ -60,10 +60,16 @@ public final class MemoryAudioSource extends AudioSource {
         return this.sampleRate;
     }
 
+    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0).asReadOnlyBuffer();
+
     @Override
     public @NotNull ByteBuffer getSamples(long offset, long sampleCount) throws IOException {
         if (this.closed) {
             throw new IOException("Audio source is closed");
+        }
+
+        if (offset < 0 || sampleCount <= 0) {
+            return EMPTY_BUFFER;
         }
 
         var bytesPerFrame = (long) this.sampleFormat.bytes() * this.channelCount;
@@ -71,7 +77,7 @@ public final class MemoryAudioSource extends AudioSource {
         var endByte = (offset + sampleCount) * bytesPerFrame;
 
         if (startByte >= this.data.capacity()) {
-            return ByteBuffer.allocate(0).asReadOnlyBuffer();
+            return EMPTY_BUFFER;
         }
 
         if (endByte > this.data.capacity()) {

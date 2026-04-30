@@ -32,29 +32,63 @@ public abstract class AudioPlayback implements AutoCloseable {
         return this.stream.sampleCount();
     }
 
+    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
+
     protected synchronized @NotNull ByteBuffer fetchSamples(long sampleCount) throws IOException {
+        if (sampleCount <= 0) {
+            return EMPTY_BUFFER;
+        }
+
         long streamSampleCount = this.stream.sampleCount();
-        if (this.sampleOffset + sampleCount > streamSampleCount && this.shouldLoop) {
+        if (streamSampleCount <= 0) {
+            return EMPTY_BUFFER;
+        }
+
+        if (this.shouldLoop) {
+            this.sampleOffset %= streamSampleCount;
+            if (this.sampleOffset < 0) {
+                this.sampleOffset += streamSampleCount;
+            }
+        }
+
+        if (this.shouldLoop && (this.sampleOffset + sampleCount > streamSampleCount)) {
             long firstPartCount = streamSampleCount - this.sampleOffset;
             long secondPartCount = sampleCount - firstPartCount;
 
-            var bytesPerSample = this.streamSampleFormat().bytes() * this.streamChannelCount();
-            ByteBuffer totalBuffer = ByteBuffer.allocate((int)StrictMath.multiplyExact(sampleCount, bytesPerSample));
+            var bytesPerFrame = this.streamSampleFormat().bytes() * this.streamChannelCount();
+            ByteBuffer totalBuffer = ByteBuffer.allocate((int) StrictMath.multiplyExact(sampleCount, bytesPerFrame));
 
-            ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
-            totalBuffer.put(firstPartBuffer);
+            if (firstPartCount > 0) {
+                ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
+                totalBuffer.put(firstPartBuffer);
+            }
 
-            ByteBuffer secondPartBuffer = this.stream.getSamples(0, secondPartCount);
-            totalBuffer.put(secondPartBuffer);
+            long remainingToLoad = secondPartCount;
+            while (remainingToLoad > 0) {
+                long loadNow = Math.min(remainingToLoad, streamSampleCount);
+                ByteBuffer partBuffer = this.stream.getSamples(0, loadNow);
+                totalBuffer.put(partBuffer);
+                remainingToLoad -= loadNow;
+            }
 
             totalBuffer.flip();
 
-            this.sampleOffset = secondPartCount;
+            this.sampleOffset = secondPartCount % streamSampleCount;
             return totalBuffer;
         }
 
-        ByteBuffer sampleBuffer = this.stream.getSamples(this.sampleOffset, sampleCount);
-        this.sampleOffset += sampleCount;
+        // If not looping, we should still ensure we don't go out of bounds
+        if (!this.shouldLoop && this.sampleOffset >= streamSampleCount) {
+            return EMPTY_BUFFER;
+        }
+
+        long actualLoad = sampleCount;
+        if (!this.shouldLoop && (this.sampleOffset + sampleCount > streamSampleCount)) {
+            actualLoad = streamSampleCount - this.sampleOffset;
+        }
+
+        ByteBuffer sampleBuffer = this.stream.getSamples(this.sampleOffset, actualLoad);
+        this.sampleOffset += actualLoad;
         return sampleBuffer;
     }
 
