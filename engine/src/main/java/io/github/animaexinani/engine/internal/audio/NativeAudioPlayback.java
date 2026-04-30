@@ -30,7 +30,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
         private final WeakReference<NativeAudioPlayback> playbackRef;
         private final AtomicBoolean cleaned;
 
-        private void feed(int additionalAmount) {
+        private synchronized void feed(int additionalAmount) {
             if (additionalAmount <= 0) {
                 return;
             }
@@ -57,7 +57,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             if (this.cleaned.getAndSet(true)) {
                 return;
             }
@@ -101,7 +101,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
      * Resumes this playback's underlying SDL audio stream.
      */
     @Override
-    public void play() {
+    public synchronized void play() {
         this.throwIfClosed();
         SdlOperationFailedException.throwOnFailure(
             SDLAudio.SDL_ResumeAudioStreamDevice(this.nativeState.streamHandle)
@@ -113,7 +113,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
      * Pauses this playback's underlying SDL audio stream.
      */
     @Override
-    public void pause() {
+    public synchronized void pause() {
         if (this.nativeState.cleaned.getAcquire()) {
             return;
         }
@@ -131,7 +131,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
      * @return {@code true} if the offset is valid and the seek was applied.
      */
     @Override
-    public boolean seek(long sampleOffset) {
+    public synchronized boolean seek(long sampleOffset) {
         this.throwIfClosed();
         if (sampleOffset < 0 || sampleOffset > this.streamSampleCount()) {
             return false;
@@ -151,7 +151,7 @@ public final class NativeAudioPlayback extends AudioPlayback {
      * @return {@code true} if the seek target is valid and was applied.
      */
     @Override
-    public boolean seek(@NotNull Duration position) {
+    public synchronized boolean seek(@NotNull Duration position) {
         Objects.requireNonNull(position);
         long targetSamples = Math.multiplyExact(position.toNanos(), this.sampleRate) / 1_000_000_000L;
         return this.seek(targetSamples);

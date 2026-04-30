@@ -32,7 +32,7 @@ public abstract class AudioPlayback implements AutoCloseable {
         return this.stream.sampleCount();
     }
 
-    protected @NotNull ByteBuffer fetchSamples(long sampleCount) throws IOException {
+    protected synchronized @NotNull ByteBuffer fetchSamples(long sampleCount) throws IOException {
         long streamSampleCount = this.stream.sampleCount();
         if (this.sampleOffset + sampleCount > streamSampleCount && this.shouldLoop) {
             long firstPartCount = streamSampleCount - this.sampleOffset;
@@ -60,11 +60,11 @@ public abstract class AudioPlayback implements AutoCloseable {
 
     private long sampleOffset = 0;
 
-    protected long sampleOffset() {
+    protected synchronized long sampleOffset() {
         return this.sampleOffset;
     }
 
-    protected void sampleOffset(long sampleOffset) {
+    protected synchronized void sampleOffset(long sampleOffset) {
         this.sampleOffset = sampleOffset;
     }
 
@@ -74,7 +74,7 @@ public abstract class AudioPlayback implements AutoCloseable {
      * Whether the playback should loop once the end of the audio stream is reached.
      * @return <code>true</code> if the playback should loop, <code>false</code> otherwise.
      */
-    public boolean shouldLoop() {
+    public synchronized boolean shouldLoop() {
         return this.shouldLoop;
     }
 
@@ -82,7 +82,7 @@ public abstract class AudioPlayback implements AutoCloseable {
      * Sets whether the playback should loop once the end of the audio stream is reached.
      * @param value <code>true</code> if the playback should loop, <code>false</code> otherwise.
      */
-    public void shouldLoop(boolean value) {
+    public synchronized void shouldLoop(boolean value) {
         this.shouldLoop = value;
     }
 
