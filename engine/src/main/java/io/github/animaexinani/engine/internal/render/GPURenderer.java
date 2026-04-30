@@ -1,5 +1,20 @@
 package io.github.animaexinani.engine.internal.render;
 
+import java.lang.ref.Cleaner;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.sdl.SDLPixels;
+import org.lwjgl.sdl.SDLRender;
+import org.lwjgl.sdl.SDLSurface;
+import org.lwjgl.sdl.SDL_FColor;
+import org.lwjgl.sdl.SDL_Texture;
+import org.lwjgl.system.MemoryStack;
+
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
 import io.github.animaexinani.engine.internal.SdlOperationFailedException;
@@ -11,21 +26,11 @@ import io.github.animaexinani.engine.size.Size;
 import io.github.animaexinani.engine.texture.PixelFormat;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.texture.TextureCreationException;
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.sdl.*;
-import org.lwjgl.system.MemoryStack;
-
-import java.lang.ref.Cleaner;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import io.github.animaexinani.engine.transform.Transform;
 
 public final class GPURenderer implements Renderer {
     private static final class NativeState implements Runnable {
         private final long handle;
-
         private final AtomicBoolean cleaned;
 
         @Override
@@ -41,8 +46,8 @@ public final class GPURenderer implements Renderer {
     }
 
     private final NativeState nativeState;
-
     private final Cleaner.Cleanable cleanable;
+    private Transform currentTransform = null; // state tracking
 
     @Override
     public @NotNull Texture createTexture(@NotNull Size textureSize, @NotNull PixelFormat pixelFormat, @NotNull ByteBuffer pixelBuffer) {
@@ -136,6 +141,90 @@ public final class GPURenderer implements Renderer {
                 xy.put(i * 2 + 1, vertices[i].position().y());
             }
 
+            var color = SDL_FColor.calloc(vertices.length, stack);
+            for (int i = 0; i < vertices.length; i++) {
+                var currentColor = color.position(i);
+                currentColor.r(vertices[i].color().red());
+                currentColor.g(vertices[i].color().green());
+                currentColor.b(vertices[i].color().blue());
+                currentColor.a(vertices[i].color().alpha());
+            }
+            color.position(0);
+
+            var indices = IntBuffer.wrap(drawable.indices());
+
+            FloatBuffer uv;
+            int uvStride;
+            if (Objects.isNull(texture)) {
+                uv = null;
+                uvStride = 0;
+            } else {
+                uv = stack.mallocFloat(vertices.length * 2);
+                uvStride = 8; // float * 2
+
+                for (int i = 0; i < vertices.length; i++) {
+                    var vertexUv = texture.getUvOfPoint(vertices[i].uv());
+                    uv.put(i * 2, vertexUv.x());
+                    uv.put(i * 2 + 1, vertexUv.y());
+                }
+            }
+
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                    SDLRender.SDL_RenderGeometryRaw(
+                        this.nativeState.handle,
+                        nativeTexture,
+                        xy,
+                        Float.BYTES * 2,
+                        color,
+                        SDL_FColor.SIZEOF,
+                        uv,
+                        uvStride,
+                        vertices.length,
+                        indices,
+                        drawableIndices.length,
+                        Integer.BYTES
+                    )
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to render object", e);
+            }
+        }
+    }
+
+    // new method for hardware transforms
+    @Override
+    public void draw(@NotNull Drawable drawable, @NotNull Transform transform) {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to render with closed renderer");
+        }
+
+        Objects.requireNonNull(drawable);
+        Objects.requireNonNull(transform);
+
+        Texture texture = drawable.texture();
+        SDL_Texture nativeTexture;
+        if (texture instanceof NativeTexture texture1) {
+            nativeTexture = texture1.getBackingTexture();
+        } else if (Objects.isNull(texture)) {
+            nativeTexture = null;
+        } else {
+            throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+        }
+
+        var vertices = drawable.vertices();
+        var drawableIndices = drawable.indices();
+
+        try (var stack = MemoryStack.stackPush()) {
+            FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
+            for (int i = 0; i < vertices.length; i++) {
+                
+                // multiply the vetex by the matrix here
+                var transformedPos = transform.transform(vertices[i].position()); 
+                
+                xy.put(i * 2, transformedPos.x());
+                xy.put(i * 2 + 1, transformedPos.y());
+            }
 
             var color = SDL_FColor.calloc(vertices.length, stack);
             for (int i = 0; i < vertices.length; i++) {
@@ -206,6 +295,11 @@ public final class GPURenderer implements Renderer {
     public GPURenderer(long handle) {
         this.nativeState = new NativeState(handle);
         this.cleanable = GlobalCleaner.register(this, this.nativeState);
+    }
+
+    @Override
+    public void setTransform(@NotNull Transform transform) {
+        this.currentTransform = transform;
     }
 
     @Override

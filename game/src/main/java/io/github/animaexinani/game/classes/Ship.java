@@ -7,7 +7,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
+import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Ship extends Entity {
     private static final double THRUST_POWER = 750.0; 
@@ -26,8 +26,8 @@ public class Ship extends Entity {
 
     public Ship(float startX, float startY) {
         super(createBody(startX, startY), 
-              GeometryFactory.createConvexPolygon(startX, startY, LOCAL_COORDS, SHIP_COLOR), 
-              LOCAL_COORDS, 5);
+              new ConvexPolygon(LOCAL_COORDS, SHIP_COLOR), 
+              5);
     }
 
     // factory method to keep the constructor clean

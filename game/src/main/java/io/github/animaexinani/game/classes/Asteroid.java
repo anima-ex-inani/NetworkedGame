@@ -1,4 +1,5 @@
 package io.github.animaexinani.game.classes;
+
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.MassType;
@@ -6,10 +7,10 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
+import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Asteroid extends Entity {
-    // a simple 6-sided hexagon shape
+    
     private static final Vector2[] LOCAL_COORDS = {
         new Vector2(20.0, 0.0),
         new Vector2(10.0, 15.0),
@@ -23,30 +24,28 @@ public class Asteroid extends Entity {
 
     public Asteroid(float startX, float startY, double velocityX, double velocityY) {
         super(createBody(startX, startY, velocityX, velocityY), 
-              GeometryFactory.createConvexPolygon(startX, startY, LOCAL_COORDS, ASTEROID_COLOR), 
-              LOCAL_COORDS, 3);
+              new ConvexPolygon(LOCAL_COORDS, ASTEROID_COLOR), 
+              3);
     }
 
     private static Body createBody(float x, float y, double vx, double vy) {
         Body body = new Body();
         Polygon shape = org.dyn4j.geometry.Geometry.createPolygon(LOCAL_COORDS);
         BodyFixture fixture = body.addFixture(shape);
-        fixture.setDensity(0.005); // asteroids are a bit heavier than the ship
+        fixture.setDensity(0.005);
         
         body.setMass(MassType.NORMAL);
         body.translate(x, y);
-        // zero damping so asteroids float forever in space
         body.setLinearDamping(0.0);
         body.setAngularDamping(0.0); 
         
-        // give it an initial push and a slight spin
         body.setLinearVelocity(new Vector2(vx, vy));
         body.setAngularVelocity(Math.random() * 2.0 - 1.0); 
         return body;
     }
 
     public int getCollisionDamage() {
-        return 1; // do 1 damage to the ship on impact
+        return 1;
     }
 
     @Override
@@ -56,7 +55,6 @@ public class Asteroid extends Entity {
 
     @Override
     public void onDestroy() {
-        // TODO: Spawn smaller asteroids or particle effects later!
         System.out.println("Asteroid shattered!");
     }
 }
