@@ -60,7 +60,7 @@ public final class MemoryAudioSource extends AudioSource {
         return this.sampleRate;
     }
 
-    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0).asReadOnlyBuffer();
+    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.allocateDirect(0).asReadOnlyBuffer();
 
     @Override
     public @NotNull ByteBuffer getSamples(long offset, long sampleCount) throws IOException {

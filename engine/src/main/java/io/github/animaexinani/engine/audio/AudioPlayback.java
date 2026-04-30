@@ -32,7 +32,7 @@ public abstract class AudioPlayback implements AutoCloseable {
         return this.stream.sampleCount();
     }
 
-    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
+    private static final @NotNull ByteBuffer EMPTY_BUFFER = ByteBuffer.allocateDirect(0).asReadOnlyBuffer();
 
     protected synchronized @NotNull ByteBuffer fetchSamples(long sampleCount) throws IOException {
         if (sampleCount <= 0) {
@@ -56,7 +56,7 @@ public abstract class AudioPlayback implements AutoCloseable {
             long secondPartCount = sampleCount - firstPartCount;
 
             var bytesPerFrame = this.streamSampleFormat().bytes() * this.streamChannelCount();
-            ByteBuffer totalBuffer = ByteBuffer.allocate((int) StrictMath.multiplyExact(sampleCount, bytesPerFrame));
+            ByteBuffer totalBuffer = ByteBuffer.allocateDirect((int) StrictMath.multiplyExact(sampleCount, bytesPerFrame));
 
             if (firstPartCount > 0) {
                 ByteBuffer firstPartBuffer = this.stream.getSamples(this.sampleOffset, firstPartCount);
@@ -74,7 +74,7 @@ public abstract class AudioPlayback implements AutoCloseable {
             totalBuffer.flip();
 
             this.sampleOffset = secondPartCount % streamSampleCount;
-            return totalBuffer;
+            return totalBuffer.asReadOnlyBuffer();
         }
 
         // If not looping, we should still ensure we don't go out of bounds
