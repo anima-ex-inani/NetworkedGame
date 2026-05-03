@@ -70,14 +70,20 @@ public final class NativeAudioPlayback extends AudioPlayback {
             this.playbackRef = new WeakReference<>(playback);
             this.cleaned = new AtomicBoolean(false);
             this.feedCallback = SDL_AudioStreamCallback.create((userdata, stream, additionalAmount, totalAmount) -> this.feed(additionalAmount));
-            this.streamHandle = SdlOperationFailedException.throwOnFailure(
-                SDLAudio.SDL_OpenAudioDeviceStream(
-                    SDLAudio.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-                    streamSpec,
-                    this.feedCallback,
-                    0L
-                )
-            );
+            try {
+                this.streamHandle = SdlOperationFailedException.throwOnFailure(
+                    SDLAudio.SDL_OpenAudioDeviceStream(
+                        SDLAudio.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+                        streamSpec,
+                        this.feedCallback,
+                        0L
+                    )
+                );
+            }
+            catch (SdlOperationFailedException e) {
+                this.feedCallback.close();
+                throw e;
+            }
         }
     }
 
