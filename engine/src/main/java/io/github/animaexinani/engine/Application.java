@@ -66,6 +66,10 @@ public abstract class Application implements AutoCloseable, Runnable {
      */
     @NotNull
     protected final AudioSystem audioSystem() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to get the audio system of a closed application.");
+        }
+
         if (this.audioSystem == null) {
             this.audioSystem = new NativeAudioSystem();
         }
