@@ -81,12 +81,22 @@ public final class NativeAudioSystem implements AudioSystem {
         }
 
         var playback = new NativeAudioPlayback(stream);
+        var playbackReference = new WeakReference<AudioPlayback>(playback, this.playbackHandlesRefQueue);
 
         synchronized (this.playbackHandles) {
-            this.playbackHandles.add(new WeakReference<AudioPlayback>(playback, this.playbackHandlesRefQueue));
+            this.playbackHandles.add(playbackReference);
             if (this.playbackHandles.size() >= this.playbackHandlesCleanThreshold) {
                 this.cleanPlaybackHandleReferences();
             }
+        }
+
+        if (this.nativeState.cleaned.getAcquire()) {
+            synchronized (this.playbackHandles) {
+                this.playbackHandles.remove(playbackReference);
+            }
+            playback.close();
+
+            throw new IllegalStateException("Attempted to bind audio after the audio subsystem has been closed");
         }
 
         return playback;
