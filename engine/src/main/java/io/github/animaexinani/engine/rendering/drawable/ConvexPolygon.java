@@ -1,5 +1,5 @@
 package io.github.animaexinani.engine.rendering.drawable;
-import java.util.Objects;
+
 import org.dyn4j.geometry.Vector2;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,18 +21,6 @@ public class ConvexPolygon implements Drawable, Transformable {
     private float rotation = 0f;
 
     public ConvexPolygon(Vector2[] localCoords, Color color) {
-        // input validation guard
-        Objects.requireNonNull(localCoords, "localCoords cannot be null");
-        Objects.requireNonNull(color, "color cannot be null");
-        
-        if (localCoords.length < 3) {
-            throw new IllegalArgumentException("ConvexPolygon requires at least 3 vertices. Found: " + localCoords.length);
-        }
-        
-        for (Vector2 coord : localCoords) {
-            Objects.requireNonNull(coord, "localCoords contains a null Vector2 element");
-        }
-
         int numVertices = localCoords.length;
         Vertex[] vertices = new Vertex[numVertices];
 
