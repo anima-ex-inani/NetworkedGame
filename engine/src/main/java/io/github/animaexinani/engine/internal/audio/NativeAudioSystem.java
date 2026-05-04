@@ -29,7 +29,6 @@ public final class NativeAudioSystem implements AudioSystem {
 
         @Override
         public void run() {
-            this.cleaned.setRelease(true);
             SDLInit.SDL_QuitSubSystem(SDLInit.SDL_INIT_AUDIO);
         }
 
@@ -118,7 +117,7 @@ public final class NativeAudioSystem implements AudioSystem {
      */
     @Override
     public void close() {
-        if (this.nativeState.cleaned.getAcquire()) {
+        if (this.nativeState.cleaned.getAndSet(true)) {
             return;
         }
 
