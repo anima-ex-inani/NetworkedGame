@@ -5,6 +5,7 @@ module io.github.animaexinani.engine {
     requires transitive org.jetbrains.annotations;
 
     exports io.github.animaexinani.engine;
+    exports io.github.animaexinani.engine.audio;
     exports io.github.animaexinani.engine.assets;
     exports io.github.animaexinani.engine.color;
     exports io.github.animaexinani.engine.events;
