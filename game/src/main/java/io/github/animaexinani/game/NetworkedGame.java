@@ -38,6 +38,8 @@ public final class NetworkedGame extends Application {
     private long lastTime = 0;
     private double accumulator = 0.0;
     
+    // // 20 Ticks Per Second = 0.05 seconds per tick
+    // private static final double TIME_STEP = 1.0 / 20.0;
     // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
     
@@ -87,8 +89,7 @@ public final class NetworkedGame extends Application {
         renderer.clear(Color.BLACK);
         
         for (Entity entity : this.gameWorld.getEntities()) {
-            entity.updateVisuals();
-            renderer.draw(entity.getPolygon(), entity.getPolygon().transform());
+            renderer.draw(entity);
         }
 
         renderer.present();

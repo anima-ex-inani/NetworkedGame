@@ -7,29 +7,21 @@ import java.nio.IntBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.github.animaexinani.engine.rendering.drawable.Drawable;
+import io.github.animaexinani.engine.size.Size;
+import io.github.animaexinani.engine.texture.PixelFormat;
+import io.github.animaexinani.engine.texture.Texture;
+import io.github.animaexinani.engine.texture.TextureCreationException;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.sdl.SDLInit;
-import org.lwjgl.sdl.SDLPixels;
-import org.lwjgl.sdl.SDLRender;
-import org.lwjgl.sdl.SDLSurface;
-import org.lwjgl.sdl.SDLVideo;
-import org.lwjgl.sdl.SDL_FColor;
-import org.lwjgl.sdl.SDL_MainThreadCallback;
-import org.lwjgl.sdl.SDL_Texture;
-import org.lwjgl.system.MemoryStack;
+import org.lwjgl.sdl.*;
 
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
 import io.github.animaexinani.engine.internal.SdlOperationFailedException;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
-import io.github.animaexinani.engine.rendering.drawable.Drawable;
-import io.github.animaexinani.engine.size.Size;
-import io.github.animaexinani.engine.texture.PixelFormat;
-import io.github.animaexinani.engine.texture.Texture;
-import io.github.animaexinani.engine.texture.TextureCreationException;
-import io.github.animaexinani.engine.transform.Transform;
 import io.github.animaexinani.engine.windowing.Window;
+import org.lwjgl.system.MemoryStack;
 
 public final class WindowWithRenderer implements Window, Renderer {
     private static final class NativeState implements Runnable {
@@ -61,7 +53,6 @@ public final class WindowWithRenderer implements Window, Renderer {
 
     private final NativeState nativeState;
     private final Cleanable cleanable;
-    private Transform currentTransform = null; // State Tracking
 
     @Override
     public @NotNull Size clientSize() {
@@ -178,6 +169,7 @@ public final class WindowWithRenderer implements Window, Renderer {
                 xy.put(i * 2 + 1, vertices[i].position().y());
             }
 
+
             var color = SDL_FColor.calloc(vertices.length, stack);
             for (int i = 0; i < vertices.length; i++) {
                 var currentColor = color.position(i);
@@ -231,92 +223,6 @@ public final class WindowWithRenderer implements Window, Renderer {
         }
     }
 
-    // new method for hardware transforms
-    @Override
-    public void draw(@NotNull Drawable drawable, @NotNull Transform transform) {
-        if (this.nativeState.cleaned.getAcquire()) {
-            throw new IllegalStateException("Attempted to render with closed renderer");
-        }
-
-        Objects.requireNonNull(drawable);
-        Objects.requireNonNull(transform);
-
-        Texture texture = drawable.texture();
-        SDL_Texture nativeTexture;
-        if (texture instanceof NativeTexture texture1) {
-            nativeTexture = texture1.getBackingTexture();
-        } else if (Objects.isNull(texture)) {
-            nativeTexture = null;
-        } else {
-            throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
-        }
-
-        var vertices = drawable.vertices();
-        var drawableIndices = drawable.indices();
-
-        try (var stack = MemoryStack.stackPush()) {
-            FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
-            for (int i = 0; i < vertices.length; i++) {
-                
-                // multiply the vertex by the matrix here
-                var transformedPos = transform.transform(vertices[i].position()); 
-                
-                xy.put(i * 2, transformedPos.x());
-                xy.put(i * 2 + 1, transformedPos.y());
-            }
-
-            var color = SDL_FColor.calloc(vertices.length, stack);
-            for (int i = 0; i < vertices.length; i++) {
-                var currentColor = color.position(i);
-                currentColor.r(vertices[i].color().red());
-                currentColor.g(vertices[i].color().green());
-                currentColor.b(vertices[i].color().blue());
-                currentColor.a(vertices[i].color().alpha());
-            }
-            color.position(0);
-
-            var indices = IntBuffer.wrap(drawable.indices());
-
-            FloatBuffer uv;
-            int uvStride;
-            if (Objects.isNull(texture)) {
-                uv = null;
-                uvStride = 0;
-            }
-            else {
-                uv = stack.mallocFloat(vertices.length * 2);
-                uvStride = 8; // float * 2
-
-                for (int i = 0; i < vertices.length; i++) {
-                    var vertexUv = texture.getUvOfPoint(vertices[i].uv());
-                    uv.put(i * 2, vertexUv.x());
-                    uv.put(i * 2 + 1, vertexUv.y());
-                }
-            }
-
-            try {
-                SdlOperationFailedException.throwOnFailure(
-                    SDLRender.SDL_RenderGeometryRaw(
-                        this.nativeState.rendererHandle, // uses specific renderer handle
-                        nativeTexture,
-                        xy,
-                        8, 
-                        color,
-                        SDL_FColor.SIZEOF,
-                        uv,
-                        uvStride,
-                        vertices.length,
-                        indices,
-                        drawableIndices.length,
-                        4 
-                    )
-                );
-            } catch (SdlOperationFailedException e) {
-                throw new RenderingOperationFailedException("Failed to render object", e);
-            }
-        }
-    }
-
     @Override
     public void present() {
         if (this.nativeState.cleaned.getAcquire()) {
@@ -345,11 +251,6 @@ public final class WindowWithRenderer implements Window, Renderer {
     public WindowWithRenderer(long windowHandle, long rendererHandle) {
         this.nativeState = new NativeState(windowHandle, rendererHandle);
         this.cleanable = GlobalCleaner.register(this, this.nativeState);
-    }
-
-    @Override
-    public void setTransform(@NotNull Transform transform) {
-        this.currentTransform = transform;
     }
 
     @Override
