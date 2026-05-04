@@ -131,8 +131,8 @@ public final class NativeAudioSystem implements AudioSystem {
                         // Intentionally ignored
                     }
                 }
-                this.playbackHandles.clear();
             }
+            this.playbackHandles.clear();
         }
 
         this.cleanable.clean();
