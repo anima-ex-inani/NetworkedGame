@@ -89,7 +89,8 @@ public final class NetworkedGame extends Application {
         renderer.clear(Color.BLACK);
         
         for (Entity entity : this.gameWorld.getEntities()) {
-            renderer.draw(entity);
+            entity.updateVisuals();
+            renderer.draw(entity.getPolygon());
         }
 
         renderer.present();

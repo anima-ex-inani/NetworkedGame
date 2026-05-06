@@ -6,7 +6,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.rendering.drawable.GeometryFactory;
+import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Asteroid extends Entity {
     // a simple 6-sided hexagon shape
@@ -23,8 +23,8 @@ public class Asteroid extends Entity {
 
     public Asteroid(float startX, float startY, double velocityX, double velocityY) {
         super(createBody(startX, startY, velocityX, velocityY), 
-              GeometryFactory.createConvexPolygon(startX, startY, LOCAL_COORDS, ASTEROID_COLOR), 
-              LOCAL_COORDS, 3);
+              new ConvexPolygon(LOCAL_COORDS, ASTEROID_COLOR), 
+              3);
     }
 
     private static Body createBody(float x, float y, double vx, double vy) {
