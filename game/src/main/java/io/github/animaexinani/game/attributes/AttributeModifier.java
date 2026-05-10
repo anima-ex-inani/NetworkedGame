@@ -1,5 +1,6 @@
 package io.github.animaexinani.game.attributes;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
@@ -12,4 +13,11 @@ import org.jetbrains.annotations.NotNull;
  * @param operation the operation to perform on the attribute
  */
 public record AttributeModifier(@NotNull UUID id, float value, @NotNull AttributeModifierOperation operation) {
+    public AttributeModifier {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(operation);
+        if (!Float.isFinite(value)) {
+            throw new IllegalArgumentException("Value must be finite");
+        }
+    }
 }
