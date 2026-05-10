@@ -1,6 +1,9 @@
 package io.github.animaexinani.engine.util.observer;
 
-import org.jetbrains.annotations.NotNull;import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A collection that allows listeners to track changes.
@@ -8,6 +11,147 @@ import org.jetbrains.annotations.NotNull;import java.util.Collection;
  * @param <E> the type of elements in this collection
  */
 public interface ObservableCollection<E> extends Collection<E> {
+    /**
+     * Creates an {@link ObservableCollection} that wraps the specified collection.
+     *
+     * @param collection the collection to wrap
+     * @param <E> the type of elements in the collection
+     * @return an observable collection wrapping the specified collection
+     */
+    static <E> ObservableCollection<E> wrap(Collection<E> collection) {
+        return new ObservableCollection<>() {
+            private final Collection<E> backingCollection = collection;
+            private final List<ElementsAddedEventListener<E>> addedListeners = new CopyOnWriteArrayList<>();
+            private final List<ElementsRemovedEventListener> removedListeners = new CopyOnWriteArrayList<>();
+
+            @Override
+            public <T extends CollectionChangedEventListener> boolean addListener(@NotNull Class<T> type, @NotNull T listener) {
+                if (type.equals(ElementsAddedEventListener.class)) {
+                    @SuppressWarnings("unchecked") var addedListener = (ElementsAddedEventListener<E>) listener;
+                    return this.addedListeners.add(addedListener);
+                }
+                if (type.equals(ElementsRemovedEventListener.class)) {
+                    var removedListener = (ElementsRemovedEventListener) listener;
+                    return this.removedListeners.add(removedListener);
+                }
+                throw new IllegalArgumentException("Unsupported listener type: " + type.getName());
+            }
+
+            @Override
+            public <T extends CollectionChangedEventListener> boolean removeListener(@NotNull Class<T> type, @NotNull T listener) {
+                if (type.equals(ElementsAddedEventListener.class)) {
+                    @SuppressWarnings("unchecked") var addedListener = (ElementsAddedEventListener<E>) listener;
+                    return this.addedListeners.remove(addedListener);
+                }
+                if (type.equals(ElementsRemovedEventListener.class)) {
+                    var removedListener = (ElementsRemovedEventListener) listener;
+                    return this.removedListeners.remove(removedListener);
+                }
+                throw new IllegalArgumentException("Unsupported listener type: " + type.getName());
+            }
+
+            @Override
+            public int size() {
+                return this.backingCollection.size();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return this.backingCollection.isEmpty();
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return this.backingCollection.contains(o);
+            }
+
+            @Override
+            public @NotNull Iterator<E> iterator() {
+                return this.backingCollection.iterator();
+            }
+
+            @Override
+            public @NotNull Object @NotNull [] toArray() {
+                return this.backingCollection.toArray();
+            }
+
+            @Override
+            public @NotNull <T> T @NotNull [] toArray(@NotNull T @NotNull [] a) {
+                return this.backingCollection.toArray(a);
+            }
+
+            @Override
+            public boolean add(E e) {
+                var result = this.backingCollection.add(e);
+                if (result) {
+                    var addedItems = Collections.singletonList(e);
+                    this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+                }
+
+                return result;
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                var result = this.backingCollection.remove(o);
+                if (result) {
+                    var removedItems = Collections.singletonList(o);
+                    this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                }
+
+                return result;
+            }
+
+            @Override
+            public boolean containsAll(@NotNull Collection<?> c) {
+                return this.backingCollection.containsAll(c);
+            }
+
+            @Override
+            public boolean addAll(@NotNull Collection<? extends E> c) {
+                var result = this.backingCollection.addAll(c);
+                if (result) {
+                    var addedItems = c.stream().filter(this.backingCollection::contains).toList();
+                    this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+                }
+
+                return result;
+            }
+
+            @Override
+            public boolean removeAll(@NotNull Collection<?> c) {
+                var listCopy = new ArrayList<>(this.backingCollection);
+                var result = this.backingCollection.removeAll(c);
+                if (result) {
+                    var removedItems = listCopy.stream().filter(item -> !this.backingCollection.contains(item)).toList();
+                    this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                }
+
+                return result;
+            }
+
+            @Override
+            public boolean retainAll(@NotNull Collection<?> c) {
+                var listCopy = new ArrayList<>(this.backingCollection);
+                var result = this.backingCollection.retainAll(c);
+
+                if (result) {
+                    var removedItems = listCopy.stream().filter(item -> !this.backingCollection.contains(item)).toList();
+                    this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                }
+
+                return result;
+            }
+
+            @Override
+            public void clear() {
+                var removedItems = new ArrayList<>(this.backingCollection);
+                this.backingCollection.clear();
+                this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+            }
+        };
+    }
+
     /**
      * Adds a listener for changes to this collection.
      *

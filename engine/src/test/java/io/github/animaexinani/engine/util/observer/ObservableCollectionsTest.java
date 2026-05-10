@@ -20,7 +20,7 @@ class ObservableCollectionsTest {
     @Test
     void testFromList_Add() {
         List<String> list = new ArrayList<>();
-        ObservableList<String> observableList = ObservableCollections.fromList(list);
+        ObservableList<String> observableList = ObservableList.wrap(list);
 
         AtomicInteger addedCount = new AtomicInteger(0);
         observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -38,7 +38,7 @@ class ObservableCollectionsTest {
     void testFromList_AddAtIndex() {
         List<String> list = new ArrayList<>();
         list.add("item0");
-        ObservableList<String> observableList = ObservableCollections.fromList(list);
+        ObservableList<String> observableList = ObservableList.wrap(list);
 
         AtomicInteger addedCount = new AtomicInteger(0);
         observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -56,7 +56,7 @@ class ObservableCollectionsTest {
     void testFromList_Remove() {
         List<String> list = new ArrayList<>();
         list.add("item1");
-        ObservableList<String> observableList = ObservableCollections.fromList(list);
+        ObservableList<String> observableList = ObservableList.wrap(list);
 
         AtomicInteger removedCount = new AtomicInteger(0);
         observableList.addListener(ElementsRemovedEventListener.class, removedItems -> {
@@ -73,7 +73,7 @@ class ObservableCollectionsTest {
     void testFromList_RemoveAtIndex() {
         List<String> list = new ArrayList<>();
         list.add("item1");
-        ObservableList<String> observableList = ObservableCollections.fromList(list);
+        ObservableList<String> observableList = ObservableList.wrap(list);
 
         AtomicInteger removedCount = new AtomicInteger(0);
         observableList.addListener(ElementsRemovedEventListener.class, removedItems -> {
@@ -90,7 +90,7 @@ class ObservableCollectionsTest {
     void testFromList_Set() {
         List<String> list = new ArrayList<>();
         list.add("item1");
-        ObservableList<String> observableList = ObservableCollections.fromList(list);
+        ObservableList<String> observableList = ObservableList.wrap(list);
 
         AtomicInteger addedCount = new AtomicInteger(0);
         AtomicInteger removedCount = new AtomicInteger(0);
@@ -120,7 +120,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test adding single element to empty collection triggers add listener")
         void testAddSingleElementToEmptyCollection() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             var itemToAdd = "item";
 
             observableCollection.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -143,7 +143,7 @@ class ObservableCollectionsTest {
             var backingCollection = new HashSet<String>();
             backingCollection.add(itemToAdd);
 
-            var observableCollection = ObservableCollections.fromCollection(backingCollection);
+            var observableCollection = ObservableCollection.wrap(backingCollection);
             observableCollection.addListener(ElementsAddedEventListener.class, addedItems -> {
                 fail("Add listener should not be triggered");
             });
@@ -155,7 +155,7 @@ class ObservableCollectionsTest {
             var backingCollection2 = new ArrayList<String>();
             backingCollection2.add(itemToAdd);
 
-            var observableCollection2 = ObservableCollections.fromCollection(backingCollection2);
+            var observableCollection2 = ObservableCollection.wrap(backingCollection2);
             observableCollection2.addListener(ElementsAddedEventListener.class, addedItems -> {
                 assertEquals(1, addedItems.size());
                 for (var addedItem : addedItems) {
@@ -174,7 +174,7 @@ class ObservableCollectionsTest {
             var itemToRemove = "item";
             var backingCollection = new ArrayList<String>();
             backingCollection.add(itemToRemove);
-            var observableCollection = ObservableCollections.fromCollection(backingCollection);
+            var observableCollection = ObservableCollection.wrap(backingCollection);
 
             AtomicInteger removedCount = new AtomicInteger(0);
             observableCollection.addListener(ElementsRemovedEventListener.class, removedItems -> {
@@ -191,7 +191,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test removing non-existing element does not trigger remove listener")
         void testRemoveNonExistingElement() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
 
             observableCollection.addListener(ElementsRemovedEventListener.class, removedItems -> {
                 fail("Remove listener should not be triggered");
@@ -206,7 +206,7 @@ class ObservableCollectionsTest {
         @NullAndEmptySource
         @DisplayName("Test handling null and empty elements")
         void testNullAndEmptyElements(String value) {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             AtomicInteger addedCount = new AtomicInteger(0);
             observableCollection.addListener(ElementsAddedEventListener.class, addedItems -> {
                 addedCount.addAndGet(addedItems.size());
@@ -238,7 +238,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test addAll with multiple elements triggers add listener once")
         void testAddAllMultipleElements() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             var itemsToAdd = List.of("item1", "item2", "item3");
 
             AtomicInteger addedCount = new AtomicInteger(0);
@@ -257,7 +257,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test addAll with empty collection does not trigger add listener")
         void testAddAllEmptyCollection() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
 
             observableCollection.addListener(ElementsAddedEventListener.class, addedItems -> {
                 fail("Add listener should not be triggered");
@@ -272,7 +272,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test removeAll removes specified elements and triggers remove listener")
         void testRemoveAllSpecifiedElements() {
             var items = new ArrayList<>(List.of("item1", "item2", "item3"));
-            var observableCollection = ObservableCollections.fromCollection(items);
+            var observableCollection = ObservableCollection.wrap(items);
             var itemsToRemove = List.of("item1", "item3");
 
             AtomicInteger removedCount = new AtomicInteger(0);
@@ -293,7 +293,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test retainAll keeps only specified elements and triggers remove listener")
         void testRetainAllSpecifiedElements() {
             var items = new ArrayList<>(List.of("item1", "item2", "item3"));
-            var observableCollection = ObservableCollections.fromCollection(items);
+            var observableCollection = ObservableCollection.wrap(items);
             var itemsToRetain = List.of("item2");
 
             AtomicInteger removedCount = new AtomicInteger(0);
@@ -315,7 +315,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test clear removes all elements and triggers remove listener")
         void testClearAllElements() {
             var items = new ArrayList<>(List.of("item1", "item2"));
-            var observableCollection = ObservableCollections.fromCollection(items);
+            var observableCollection = ObservableCollection.wrap(items);
 
             AtomicInteger removedCount = new AtomicInteger(0);
             observableCollection.addListener(ElementsRemovedEventListener.class, removedItems -> {
@@ -338,7 +338,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test adding multiple add listeners")
         void testMultipleAddListeners() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             AtomicInteger count1 = new AtomicInteger(0);
             AtomicInteger count2 = new AtomicInteger(0);
 
@@ -354,7 +354,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test adding multiple remove listeners")
         void testMultipleRemoveListeners() {
             var items = new ArrayList<>(List.of("item"));
-            var observableCollection = ObservableCollections.fromCollection(items);
+            var observableCollection = ObservableCollection.wrap(items);
             AtomicInteger count1 = new AtomicInteger(0);
             AtomicInteger count2 = new AtomicInteger(0);
 
@@ -369,7 +369,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test removing listeners prevents further notifications")
         void testRemoveListener() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             AtomicInteger count1 = new AtomicInteger(0);
             ElementsAddedEventListener<String> listener = addedItems -> count1.incrementAndGet();
 
@@ -385,7 +385,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test adding unsupported listener type throws exception")
         void testUnsupportedListenerType() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             assertThrows(IllegalArgumentException.class, () -> {
                 observableCollection.addListener(CollectionChangedEventListener.class, new CollectionChangedEventListener() {});
             });
@@ -394,7 +394,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test removing unsupported listener type throws exception")
         void testRemoveUnsupportedListenerType() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             assertThrows(IllegalArgumentException.class, () -> {
                 observableCollection.removeListener(CollectionChangedEventListener.class, new CollectionChangedEventListener() {});
             });
@@ -408,7 +408,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test operations on empty collection")
         void testEmptyCollectionOperations() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
 
             assertFalse(observableCollection.remove("item"));
             assertFalse(observableCollection.removeAll(List.of("item")));
@@ -421,7 +421,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test concurrent modifications during iteration")
         void testConcurrentModifications() {
             // Using a collection that supports concurrent modification for this test
-            var observableCollection = ObservableCollections.fromCollection(new java.util.concurrent.CopyOnWriteArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new java.util.concurrent.CopyOnWriteArrayList<String>());
             observableCollection.add("item1");
             observableCollection.add("item2");
 
@@ -435,7 +435,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test listener throws exception behavior")
         void testListenerExceptionHandling() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             AtomicInteger count = new AtomicInteger(0);
 
             observableCollection.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -452,12 +452,12 @@ class ObservableCollectionsTest {
         @DisplayName("Test collection backed by different collection types")
         void testDifferentBackingCollections() {
             var list = new ArrayList<String>();
-            var observableList = ObservableCollections.fromCollection(list);
+            var observableList = ObservableCollection.wrap(list);
             observableList.add("item");
             assertTrue(list.contains("item"));
 
             var set = new HashSet<String>();
-            var observableSet = ObservableCollections.fromCollection(set);
+            var observableSet = ObservableCollection.wrap(set);
             observableSet.add("item");
             assertTrue(set.contains("item"));
         }
@@ -470,7 +470,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test get element at valid index")
         void testGetAtValidIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item1", "item2")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1", "item2")));
             assertEquals("item0", observableList.get(0));
             assertEquals("item1", observableList.get(1));
             assertEquals("item2", observableList.get(2));
@@ -479,7 +479,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test get element at invalid index throws exception")
         void testGetAtInvalidIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0")));
             assertThrows(IndexOutOfBoundsException.class, () -> observableList.get(-1));
             assertThrows(IndexOutOfBoundsException.class, () -> observableList.get(1));
         }
@@ -487,7 +487,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test set element at index triggers both add and remove listeners")
         void testSetAtIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0")));
             AtomicInteger addedCount = new AtomicInteger(0);
             AtomicInteger removedCount = new AtomicInteger(0);
 
@@ -510,7 +510,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test add element at specific index")
         void testAddAtSpecificIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item1")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1")));
             AtomicInteger addedCount = new AtomicInteger(0);
             observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
                 addedCount.incrementAndGet();
@@ -527,7 +527,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test remove element at specific index")
         void testRemoveAtSpecificIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item1")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1")));
             AtomicInteger removedCount = new AtomicInteger(0);
             observableList.addListener(ElementsRemovedEventListener.class, removedItems -> {
                 removedCount.incrementAndGet();
@@ -544,7 +544,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test indexOf and lastIndexOf operations")
         void testIndexOfOperations() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item", "duplicate", "duplicate")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item", "duplicate", "duplicate")));
             assertEquals(0, observableList.indexOf("item"));
             assertEquals(1, observableList.indexOf("duplicate"));
             assertEquals(2, observableList.lastIndexOf("duplicate"));
@@ -554,7 +554,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test addAll at specific index")
         void testAddAllAtIndex() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item3")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item3")));
             var itemsToAdd = List.of("item1", "item2");
             AtomicInteger addedCount = new AtomicInteger(0);
             observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -580,7 +580,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test removeAll preserves order of remaining elements")
         void testRemoveAllOrderPreservation() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item1", "item2", "item3", "item4")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item1", "item2", "item3", "item4")));
             observableList.removeAll(List.of("item1", "item3"));
             assertEquals(2, observableList.size());
             assertEquals("item2", observableList.get(0));
@@ -590,7 +590,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test retainAll preserves order of retained elements")
         void testRetainAllOrderPreservation() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item1", "item2", "item3", "item4")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item1", "item2", "item3", "item4")));
             observableList.retainAll(List.of("item2", "item4"));
             assertEquals(2, observableList.size());
             assertEquals("item2", observableList.get(0));
@@ -600,7 +600,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test subList operations")
         void testSubListOperations() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item1", "item2")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1", "item2")));
             var subList = observableList.subList(1, 3);
             assertEquals(2, subList.size());
             assertEquals("item1", subList.get(0));
@@ -614,7 +614,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test listIterator operations")
         void testListIteratorOperations() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item0", "item1")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1")));
             var iterator = observableList.listIterator();
             assertTrue(iterator.hasNext());
             assertEquals("item0", iterator.next());
@@ -631,7 +631,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test operations with large lists")
         void testLargeListOperations() {
-            var observableList = ObservableCollections.fromList(new ArrayList<Integer>());
+            var observableList = ObservableList.wrap(new ArrayList<Integer>());
             int count = 1000;
             AtomicInteger addedCount = new AtomicInteger(0);
             observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
@@ -648,7 +648,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test duplicate elements handling")
         void testDuplicateElements() {
-            var observableList = ObservableCollections.fromList(new ArrayList<String>());
+            var observableList = ObservableList.wrap(new ArrayList<String>());
             observableList.add("item");
             observableList.add("item");
             assertEquals(2, observableList.size());
@@ -659,7 +659,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test null elements in list")
         void testNullElementsInList() {
-            var observableList = ObservableCollections.fromList(new ArrayList<String>());
+            var observableList = ObservableList.wrap(new ArrayList<String>());
             AtomicInteger addedCount = new AtomicInteger(0);
             observableList.addListener(ElementsAddedEventListener.class, addedItems -> {
                 addedCount.addAndGet(addedItems.size());
@@ -675,7 +675,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test list operations after clear")
         void testOperationsAfterClear() {
-            var observableList = ObservableCollections.fromList(new ArrayList<>(List.of("item")));
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item")));
             observableList.clear();
             assertTrue(observableList.isEmpty());
 
@@ -695,7 +695,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test concurrent listener additions and removals")
         void testConcurrentListenerManagement() throws InterruptedException {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             int threadCount = 10;
             int operationsPerThread = 100;
             var startLatch = new java.util.concurrent.CountDownLatch(1);
@@ -726,7 +726,7 @@ class ObservableCollectionsTest {
         @DisplayName("Test concurrent collection modifications")
         void testConcurrentModifications() throws InterruptedException {
             // Using a thread-safe backing collection
-            var observableCollection = ObservableCollections.fromCollection(new java.util.concurrent.CopyOnWriteArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new java.util.concurrent.CopyOnWriteArrayList<String>());
             int threadCount = 10;
             int operationsPerThread = 100;
             var startLatch = new java.util.concurrent.CountDownLatch(1);
@@ -759,7 +759,7 @@ class ObservableCollectionsTest {
         @Test
         @DisplayName("Test listener notification order")
         void testListenerNotificationOrder() {
-            var observableCollection = ObservableCollections.fromCollection(new ArrayList<String>());
+            var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             List<Integer> order = new java.util.concurrent.CopyOnWriteArrayList<>();
 
             observableCollection.addListener(ElementsAddedEventListener.class, items -> order.add(1));
