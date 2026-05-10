@@ -23,4 +23,10 @@ dependencies {
     implementation(project(":engine"))
     implementation(libs.dyn4j)
     compileOnly(libs.jetbrains.annotations)
+    testImplementation(libs.junit)
+    testRuntimeOnly(libs.junit.platform)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
