@@ -5,12 +5,15 @@
 lwjgl = "3.4.1"
 dyn4j = "5.0.2"
 jetbrains-annotations = "25.0.0"
+junit = "6.0.3"
 
 [libraries]
 lwjgl = { module = "org.lwjgl:lwjgl", version.ref = "lwjgl" }
 lwjgl-sdl = { module = "org.lwjgl:lwjgl-sdl", version.ref = "lwjgl" }
 dyn4j = { module = "org.dyn4j:dyn4j", version.ref = "dyn4j" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 
 [bundles]
 lwjgl = ["lwjgl", "lwjgl-sdl"]
