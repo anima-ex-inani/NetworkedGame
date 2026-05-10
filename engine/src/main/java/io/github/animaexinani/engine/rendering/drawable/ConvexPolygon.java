@@ -21,14 +21,12 @@ public class ConvexPolygon implements Drawable, Transformable {
     private @NotNull Color tint;
 
     private final Vector2[] localCoords;
-    private final Vertex[] vertexCache;
+    private Vertex[] vertexCache = null;
     private final int[] indices;
-    private boolean vertexCacheDirty = true;
 
     public ConvexPolygon(Vector2[] localCoords, @NotNull Color tint) {
         this.localCoords = localCoords;
         this.tint = tint;
-        this.vertexCache = new Vertex[localCoords.length];
 
         // triangle fan algo: anchor to 0, connect adjacent points
         int numTriangles = localCoords.length - 2;
@@ -42,8 +40,10 @@ public class ConvexPolygon implements Drawable, Transformable {
 
     @Override
     public @NotNull Vertex @NotNull [] vertices() {
-        // just-in-time calculation if the Transformable properties were updated
-        if (this.vertexCacheDirty) {
+        // 4. Null-check to see if we need to regenerate the vertices
+        if (this.vertexCache == null) {
+            // Instantiate the array since it was nullified
+            this.vertexCache = new Vertex[this.localCoords.length];
             var currentTransform = this.transform();
 
             for (int i = 0; i < this.localCoords.length; i++) {
@@ -53,7 +53,6 @@ public class ConvexPolygon implements Drawable, Transformable {
                 // texture UV is Point.ZERO since this is a solid color polygon
                 this.vertexCache[i] = new Vertex(transformedPos, new Point(0, 0), this.tint);
             }
-            this.vertexCacheDirty = false;
         }
 
         return this.vertexCache;
@@ -75,7 +74,7 @@ public class ConvexPolygon implements Drawable, Transformable {
         Objects.requireNonNull(translation);
         if (!this.translation.equals(translation)) {
             this.translation = translation;
-            this.vertexCacheDirty = true;
+            this.vertexCache = null;
         }
     }
 
@@ -83,7 +82,7 @@ public class ConvexPolygon implements Drawable, Transformable {
     @Override public void rotation(float rotation) {
         if (this.rotation != rotation) {
             this.rotation = rotation;
-            this.vertexCacheDirty = true;
+            this.vertexCache = null;
         }
     }
 
@@ -92,7 +91,7 @@ public class ConvexPolygon implements Drawable, Transformable {
         Objects.requireNonNull(pivot);
         if (!this.origin.equals(pivot)) {
             this.origin = pivot;
-            this.vertexCacheDirty = true;
+            this.vertexCache = null;
         }
     }
 
@@ -101,7 +100,7 @@ public class ConvexPolygon implements Drawable, Transformable {
         Objects.requireNonNull(scale);
         if (!this.scale.equals(scale)) {
             this.scale = scale;
-            this.vertexCacheDirty = true;
+            this.vertexCache = null;
         }
     }
 }
