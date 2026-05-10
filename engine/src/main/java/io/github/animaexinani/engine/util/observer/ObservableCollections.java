@@ -72,7 +72,7 @@ public final class ObservableCollections {
             public boolean add(E e) {
                 var result = this.backingCollection.add(e);
                 if (result) {
-                    var addedItems = List.of(e);
+                    var addedItems = Collections.singletonList(e);
                     this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
                 }
 
@@ -83,7 +83,7 @@ public final class ObservableCollections {
             public boolean remove(Object o) {
                 var result = this.backingCollection.remove(o);
                 if (result) {
-                    var removedItems = List.of(o);
+                    var removedItems = Collections.singletonList(o);
                     this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
                 }
 
@@ -108,7 +108,7 @@ public final class ObservableCollections {
 
             @Override
             public boolean removeAll(@NotNull Collection<?> c) {
-                var listCopy = List.copyOf(this.backingCollection);
+                var listCopy = new ArrayList<>(this.backingCollection);
                 var result = this.backingCollection.removeAll(c);
                 if (result) {
                     var removedItems = listCopy.stream().filter(item -> !this.backingCollection.contains(item)).toList();
@@ -120,7 +120,7 @@ public final class ObservableCollections {
 
             @Override
             public boolean retainAll(@NotNull Collection<?> c) {
-                var listCopy = List.copyOf(this.backingCollection);
+                var listCopy = new ArrayList<>(this.backingCollection);
                 var result = this.backingCollection.retainAll(c);
 
                 if (result) {
@@ -133,7 +133,7 @@ public final class ObservableCollections {
 
             @Override
             public void clear() {
-                var removedItems = List.copyOf(this.backingCollection);
+                var removedItems = new ArrayList<>(this.backingCollection);
                 this.backingCollection.clear();
                 this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
             }
@@ -206,7 +206,7 @@ public final class ObservableCollections {
             public boolean add(E e) {
                 var result = this.backingList.add(e);
                 if (result) {
-                    var addedItems = List.of(e);
+                    var addedItems = Collections.singletonList(e);
                     this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
                 }
                 return result;
@@ -216,7 +216,7 @@ public final class ObservableCollections {
             public boolean remove(Object o) {
                 var result = this.backingList.remove(o);
                 if (result) {
-                    var removedItems = List.of(o);
+                    var removedItems = Collections.singletonList(o);
                     this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
                 }
                 return result;
@@ -231,7 +231,7 @@ public final class ObservableCollections {
             public boolean addAll(@NotNull Collection<? extends E> c) {
                 var result = this.backingList.addAll(c);
                 if (result) {
-                    var addedItems = List.copyOf(c);
+                    var addedItems = new ArrayList<>(c);
                     this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
                 }
                 return result;
@@ -241,7 +241,7 @@ public final class ObservableCollections {
             public boolean addAll(int index, @NotNull Collection<? extends E> c) {
                 var result = this.backingList.addAll(index, c);
                 if (result) {
-                    var addedItems = List.copyOf(c);
+                    var addedItems = new ArrayList<>(c);
                     this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
                 }
                 return result;
@@ -249,7 +249,7 @@ public final class ObservableCollections {
 
             @Override
             public boolean removeAll(@NotNull Collection<?> c) {
-                var listCopy = List.copyOf(this.backingList);
+                var listCopy = new ArrayList<>(this.backingList);
                 var result = this.backingList.removeAll(c);
                 if (result) {
                     var removedItems = listCopy.stream().filter(item -> !this.backingList.contains(item)).toList();
@@ -260,7 +260,7 @@ public final class ObservableCollections {
 
             @Override
             public boolean retainAll(@NotNull Collection<?> c) {
-                var listCopy = List.copyOf(this.backingList);
+                var listCopy = new ArrayList<>(this.backingList);
                 var result = this.backingList.retainAll(c);
                 if (result) {
                     var removedItems = listCopy.stream().filter(item -> !this.backingList.contains(item)).toList();
@@ -271,7 +271,7 @@ public final class ObservableCollections {
 
             @Override
             public void clear() {
-                var removedItems = List.copyOf(this.backingList);
+                var removedItems = new ArrayList<>(this.backingList);
                 this.backingList.clear();
                 this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
             }
@@ -284,21 +284,21 @@ public final class ObservableCollections {
             @Override
             public E set(int index, E element) {
                 var oldElement = this.backingList.set(index, element);
-                this.removedListeners.forEach(listener -> listener.onElementsRemoved(List.of(oldElement)));
-                this.addedListeners.forEach(listener -> listener.onElementsAdded(List.of(element)));
+                this.removedListeners.forEach(listener -> listener.onElementsRemoved(Collections.singletonList(oldElement)));
+                this.addedListeners.forEach(listener -> listener.onElementsAdded(Collections.singletonList(element)));
                 return oldElement;
             }
 
             @Override
             public void add(int index, E element) {
                 this.backingList.add(index, element);
-                this.addedListeners.forEach(listener -> listener.onElementsAdded(List.of(element)));
+                this.addedListeners.forEach(listener -> listener.onElementsAdded(Collections.singletonList(element)));
             }
 
             @Override
             public E remove(int index) {
                 var removedElement = this.backingList.remove(index);
-                this.removedListeners.forEach(listener -> listener.onElementsRemoved(List.of(removedElement)));
+                this.removedListeners.forEach(listener -> listener.onElementsRemoved(Collections.singletonList(removedElement)));
                 return removedElement;
             }
 
