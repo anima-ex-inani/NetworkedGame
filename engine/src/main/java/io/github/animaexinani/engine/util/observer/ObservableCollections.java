@@ -5,7 +5,17 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Utility methods for creating observable collections.
+ */
 public final class ObservableCollections {
+    /**
+     * Creates an {@link ObservableCollection} that wraps the specified collection.
+     *
+     * @param collection the collection to wrap
+     * @param <E> the type of elements in the collection
+     * @return an observable collection wrapping the specified collection
+     */
     public static <E> ObservableCollection<E> fromCollection(Collection<E> collection) {
         return new ObservableCollection<>() {
             private final Collection<E> backingCollection = collection;
@@ -140,6 +150,13 @@ public final class ObservableCollections {
         };
     }
 
+    /**
+     * Creates an {@link ObservableList} that wraps the specified list.
+     *
+     * @param list the list to wrap
+     * @param <E> the type of elements in the list
+     * @return an observable list wrapping the specified list
+     */
     public static <E> ObservableList<E> fromList(List<E> list) {
         return new ObservableList<>() {
             private final List<E> backingList = list;
