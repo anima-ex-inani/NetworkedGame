@@ -340,9 +340,19 @@ public interface ObservableList<E> extends ObservableCollection<E>, List<E> {
                 };
             }
 
-            @Override
+            @SuppressWarnings("unchecked")
+			@Override
             public @NotNull List<E> subList(int fromIndex, int toIndex) {
-                return this.backingList.subList(fromIndex, toIndex);
+                var subList = this.backingList.subList(fromIndex, toIndex);
+                var observedSublist = ObservableList.wrap(subList);
+                for (var listener : this.removedListeners) {
+                    observedSublist.addListener(ElementsRemovedEventListener.class, listener);
+                }
+                for (var listener : this.addedListeners) {
+                    observedSublist.addListener(ElementsAddedEventListener.class, listener);
+                }
+
+                return observedSublist;
             }
         };
     }
