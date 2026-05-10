@@ -25,7 +25,7 @@ public interface ObservableCollection<E> extends Collection<E> {
             private final List<ElementsRemovedEventListener<E>> removedListeners = new CopyOnWriteArrayList<>();
 
             @SuppressWarnings("unchecked")
-            @Override
+			@Override
             public <T extends CollectionChangedEventListener<E>> boolean addListener(@NotNull Class<T> type, @NotNull T listener) {
                 if (type.equals(ElementsAddedEventListener.class)) {
                     var addedListener = (ElementsAddedEventListener<E>) listener;
@@ -39,7 +39,7 @@ public interface ObservableCollection<E> extends Collection<E> {
             }
 
             @SuppressWarnings("unchecked")
-            @Override
+			@Override
             public <T extends CollectionChangedEventListener<E>> boolean removeListener(@NotNull Class<T> type, @NotNull T listener) {
                 if (type.equals(ElementsAddedEventListener.class)) {
                     var addedListener = (ElementsAddedEventListener<E>) listener;
@@ -69,7 +69,28 @@ public interface ObservableCollection<E> extends Collection<E> {
 
             @Override
             public @NotNull Iterator<E> iterator() {
-                return this.backingCollection.iterator();
+                var backingIterator = this.backingCollection.iterator();
+                return new Iterator<>() {
+                    private E lastReturned = null;
+
+                    @Override
+                    public boolean hasNext() {
+                        return backingIterator.hasNext();
+                    }
+
+                    @Override
+                    public E next() {
+                        this.lastReturned = backingIterator.next();
+                        return this.lastReturned;
+                    }
+
+                    @Override
+                    public void remove() {
+                        backingIterator.remove();
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                    }
+                };
             }
 
             @Override
@@ -94,7 +115,7 @@ public interface ObservableCollection<E> extends Collection<E> {
             }
 
             @SuppressWarnings("unchecked")
-            @Override
+			@Override
             public boolean remove(Object o) {
                 var result = this.backingCollection.remove(o);
                 if (result) {
@@ -112,13 +133,19 @@ public interface ObservableCollection<E> extends Collection<E> {
 
             @Override
             public boolean addAll(@NotNull Collection<? extends E> c) {
-                var result = this.backingCollection.addAll(c);
-                if (result) {
-                    var addedItems = c.stream().filter(this.backingCollection::contains).toList();
-                    this.addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+                var addedItems = new ArrayList<E>(c.size());
+                for (var item : c) {
+                    if (this.backingCollection.add(item)) {
+                        addedItems.add(item);
+                    }
                 }
 
-                return result;
+                if (addedItems.isEmpty()) {
+                    return false;
+                }
+
+                this.addedListeners.forEach(listener -> listener.onElementsAdded(Collections.unmodifiableCollection(addedItems)));
+                return true;
             }
 
             @Override
@@ -126,7 +153,8 @@ public interface ObservableCollection<E> extends Collection<E> {
                 var listCopy = new ArrayList<>(this.backingCollection);
                 var result = this.backingCollection.removeAll(c);
                 if (result) {
-                    var removedItems = listCopy.stream().filter(item -> !this.backingCollection.contains(item)).toList();
+                    var remaining = new HashSet<>(this.backingCollection);
+                    var removedItems = listCopy.stream().filter(item -> !remaining.contains(item)).toList();
                     this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
                 }
 
@@ -137,9 +165,9 @@ public interface ObservableCollection<E> extends Collection<E> {
             public boolean retainAll(@NotNull Collection<?> c) {
                 var listCopy = new ArrayList<>(this.backingCollection);
                 var result = this.backingCollection.retainAll(c);
-
                 if (result) {
-                    var removedItems = listCopy.stream().filter(item -> !this.backingCollection.contains(item)).toList();
+                    var remaining = new HashSet<>(this.backingCollection);
+                    var removedItems = listCopy.stream().filter(item -> !remaining.contains(item)).toList();
                     this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
                 }
 
@@ -148,6 +176,10 @@ public interface ObservableCollection<E> extends Collection<E> {
 
             @Override
             public void clear() {
+                if (this.backingCollection.isEmpty()) {
+                    return;
+                }
+
                 var removedItems = new ArrayList<>(this.backingCollection);
                 this.backingCollection.clear();
                 this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
@@ -164,7 +196,7 @@ public interface ObservableCollection<E> extends Collection<E> {
      * @return {@code true} if the listener was added, {@code false} otherwise
      * @throws IllegalArgumentException if the listener type is not supported
      */
-    <T extends CollectionChangedEventListener> boolean addListener(@NotNull Class<T> type, @NotNull T listener);
+    <T extends CollectionChangedEventListener<E>> boolean addListener(@NotNull Class<T> type, @NotNull T listener);
 
     /**
      * Removes a listener for changes to this collection.
@@ -175,5 +207,5 @@ public interface ObservableCollection<E> extends Collection<E> {
      * @return {@code true} if the listener was removed, {@code false} otherwise
      * @throws IllegalArgumentException if the listener type is not supported
      */
-    <T extends CollectionChangedEventListener> boolean removeListener(@NotNull Class<T> type, @NotNull T listener);
+    <T extends CollectionChangedEventListener<E>> boolean removeListener(@NotNull Class<T> type, @NotNull T listener);
 }

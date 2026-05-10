@@ -69,7 +69,28 @@ public interface ObservableList<E> extends ObservableCollection<E>, List<E> {
 
             @Override
             public @NotNull Iterator<E> iterator() {
-                return this.backingList.iterator();
+                var backingIterator = this.backingList.iterator();
+                return new Iterator<>() {
+                    private E lastReturned = null;
+
+                    @Override
+                    public boolean hasNext() {
+                        return backingIterator.hasNext();
+                    }
+
+                    @Override
+                    public E next() {
+                        this.lastReturned = backingIterator.next();
+                        return this.lastReturned;
+                    }
+
+                    @Override
+                    public void remove() {
+                        backingIterator.remove();
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                    }
+                };
             }
 
             @Override
@@ -195,12 +216,128 @@ public interface ObservableList<E> extends ObservableCollection<E>, List<E> {
 
             @Override
             public @NotNull ListIterator<E> listIterator() {
-                return this.backingList.listIterator();
+                var backingIterator = this.backingList.listIterator();
+                return new ListIterator<>() {
+                    private E lastReturned = null;
+
+					@Override
+					public boolean hasNext() {
+                        return backingIterator.hasNext();
+					}
+
+					@Override
+					public E next() {
+                        this.lastReturned = backingIterator.next();
+                        return this.lastReturned;
+					}
+
+					@Override
+					public boolean hasPrevious() {
+                        return backingIterator.hasPrevious();
+					}
+
+					@Override
+					public E previous() {
+                        this.lastReturned = backingIterator.previous();
+                        return this.lastReturned;
+					}
+
+					@Override
+					public int nextIndex() {
+                        return backingIterator.nextIndex();
+					}
+
+					@Override
+					public int previousIndex() {
+                        return backingIterator.previousIndex();
+					}
+
+					@Override
+					public void remove() {
+                        backingIterator.remove();
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+					}
+
+					@Override
+					public void set(E e) {
+                        backingIterator.set(e);
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                        var addedItems = Collections.singletonList(e);
+                        addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+					}
+
+					@Override
+					public void add(E e) {
+                        backingIterator.add(e);
+                        var addedItems = Collections.singletonList(e);
+                        addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+					}
+                };
             }
 
             @Override
             public @NotNull ListIterator<E> listIterator(int index) {
-                return this.backingList.listIterator(index);
+                var backingIterator = this.backingList.listIterator(index);
+                return new ListIterator<>() {
+                    private E lastReturned = null;
+
+					@Override
+					public boolean hasNext() {
+                        return backingIterator.hasNext();
+					}
+
+					@Override
+					public E next() {
+                        this.lastReturned = backingIterator.next();
+                        return this.lastReturned;
+					}
+
+					@Override
+					public boolean hasPrevious() {
+                        return backingIterator.hasPrevious();
+					}
+
+					@Override
+					public E previous() {
+                        this.lastReturned = backingIterator.previous();
+                        return this.lastReturned;
+					}
+
+					@Override
+					public int nextIndex() {
+                        return backingIterator.nextIndex();
+					}
+
+					@Override
+					public int previousIndex() {
+                        return backingIterator.previousIndex();
+					}
+
+					@Override
+					public void remove() {
+                        backingIterator.remove();
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+					}
+
+					@Override
+					public void set(E e) {
+                        backingIterator.set(e);
+                        var removedItems = Collections.singletonList(this.lastReturned);
+                        removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
+                        var addedItems = Collections.singletonList(e);
+                        addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+					}
+
+					@Override
+					public void add(E e) {
+                        backingIterator.add(e);
+                        var addedItems = Collections.singletonList(e);
+                        addedListeners.forEach(listener -> listener.onElementsAdded(addedItems));
+					}
+                };
             }
 
             @Override
