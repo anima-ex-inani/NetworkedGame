@@ -37,7 +37,6 @@ public class ConvexPolygon implements Drawable, Transformable {
         }
     }
 
-    @Override
     public @NotNull Vertex @NotNull [] vertices() {
         // 4. Null-check to see if we need to regenerate the vertices
         if (this.vertexCache == null) {
@@ -56,7 +55,27 @@ public class ConvexPolygon implements Drawable, Transformable {
         return this.vertexCache;
     }
 
+
     @Override
+    public int indexCount() {
+        return this.indices.length;
+    }
+
+    @Override
+    public int indexAt(int index) {
+        return this.indices[index];
+    }
+
+    @Override
+    public int vertexCount() {
+        return this.vertices().length;
+    }
+
+    @Override
+    public @NotNull Vertex vertexAt(int index) {
+        return this.vertices()[index];
+    }
+
     public int @NotNull [] indices() {
         return this.indices;
     }
