@@ -22,29 +22,31 @@ public interface ObservableCollection<E> extends Collection<E> {
         return new ObservableCollection<>() {
             private final Collection<E> backingCollection = collection;
             private final List<ElementsAddedEventListener<E>> addedListeners = new CopyOnWriteArrayList<>();
-            private final List<ElementsRemovedEventListener> removedListeners = new CopyOnWriteArrayList<>();
+            private final List<ElementsRemovedEventListener<E>> removedListeners = new CopyOnWriteArrayList<>();
 
+            @SuppressWarnings("unchecked")
             @Override
-            public <T extends CollectionChangedEventListener> boolean addListener(@NotNull Class<T> type, @NotNull T listener) {
+            public <T extends CollectionChangedEventListener<E>> boolean addListener(@NotNull Class<T> type, @NotNull T listener) {
                 if (type.equals(ElementsAddedEventListener.class)) {
-                    @SuppressWarnings("unchecked") var addedListener = (ElementsAddedEventListener<E>) listener;
+                    var addedListener = (ElementsAddedEventListener<E>) listener;
                     return this.addedListeners.add(addedListener);
                 }
                 if (type.equals(ElementsRemovedEventListener.class)) {
-                    var removedListener = (ElementsRemovedEventListener) listener;
+                    var removedListener = (ElementsRemovedEventListener<E>) listener;
                     return this.removedListeners.add(removedListener);
                 }
                 throw new IllegalArgumentException("Unsupported listener type: " + type.getName());
             }
 
+            @SuppressWarnings("unchecked")
             @Override
-            public <T extends CollectionChangedEventListener> boolean removeListener(@NotNull Class<T> type, @NotNull T listener) {
+            public <T extends CollectionChangedEventListener<E>> boolean removeListener(@NotNull Class<T> type, @NotNull T listener) {
                 if (type.equals(ElementsAddedEventListener.class)) {
-                    @SuppressWarnings("unchecked") var addedListener = (ElementsAddedEventListener<E>) listener;
+                    var addedListener = (ElementsAddedEventListener<E>) listener;
                     return this.addedListeners.remove(addedListener);
                 }
                 if (type.equals(ElementsRemovedEventListener.class)) {
-                    var removedListener = (ElementsRemovedEventListener) listener;
+                    var removedListener = (ElementsRemovedEventListener<E>) listener;
                     return this.removedListeners.remove(removedListener);
                 }
                 throw new IllegalArgumentException("Unsupported listener type: " + type.getName());
@@ -91,11 +93,12 @@ public interface ObservableCollection<E> extends Collection<E> {
                 return result;
             }
 
+            @SuppressWarnings("unchecked")
             @Override
             public boolean remove(Object o) {
                 var result = this.backingCollection.remove(o);
                 if (result) {
-                    var removedItems = Collections.singletonList(o);
+                    var removedItems = Collections.singletonList((E) o);
                     this.removedListeners.forEach(listener -> listener.onElementsRemoved(removedItems));
                 }
 
