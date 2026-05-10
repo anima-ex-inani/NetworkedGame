@@ -16,7 +16,8 @@ class ObservableCollectionsTest {
 
     // Existing tests...
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     void testFromList_Add() {
         List<String> list = new ArrayList<>();
         ObservableList<String> observableList = ObservableList.wrap(list);
@@ -33,7 +34,8 @@ class ObservableCollectionsTest {
         assertEquals("item1", list.get(0));
     }
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     void testFromList_AddAtIndex() {
         List<String> list = new ArrayList<>();
         list.add("item0");
@@ -51,7 +53,8 @@ class ObservableCollectionsTest {
         assertEquals("item1", list.get(0));
     }
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     void testFromList_Remove() {
         List<String> list = new ArrayList<>();
         list.add("item1");
@@ -68,7 +71,8 @@ class ObservableCollectionsTest {
         assertTrue(list.isEmpty());
     }
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     void testFromList_RemoveAtIndex() {
         List<String> list = new ArrayList<>();
         list.add("item1");
@@ -85,7 +89,8 @@ class ObservableCollectionsTest {
         assertTrue(list.isEmpty());
     }
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     void testFromList_Set() {
         List<String> list = new ArrayList<>();
         list.add("item1");
@@ -116,7 +121,8 @@ class ObservableCollectionsTest {
     @DisplayName("ObservableCollection Basic Operations")
     class ObservableCollectionBasicOperations {
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test adding single element to empty collection triggers add listener")
         void testAddSingleElementToEmptyCollection() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -134,7 +140,8 @@ class ObservableCollectionsTest {
             assertEquals(1, observableCollection.size());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test adding duplicate element does not trigger add listener")
         void testAddDuplicateElement() {
             var itemToAdd = "item";
@@ -167,7 +174,8 @@ class ObservableCollectionsTest {
             assertEquals(2, observableCollection2.size());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test removing existing element triggers remove listener")
         void testRemoveExistingElement() {
             var itemToRemove = "item";
@@ -187,7 +195,8 @@ class ObservableCollectionsTest {
             assertTrue(observableCollection.isEmpty());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test removing non-existing element does not trigger remove listener")
         void testRemoveNonExistingElement() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -201,7 +210,8 @@ class ObservableCollectionsTest {
             assertTrue(observableCollection.isEmpty());
         }
 
-        @ParameterizedTest
+        @SuppressWarnings("unchecked")
+		@ParameterizedTest
         @NullAndEmptySource
         @DisplayName("Test handling null and empty elements")
         void testNullAndEmptyElements(String value) {
@@ -234,7 +244,8 @@ class ObservableCollectionsTest {
     @DisplayName("ObservableCollection Bulk Operations")
     class ObservableCollectionBulkOperations {
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test addAll with multiple elements triggers add listener once")
         void testAddAllMultipleElements() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -253,7 +264,8 @@ class ObservableCollectionsTest {
             assertEquals(3, observableCollection.size());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test addAll with empty collection does not trigger add listener")
         void testAddAllEmptyCollection() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -267,7 +279,8 @@ class ObservableCollectionsTest {
             assertTrue(observableCollection.isEmpty());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test removeAll removes specified elements and triggers remove listener")
         void testRemoveAllSpecifiedElements() {
             var items = new ArrayList<>(List.of("item1", "item2", "item3"));
@@ -288,7 +301,8 @@ class ObservableCollectionsTest {
             assertTrue(observableCollection.contains("item2"));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test retainAll keeps only specified elements and triggers remove listener")
         void testRetainAllSpecifiedElements() {
             var items = new ArrayList<>(List.of("item1", "item2", "item3"));
@@ -310,7 +324,8 @@ class ObservableCollectionsTest {
             assertTrue(observableCollection.contains("item2"));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test clear removes all elements and triggers remove listener")
         void testClearAllElements() {
             var items = new ArrayList<>(List.of("item1", "item2"));
@@ -334,7 +349,8 @@ class ObservableCollectionsTest {
     @DisplayName("ObservableCollection Listener Management")
     class ObservableCollectionListenerManagement {
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test adding multiple add listeners")
         void testMultipleAddListeners() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -349,7 +365,8 @@ class ObservableCollectionsTest {
             assertEquals(1, count2.get());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test adding multiple remove listeners")
         void testMultipleRemoveListeners() {
             var items = new ArrayList<>(List.of("item"));
@@ -365,7 +382,8 @@ class ObservableCollectionsTest {
             assertEquals(1, count2.get());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test removing listeners prevents further notifications")
         void testRemoveListener() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -381,21 +399,23 @@ class ObservableCollectionsTest {
             assertEquals(1, count1.get());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test adding unsupported listener type throws exception")
         void testUnsupportedListenerType() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             assertThrows(IllegalArgumentException.class, () -> {
-                observableCollection.addListener(CollectionChangedEventListener.class, new CollectionChangedEventListener() {});
+                observableCollection.addListener(CollectionChangedEventListener.class, new CollectionChangedEventListener<String>() {});
             });
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test removing unsupported listener type throws exception")
         void testRemoveUnsupportedListenerType() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
             assertThrows(IllegalArgumentException.class, () -> {
-                observableCollection.removeListener(CollectionChangedEventListener.class, new CollectionChangedEventListener() {});
+                observableCollection.removeListener(CollectionChangedEventListener.class, new CollectionChangedEventListener<String>() {});
             });
         }
     }
@@ -431,7 +451,8 @@ class ObservableCollectionsTest {
             });
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test listener throws exception behavior")
         void testListenerExceptionHandling() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -483,7 +504,8 @@ class ObservableCollectionsTest {
             assertThrows(IndexOutOfBoundsException.class, () -> observableList.get(1));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test set element at index triggers both add and remove listeners")
         void testSetAtIndex() {
             var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0")));
@@ -506,7 +528,8 @@ class ObservableCollectionsTest {
             assertEquals("newItem", observableList.get(0));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test add element at specific index")
         void testAddAtSpecificIndex() {
             var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1")));
@@ -523,7 +546,8 @@ class ObservableCollectionsTest {
             assertEquals("item1", observableList.get(2));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test remove element at specific index")
         void testRemoveAtSpecificIndex() {
             var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1")));
@@ -550,7 +574,8 @@ class ObservableCollectionsTest {
             assertEquals(-1, observableList.indexOf("non-existing"));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test addAll at specific index")
         void testAddAllAtIndex() {
             var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item3")));
@@ -627,7 +652,8 @@ class ObservableCollectionsTest {
     @DisplayName("ObservableList Edge Cases")
     class ObservableListEdgeCases {
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test operations with large lists")
         void testLargeListOperations() {
             var observableList = ObservableList.wrap(new ArrayList<Integer>());
@@ -655,7 +681,8 @@ class ObservableCollectionsTest {
             assertEquals(1, observableList.lastIndexOf("item"));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test null elements in list")
         void testNullElementsInList() {
             var observableList = ObservableList.wrap(new ArrayList<String>());
@@ -671,7 +698,8 @@ class ObservableCollectionsTest {
             assertEquals(1, addedCount.get());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test list operations after clear")
         void testOperationsAfterClear() {
             var observableList = ObservableList.wrap(new ArrayList<>(List.of("item")));
@@ -691,7 +719,8 @@ class ObservableCollectionsTest {
     @DisplayName("Thread Safety Tests")
     class ThreadSafetyTests {
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test concurrent listener additions and removals")
         void testConcurrentListenerManagement() throws InterruptedException {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());
@@ -721,7 +750,8 @@ class ObservableCollectionsTest {
             assertTrue(endLatch.await(5, java.util.concurrent.TimeUnit.SECONDS));
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test concurrent collection modifications")
         void testConcurrentModifications() throws InterruptedException {
             // Using a thread-safe backing collection
@@ -755,7 +785,8 @@ class ObservableCollectionsTest {
             assertEquals(threadCount * operationsPerThread, addedCount.get());
         }
 
-        @Test
+        @SuppressWarnings("unchecked")
+		@Test
         @DisplayName("Test listener notification order")
         void testListenerNotificationOrder() {
             var observableCollection = ObservableCollection.wrap(new ArrayList<String>());

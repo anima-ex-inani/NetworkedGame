@@ -10,7 +10,7 @@ import java.util.Collection;
  * @param <E> the type of elements in the collection
  */
 @FunctionalInterface
-public interface ElementsAddedEventListener<E> extends CollectionChangedEventListener {
+public interface ElementsAddedEventListener<E> extends CollectionChangedEventListener<E> {
     /**
      * Called when elements are added to the collection.
      *

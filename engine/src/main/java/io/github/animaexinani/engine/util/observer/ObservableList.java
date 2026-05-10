@@ -42,7 +42,7 @@ public interface ObservableList<E> extends ObservableCollection<E>, List<E> {
 			@Override
             public <T extends CollectionChangedEventListener<E>> boolean removeListener(@NotNull Class<T> type, @NotNull T listener) {
                 if (type.equals(ElementsAddedEventListener.class)) {
-                    @SuppressWarnings("unchecked") var addedListener = (ElementsAddedEventListener<E>) listener;
+                    var addedListener = (ElementsAddedEventListener<E>) listener;
                     return this.addedListeners.remove(addedListener);
                 }
                 if (type.equals(ElementsRemovedEventListener.class)) {
