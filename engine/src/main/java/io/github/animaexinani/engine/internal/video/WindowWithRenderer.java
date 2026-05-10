@@ -21,6 +21,7 @@ import io.github.animaexinani.engine.internal.SdlOperationFailedException;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.engine.vertex.Vertex;
 import org.lwjgl.system.MemoryStack;
 
 public final class WindowWithRenderer implements Window, Renderer {
@@ -35,7 +36,7 @@ public final class WindowWithRenderer implements Window, Renderer {
             this.cleaned.setRelease(true);
 
             SdlOperationFailedException.throwOnFailure(
-                SDLInit.SDL_RunOnMainThread(this.cleanCallback, 0, true)
+                    SDLInit.SDL_RunOnMainThread(this.cleanCallback, 0, true)
             );
             this.cleanCallback.close();
         }
@@ -65,7 +66,7 @@ public final class WindowWithRenderer implements Window, Renderer {
             IntBuffer h = stack.mallocInt(1);
 
             SdlOperationFailedException.throwOnFailure(
-                SDLVideo.SDL_GetWindowSize(this.nativeState.windowHandle, w, h)
+                    SDLVideo.SDL_GetWindowSize(this.nativeState.windowHandle, w, h)
             );
 
             return new Size(w.get(0), h.get(0));
@@ -97,7 +98,7 @@ public final class WindowWithRenderer implements Window, Renderer {
         };
         var pitch = pixelFormat.calculatePitch(textureSize.width());
         try (var surface = SdlOperationFailedException.throwOnFailure(
-            SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
+                SDLSurface.SDL_CreateSurfaceFrom(textureSize.width(), textureSize.height(), nativePixelFormat, pixelBuffer, pitch)
         )) {
             var nativeTexture = SdlOperationFailedException.throwOnFailure(SDLRender.SDL_CreateTextureFromSurface(this.nativeState.rendererHandle, surface));
             return new NativeTexture(nativeTexture);
@@ -122,7 +123,7 @@ public final class WindowWithRenderer implements Window, Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_SetRenderDrawColorFloat(this.nativeState.rendererHandle, red, green, blue, alpha)
+                    SDLRender.SDL_SetRenderDrawColorFloat(this.nativeState.rendererHandle, red, green, blue, alpha)
             );
         }
         catch (SdlOperationFailedException e) {
@@ -131,7 +132,7 @@ public final class WindowWithRenderer implements Window, Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderClear(this.nativeState.rendererHandle)
+                    SDLRender.SDL_RenderClear(this.nativeState.rendererHandle)
             );
         }
         catch (SdlOperationFailedException e) {
@@ -159,28 +160,37 @@ public final class WindowWithRenderer implements Window, Renderer {
             throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
         }
 
-        var vertices = drawable.vertices();
-        var drawableIndices = drawable.indices();
+        int vertexCount = drawable.vertexCount();
+        int indexCount = drawable.indexCount();
+
+        Vertex[] vertexCache = new Vertex[vertexCount];
+        for (int i = 0; i < vertexCount; i++) {
+            vertexCache[i] = drawable.vertexAt(i);
+        }
 
         try (var stack = MemoryStack.stackPush()) {
-            FloatBuffer xy = stack.mallocFloat(vertices.length * 2);
-            for (int i = 0; i < vertices.length; i++) {
-                xy.put(i * 2, vertices[i].position().x());
-                xy.put(i * 2 + 1, vertices[i].position().y());
+            FloatBuffer xy = stack.mallocFloat(vertexCount * 2);
+            for (int i = 0; i < vertexCount; i++) {
+                var pos = vertexCache[i].position();
+                xy.put(i * 2, pos.x());
+                xy.put(i * 2 + 1, pos.y());
             }
 
-
-            var color = SDL_FColor.calloc(vertices.length, stack);
-            for (int i = 0; i < vertices.length; i++) {
+            var color = SDL_FColor.calloc(vertexCount, stack);
+            for (int i = 0; i < vertexCount; i++) {
+                var v = vertexCache[i];
                 var currentColor = color.position(i);
-                currentColor.r(vertices[i].color().red());
-                currentColor.g(vertices[i].color().green());
-                currentColor.b(vertices[i].color().blue());
-                currentColor.a(vertices[i].color().alpha());
+                currentColor.r(v.color().red());
+                currentColor.g(v.color().green());
+                currentColor.b(v.color().blue());
+                currentColor.a(v.color().alpha());
             }
             color.position(0);
 
-            var indices = IntBuffer.wrap(drawable.indices());
+            IntBuffer indices = stack.mallocInt(indexCount);
+            for (int i = 0; i < indexCount; i++) {
+                indices.put(i, drawable.indexAt(i));
+            }
 
             FloatBuffer uv;
             int uvStride;
@@ -189,11 +199,11 @@ public final class WindowWithRenderer implements Window, Renderer {
                 uvStride = 0;
             }
             else {
-                uv = stack.mallocFloat(vertices.length * 2);
-                uvStride = 8; // float * 2
+                uv = stack.mallocFloat(vertexCount * 2);
+                uvStride = Float.BYTES * 2;
 
-                for (int i = 0; i < vertices.length; i++) {
-                    var vertexUv = texture.getUvOfPoint(vertices[i].uv());
+                for (int i = 0; i < vertexCount; i++) {
+                    var vertexUv = texture.getUvOfPoint(vertexCache[i].uv());
                     uv.put(i * 2, vertexUv.x());
                     uv.put(i * 2 + 1, vertexUv.y());
                 }
@@ -201,20 +211,20 @@ public final class WindowWithRenderer implements Window, Renderer {
 
             try {
                 SdlOperationFailedException.throwOnFailure(
-                    SDLRender.SDL_RenderGeometryRaw(
-                        this.nativeState.rendererHandle,
-                        nativeTexture,
-                        xy,
-                        8, // float * 2
-                        color,
-                        SDL_FColor.SIZEOF,
-                        uv,
-                        uvStride,
-                        vertices.length,
-                        indices,
-                        drawableIndices.length,
-                        4 // int
-                    )
+                        SDLRender.SDL_RenderGeometryRaw(
+                                this.nativeState.rendererHandle,
+                                nativeTexture,
+                                xy,
+                                Float.BYTES * 2,
+                                color,
+                                SDL_FColor.SIZEOF,
+                                uv,
+                                uvStride,
+                                vertexCount,
+                                indices,
+                                indexCount,
+                                Integer.BYTES
+                        )
                 );
             }
             catch (SdlOperationFailedException e) {
@@ -231,7 +241,7 @@ public final class WindowWithRenderer implements Window, Renderer {
 
         try {
             SdlOperationFailedException.throwOnFailure(
-                SDLRender.SDL_RenderPresent(this.nativeState.rendererHandle)
+                    SDLRender.SDL_RenderPresent(this.nativeState.rendererHandle)
             );
         }
         catch (SdlOperationFailedException e) {
