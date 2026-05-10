@@ -1,138 +1,126 @@
 package io.github.animaexinani.game.classes;
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.geometry.MassType;
+import org.dyn4j.geometry.Polygon;
+import org.dyn4j.geometry.Vector2;
+
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rendering.drawable.Drawable;
-import io.github.animaexinani.engine.rendering.drawable.Geometry;
-import io.github.animaexinani.engine.texture.Texture;
-import io.github.animaexinani.engine.vertex.Vertex;
+import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
-import org.jetbrains.annotations.NotNull;
+public class Ship extends Entity {
+    private static final double THRUST_POWER = 750.0; 
+    private static final double TURN_TORQUE = 1500.0; 
+    private static final double MAX_SPEED = 500.0;
+    private static final double FIRE_COOLDOWN_SECONDS = 0.50;
+    private double fireCooldown = 0.0;
+    private double damageCooldown = 0.0;
 
-public class Ship implements Drawable {
-    // state
-    private float x;
-    private float y;
-    private float angle; // radians
-    private float velocityX;
-    private float velocityY;
+    private static final Vector2[] LOCAL_COORDS = {
+        new Vector2(30.0, 0.0),
+        new Vector2(-15.0, 15.0),
+        new Vector2(-15.0, -15.0)
+    };
+    // A cached array for the rendering engine
+    private static final PointF[] RENDER_COORDS = new PointF[LOCAL_COORDS.length];
+    static {
+        for (int i = 0; i < LOCAL_COORDS.length; i++) {
+            RENDER_COORDS[i] = new PointF((float) LOCAL_COORDS[i].x, (float) LOCAL_COORDS[i].y);
+        }
+    }
 
-    // physics constants
-    private static final float THRUST_POWER = 1500.0f; 
-    private static final float TURN_SPEED = 5.0f;    
-    private static final float FRICTION = 0.98f;     
-    private static final float MAX_SPEED = 720.0f;   
-    
-    // visuals
-    private Geometry geometry;
+    private static final Color SHIP_COLOR = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 
-    // define the ship's basic shape relative to its center (0,0)
-        // [0] = Nose (pointing right), [1] = Back Left, [2] = Back Right
-        private static final float[][] LOCAL_COORDS= {
-            { 30.0f, 0.0f },
-            { -15.0f, -15.0f },
-            { -15.0f, 15.0f }
-        };
-
-    // Removed the Geometry parameter from the constructor
     public Ship(float startX, float startY) {
-        this.x = startX;
-        this.y = startY;
-        this.angle = 0.0f; 
-        this.velocityX = 0.0f;
-        this.velocityY = 0.0f;
-        
-        // Create the initial geometry directly inside the class
-        Vertex[] vertices = new Vertex[] {
-            new Vertex(new PointF(startX + 30.0f, startY), new Point(0, 0), new Color(1.0f, 0.0f, 0.0f, 1.0f)),
-            new Vertex(new PointF(startX - 15.0f, startY - 15.0f), new Point(0, 0), new Color(0.0f, 1.0f, 0.0f, 1.0f)),
-            new Vertex(new PointF(startX - 15.0f, startY + 15.0f), new Point(0, 0), new Color(0.0f, 0.0f, 1.0f, 1.0f))
-        };
-        int[] indices = new int[] { 0, 1, 2 };
-        
-        this.geometry = new Geometry(vertices, indices, null);
+        super(createBody(startX, startY), 
+              new ConvexPolygon(RENDER_COORDS, SHIP_COLOR), 
+              5);
     }
 
-    public void turnLeft(float dt) {
-        this.angle -= TURN_SPEED * dt;
+    // factory method to keep the constructor clean
+    private static Body createBody(float x, float y) {
+        Body body = new Body();
+        Polygon shipShape = org.dyn4j.geometry.Geometry.createPolygon(LOCAL_COORDS);
+        BodyFixture fixture = body.addFixture(shipShape);
+        fixture.setDensity(0.001);  // ship weight
+
+        body.setMass(MassType.NORMAL);
+        body.translate(x, y);
+        body.setLinearDamping(0.2);
+        body.setAngularDamping(2.0);
+        return body;
     }
 
-    public void turnRight(float dt) {
-        this.angle += TURN_SPEED * dt;
-    }
+    public void turnLeft(float dt) { this.body.applyTorque(-TURN_TORQUE); }
+    public void turnRight(float dt) { this.body.applyTorque(TURN_TORQUE); }
 
     public void applyThrust(float dt) {
-        this.velocityX += (float) Math.cos(this.angle) * THRUST_POWER * dt;
-        this.velocityY += (float) Math.sin(this.angle) * THRUST_POWER * dt;
+        double angle = this.body.getTransform().getRotationAngle();
+        Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(THRUST_POWER);
+        this.body.applyForce(force);
     }
 
-    public void update(float dt, float screenWidth, float screenHeight) {
-        // apply friction and momentum
-        float frictionThisFrame = (float) Math.pow(FRICTION, dt * 60.0f);
-        this.velocityX *= frictionThisFrame;
-        this.velocityY *= frictionThisFrame;
+    public void fire(GameWorld world) {
+        if (this.fireCooldown > 0) return; // gun is still reloading
 
-        // vector clamping math
-        // calculate the length of the velocity vector by Pythagoras theory
-        float currentSpeed = (float) Math.sqrt((this.velocityX * this.velocityX) + (this.velocityY * this.velocityY));
-        
-        // if we are going too fast, scale the X and Y down proportionally
-        if (currentSpeed > MAX_SPEED) {
-            float scale = MAX_SPEED / currentSpeed;
-            this.velocityX *= scale;
-            this.velocityY *= scale;
+            org.dyn4j.geometry.Transform t = this.body.getTransform();
+            double angle = t.getRotationAngle();
+            double x = t.getTranslationX();
+            double y = t.getTranslationY();
+            
+            // spawn the bullet slightly in front of the ship's nose
+            double spawnX = x + (Math.cos(angle) * 35.0);
+            double spawnY = y + (Math.sin(angle) * 35.0);
+
+            // obtain a bullet and add it to the physics world
+            Bullet b = world.bulletPool.obtain(spawnX, spawnY, angle, 1500.0);
+            world.addEntity(b);
+            
+            this.fireCooldown = FIRE_COOLDOWN_SECONDS;
+    }
+
+    @Override
+    public void update(double dt, double screenWidth, double screenHeight) {
+        // decrease the reload timer
+        if (this.fireCooldown > 0) {
+            this.fireCooldown -= dt;
         }
 
-        this.x += this.velocityX * dt;
-        this.y += this.velocityY * dt;
-
-        // screen wrap logic
-        if (this.x > screenWidth) this.x = 0.0f;
-        else if (this.x < 0.0f) this.x = screenWidth;
-        
-        if (this.y > screenHeight) this.y = 0.0f;
-        else if (this.y < 0.0f) this.y = screenHeight;
-
-        float cosA = (float) Math.cos(this.angle);
-        float sinA = (float) Math.sin(this.angle);
-
-        Vertex[] verts = new Vertex[this.geometry.vertexCount()];
-        for (int i = 0; i < verts.length; i++) {
-            float localX = LOCAL_COORDS[i][0];
-            float localY = LOCAL_COORDS[i][1];
-
-            float rotatedX = (localX * cosA) - (localY * sinA);
-            float rotatedY = (localX * sinA) + (localY * cosA);
-
-            Vertex original = this.geometry.vertexAt(i);
-            verts[i] = new Vertex(new PointF(rotatedX + this.x, rotatedY + this.y), original.uv(), original.color());
+        // decrease i-frame timer
+        if (this.damageCooldown > 0) {
+            this.damageCooldown -= dt;
         }
-        this.geometry.vertices(verts);
-    }
 
-    // implement the Drawable interface methods
-    @Override
-    public int vertexCount() {
-        return this.geometry.vertexCount();
-    }
+        Vector2 velocity = this.body.getLinearVelocity();
+        if (velocity.getMagnitude() > MAX_SPEED) {
+            velocity.normalize();
+            velocity.multiply(MAX_SPEED);
+            this.body.setLinearVelocity(velocity);
+        }
 
-    @Override
-    public @NotNull Vertex vertexAt(int index) {
-        return this.geometry.vertexAt(index);
+        this.wrapPosition(screenWidth, screenHeight);
     }
 
     @Override
-    public int indexCount() {
-        return this.geometry.indexCount();
+    public void takeDamage(int damage) {
+        if (this.health <= 0) return; 
+        
+        // ship-specific I-frame check
+        if (this.damageCooldown > 0) return; 
+
+        this.health -= damage;
+        
+        // give the ship 1 second of invincibility
+        this.damageCooldown = 1.0; 
+
+        if (this.health <= 0) {
+            this.onDestroy();
+        }
     }
 
     @Override
-    public int indexAt(int index) {
-        return this.geometry.indexAt(index);
-    }
-
-    @Override
-    public Texture texture() {
-        return this.geometry.texture();
+    public void onDestroy() {
+        System.out.println("Ship Destroyed! Game Over!");
     }
 }

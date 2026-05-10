@@ -1,32 +1,39 @@
 package io.github.animaexinani.game;
 
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.github.animaexinani.engine.Application;
 import io.github.animaexinani.engine.ApplicationOptions;
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.listeners.KeyboardListener;
-import io.github.animaexinani.engine.windowing.Window;
-import io.github.animaexinani.engine.windowing.WindowOptions;
-import io.github.animaexinani.game.assets.ResourceLoader;
-import io.github.animaexinani.game.classes.Ship;
 import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.input.InputBindings;
 import io.github.animaexinani.engine.input.RebindingController;
+import io.github.animaexinani.engine.listeners.KeyboardListener;
+import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.engine.windowing.WindowOptions;
+import io.github.animaexinani.game.assets.ResourceLoader;
+import io.github.animaexinani.game.classes.Asteroid;
+import io.github.animaexinani.game.classes.Entity;
+import io.github.animaexinani.game.classes.GameWorld;
+import io.github.animaexinani.game.classes.Ship;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
     private final Window mainWindow;
+    
+    // master world manager
+    private final GameWorld gameWorld;
+    // keep a direct reference to the player's ship specifically so we can route keyboard inputs to it
     private final Ship playerShip;
 
     // instantiate Input System
     private final GameInputListener inputListener;
     private final RebindingController rebindingController;
 
-
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.3", "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.5", "io.github.animaexinani.networkedgame");
 
     private long lastTime = 0;
     private double accumulator = 0.0;
@@ -35,7 +42,7 @@ public final class NetworkedGame extends Application {
     // private static final double TIME_STEP = 1.0 / 20.0;
     // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
-
+    
     @Override
     protected boolean iterate() {
         long currentTime = System.nanoTime();
@@ -65,23 +72,26 @@ public final class NetworkedGame extends Application {
             if (this.inputListener.isHeld(GameAction.MOVE_RIGHT)) {
                 this.playerShip.turnRight(dt);
             }
-            // TODO: Wire KEY_SPACE once projectiles are implemented
-            // if (this.inputSystem.isKeyPressed(InputMap.KEY_SPACE)) {
-            //     this.playerShip.firePrimary(dt);
-            // }
+            if (this.inputListener.isHeld(GameAction.ATTACK)) {
+                this.playerShip.fire(this.gameWorld);
+            }
 
-            // physics and math happen strictly at 20 TPS
-            this.playerShip.update(dt, currentWidth, currentHeight);
-
+            // STEP THE ENTIRE GAME WORLD
+            // this single line calculates physics, handles wrapping, and updates visuals for everything.
+            this.gameWorld.update(dt, currentWidth, currentHeight);
+            
             // remove one tick's worth of time from the bucket
             this.accumulator -= TIME_STEP;
         }
 
-        // 4. the Render Loop
+        // the Render Loop
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
-
-        renderer.draw(this.playerShip);
+        
+        for (Entity entity : this.gameWorld.getEntities()) {
+            entity.updateVisuals();
+            renderer.draw(entity.getPolygon());
+        }
 
         renderer.present();
         return true;
@@ -108,7 +118,7 @@ public final class NetworkedGame extends Application {
     public NetworkedGame() {
         super(NetworkedGame.OPTIONS);
 
-        var windowOptions = new WindowOptions("Networked Game", 960, 720);
+        var windowOptions = new WindowOptions("Networked Game", 1920, 1080);
         windowOptions.setResizable(true);
 
         var windowFactory = super.windowFactory();
@@ -118,13 +128,33 @@ public final class NetworkedGame extends Application {
         var centerX = clientSize.width() / 2.0f;
         var centerY = clientSize.height() / 2.0f;
 
+        // initialize the GameWorld
+        this.gameWorld = new GameWorld();
+
+        // create the Ship and register it with the World
         this.playerShip = new Ship(centerX, centerY);
+        this.gameWorld.addEntity(this.playerShip);
+        
+        // add test asteroid
+        Asteroid testAsteroid = new Asteroid(200.0f, 200.0f, 60.0, 30.0);
+        this.gameWorld.addEntity(testAsteroid);
+
+        Random rand = new Random();
+
+        // Add four more random asteroids
+        for (int i = 0; i < 4; i++) {
+            float x = rand.nextFloat() * 960f;      // random X between 0 and screen width
+            float y = rand.nextFloat() * 720f;      // random Y between 0 and screen height
+            double vx = rand.nextDouble() * 100 - 50;  // random velocity X between -50 and 50
+            double vy = rand.nextDouble() * 100 - 50;  // random velocity Y between -50 and 50
+            Asteroid asteroid = new Asteroid(x, y, vx, vy);
+            this.gameWorld.addEntity(asteroid);
+        }
 
         // actually create the InputSystem object in memory
         var bindings = InputBindings.defaultBindings();
         this.inputListener = new GameInputListener(bindings);
         this.rebindingController = new RebindingController(bindings);
-
 
         this.assetManager().registerLoader(new ResourceLoader());
         

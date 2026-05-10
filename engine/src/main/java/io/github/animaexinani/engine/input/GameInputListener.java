@@ -27,15 +27,15 @@ public final class GameInputListener implements KeyboardListener {
     @Override
     public void onKeyEvent(@NotNull KeyEvent event) {
         switch (event.action()) {
-            case PRESS -> bindings.resolve(event.scancode()).ifPresent(action -> {
-                pressedScancodes.put(event.scancode(), action);
-                heldActions.add(action);
+            case PRESS -> this.bindings.resolve(event.scancode()).ifPresent(action -> {
+                this.pressedScancodes.put(event.scancode(), action);
+                this.heldActions.add(action);
             });
             case RELEASE -> {
-                var action = pressedScancodes.remove(event.scancode());
+                var action = this.pressedScancodes.remove(event.scancode());
                 // Only remove the action from heldActions when no other scancode is still holding it down.
-                if (action != null && !pressedScancodes.containsValue(action)) {
-                    heldActions.remove(action);
+                if (action != null && !this.pressedScancodes.containsValue(action)) {
+                    this.heldActions.remove(action);
                 }
             }
             case REPEAT -> {}
@@ -43,19 +43,19 @@ public final class GameInputListener implements KeyboardListener {
     }
 
     public boolean isHeld(@NotNull GameAction action) {
-        return heldActions.contains(action);
+        return this.heldActions.contains(action);
     }
 
     public Set<GameAction> getHeldActions() {
-        return Collections.unmodifiableSet(heldActions);
+        return Collections.unmodifiableSet(this.heldActions);
     }
 
     public void releaseAll() {
-        pressedScancodes.clear();
-        heldActions.clear();
+        this.pressedScancodes.clear();
+        this.heldActions.clear();
     }
 
     public @NotNull InputBindings getBindings() {
-        return bindings;
+        return this.bindings;
     }
 }

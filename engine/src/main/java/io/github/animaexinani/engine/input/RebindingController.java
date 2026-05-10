@@ -8,16 +8,10 @@ import org.jetbrains.annotations.Nullable;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 
-
 public final class RebindingController implements KeyboardListener {
 
-    // Called when a rebind completes.
     @FunctionalInterface
     public interface RebindCallback {
-        /**
-         * @param action   the action that was just rebound
-         * @param scancode the new scancode it was bound to
-         */
         void onRebound(@NotNull GameAction action, int scancode);
     }
 
@@ -34,64 +28,39 @@ public final class RebindingController implements KeyboardListener {
         this.bindings = bindings;
     }
 
-    // -------------------------------------------------------------------------
-    // Control API
-    // -------------------------------------------------------------------------
-
-    /**
-     * Enters "listening" mode: the next key press will be bound to
-     * {@code action}.
-     */
     public void startRebinding(@NotNull GameAction action) {
         this.pendingAction = action;
     }
 
-    /**
-     * Cancels a pending rebind without changing anything.
-     */
     public void cancelRebinding() {
         this.pendingAction = null;
     }
 
-    /**
-     * @return {@code true} while waiting for the player to press a key.
-     *         Use this to show a "Press any key…" prompt in your UI.
-     */
     public boolean isWaitingForInput() {
-        return pendingAction != null;
+        return this.pendingAction != null;
     }
 
-    /**
-     * Returns the action currently awaiting a new binding, if any.
-     */
     public Optional<GameAction> getPendingAction() {
-        return Optional.ofNullable(pendingAction);
+        return Optional.ofNullable(this.pendingAction);
     }
 
-    /**
-     * Sets an optional callback that is invoked every time a rebind completes.
-     */
     public void setCallback(@Nullable RebindCallback callback) {
         this.callback = callback;
     }
 
-    // -------------------------------------------------------------------------
-    // KeyboardListener
-    // -------------------------------------------------------------------------
-
     @Override
     public void onKeyEvent(@NotNull KeyEvent event) {
-        if (pendingAction == null) return;
+        if (this.pendingAction == null) return;
         if (event.action() != KeyEvent.Action.PRESS) return;
 
-        var action   = pendingAction;
+        var action   = this.pendingAction;
         var scancode = event.scancode();
 
-        bindings.bind(scancode, action);
-        pendingAction = null;
+        this.bindings.bind(scancode, action);
+        this.pendingAction = null;
 
-        if (callback != null) {
-            callback.onRebound(action, scancode);
+        if (this.callback != null) {
+            this.callback.onRebound(action, scancode);
         }
     }
 }

@@ -1,9 +1,9 @@
 module io.github.animaexinani.engine {
     requires org.lwjgl;
     requires org.lwjgl.sdl;
-
+    requires org.dyn4j;
+    
     requires transitive org.jetbrains.annotations;
-
     exports io.github.animaexinani.engine;
     exports io.github.animaexinani.engine.audio;
     exports io.github.animaexinani.engine.assets;

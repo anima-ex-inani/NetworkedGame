@@ -21,5 +21,6 @@ java {
 
 dependencies {
     implementation(project(":engine"))
+    implementation(libs.dyn4j)
     compileOnly(libs.jetbrains.annotations)
 }
