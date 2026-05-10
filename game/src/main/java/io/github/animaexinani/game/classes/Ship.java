@@ -1,5 +1,4 @@
 package io.github.animaexinani.game.classes;
-
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.MassType;
@@ -7,6 +6,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Ship extends Entity {
@@ -22,12 +22,19 @@ public class Ship extends Entity {
         new Vector2(-15.0, 15.0),
         new Vector2(-15.0, -15.0)
     };
+    // A cached array for the rendering engine
+    private static final PointF[] RENDER_COORDS = new PointF[LOCAL_COORDS.length];
+    static {
+        for (int i = 0; i < LOCAL_COORDS.length; i++) {
+            RENDER_COORDS[i] = new PointF((float) LOCAL_COORDS[i].x, (float) LOCAL_COORDS[i].y);
+        }
+    }
 
     private static final Color SHIP_COLOR = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 
     public Ship(float startX, float startY) {
         super(createBody(startX, startY), 
-              new ConvexPolygon(LOCAL_COORDS, SHIP_COLOR), 
+              new ConvexPolygon(RENDER_COORDS, SHIP_COLOR), 
               5);
     }
 

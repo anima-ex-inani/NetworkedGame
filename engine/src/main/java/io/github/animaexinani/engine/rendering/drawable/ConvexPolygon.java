@@ -2,7 +2,6 @@ package io.github.animaexinani.engine.rendering.drawable;
 
 import java.util.Objects;
 
-import org.dyn4j.geometry.Vector2;
 import org.jetbrains.annotations.NotNull;
 
 import io.github.animaexinani.engine.color.Color;
@@ -20,11 +19,11 @@ public class ConvexPolygon implements Drawable, Transformable {
     private @NotNull PointF origin = PointF.ZERO;
     private @NotNull Color tint;
 
-    private final Vector2[] localCoords;
+    private final PointF[] localCoords;
     private Vertex[] vertexCache = null;
     private final int[] indices;
 
-    public ConvexPolygon(Vector2[] localCoords, @NotNull Color tint) {
+    public ConvexPolygon(PointF[] localCoords, @NotNull Color tint) {
         this.localCoords = localCoords;
         this.tint = tint;
 
@@ -47,8 +46,7 @@ public class ConvexPolygon implements Drawable, Transformable {
             var currentTransform = this.transform();
 
             for (int i = 0; i < this.localCoords.length; i++) {
-                PointF localPoint = new PointF((float) this.localCoords[i].x, (float) this.localCoords[i].y);
-                PointF transformedPos = currentTransform.transform(localPoint);
+                PointF transformedPos = currentTransform.transform(this.localCoords[i]);
                 
                 // texture UV is Point.ZERO since this is a solid color polygon
                 this.vertexCache[i] = new Vertex(transformedPos, new Point(0, 0), this.tint);

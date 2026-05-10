@@ -6,6 +6,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Asteroid extends Entity {
@@ -19,11 +20,18 @@ public class Asteroid extends Entity {
         new Vector2(10.0, -15.0)
     };
 
+    private static final PointF[] RENDER_COORDS = new PointF[LOCAL_COORDS.length];
+    static {
+        for (int i = 0; i < LOCAL_COORDS.length; i++) {
+            RENDER_COORDS[i] = new PointF((float) LOCAL_COORDS[i].x, (float) LOCAL_COORDS[i].y);
+        }
+    }
+
     private static final Color ASTEROID_COLOR = new Color(0.6f, 0.6f, 0.6f, 1.0f);
 
     public Asteroid(float startX, float startY, double velocityX, double velocityY) {
         super(createBody(startX, startY, velocityX, velocityY), 
-              new ConvexPolygon(LOCAL_COORDS, ASTEROID_COLOR), 
+              new ConvexPolygon(RENDER_COORDS, ASTEROID_COLOR), 
               3);
     }
 

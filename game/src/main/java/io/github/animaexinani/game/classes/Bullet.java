@@ -8,6 +8,7 @@ import org.dyn4j.geometry.Transform;
 import org.dyn4j.geometry.Vector2;
 
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 
 public class Bullet extends Entity {
@@ -22,12 +23,19 @@ public class Bullet extends Entity {
         new Vector2(-2.0, -25.0)  // lower back arm
     };
 
+    private static final PointF[] RENDER_COORDS = new PointF[LOCAL_COORDS.length];
+    static {
+        for (int i = 0; i < LOCAL_COORDS.length; i++) {
+            RENDER_COORDS[i] = new PointF((float) LOCAL_COORDS[i].x, (float) LOCAL_COORDS[i].y);
+        }
+    }
+
     private static final Color BULLET_COLOR = new Color(1.0f, 1.0f, 0.0f, 1.0f); // yellow
 
     // bullets spawn "dead" by default so they can wait in the pool
     public Bullet() {
         super(createBody(), 
-              new ConvexPolygon(LOCAL_COORDS, BULLET_COLOR), 
+              new ConvexPolygon(RENDER_COORDS, BULLET_COLOR), 
               1);
         this.health = 0; 
     }

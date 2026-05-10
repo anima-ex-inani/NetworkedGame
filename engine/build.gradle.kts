@@ -22,5 +22,4 @@ dependencies {
         }
     }
     compileOnly(libs.jetbrains.annotations)
-    implementation("org.dyn4j:dyn4j:5.0.2")
 }
