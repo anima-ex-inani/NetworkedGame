@@ -29,7 +29,7 @@ public class BasicObjectPool<O> implements ObjectPool<O> {
         }
     }
 
-    private final Set<PooledObject<O>> available = Collections.synchronizedSet(new HashSet<>());
+    private final Set<PooledObject<O>> available = new HashSet<>();
     private final Supplier<O> supplier;
     private final Consumer<O> resetter;
 
