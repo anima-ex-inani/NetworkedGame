@@ -170,10 +170,10 @@ class ObjectPoolTest {
             });
         }
 
-        latch.await();
+        assertTrue(latch.await(30, TimeUnit.SECONDS), "Timed out waiting for threads to complete");
         executor.shutdown();
         
-        assertEquals(0, failures.size());
+        assertEquals(0, failures.size(), () -> "Worker threads failed: " + failures);
         assertEquals(totalAcquisitions, acquiredObjects.size(), "All concurrently acquired objects must be unique");
     }
 }
