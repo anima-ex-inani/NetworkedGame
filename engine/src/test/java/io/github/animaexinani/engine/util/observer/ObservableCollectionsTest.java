@@ -238,6 +238,30 @@ class ObservableCollectionsTest {
             assertEquals(1, removedCount.get());
             assertFalse(observableCollection.contains(value));
         }
+
+        @SuppressWarnings("unchecked")
+		@Test
+        @DisplayName("Test iterator remove triggers remove listener")
+        void testIteratorRemove() {
+            var observableCollection = ObservableCollection.wrap(new ArrayList<>(List.of("item1", "item2")));
+            AtomicInteger removedCount = new AtomicInteger(0);
+            
+            observableCollection.addListener(ElementsRemovedEventListener.class, removedItems -> {
+                removedCount.addAndGet(removedItems.size());
+                assertTrue(removedItems.contains("item1"));
+            });
+
+            var iterator = observableCollection.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().equals("item1")) {
+                    iterator.remove();
+                }
+            }
+            
+            assertEquals(1, removedCount.get());
+            assertEquals(1, observableCollection.size());
+            assertFalse(observableCollection.contains("item1"));
+        }
     }
 
     @Nested
@@ -645,6 +669,70 @@ class ObservableCollectionsTest {
             assertTrue(iterator.hasNext());
             assertEquals("item1", iterator.next());
             assertFalse(iterator.hasNext());
+        }
+
+        @SuppressWarnings("unchecked")
+		@Test
+        @DisplayName("Test subList modifications trigger listeners")
+        void testSubListModifications() {
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1", "item2", "item3")));
+            AtomicInteger addedCount = new AtomicInteger(0);
+            AtomicInteger removedCount = new AtomicInteger(0);
+
+            observableList.addListener(ElementsAddedEventListener.class, addedItems -> addedCount.addAndGet(addedItems.size()));
+            observableList.addListener(ElementsRemovedEventListener.class, removedItems -> removedCount.addAndGet(removedItems.size()));
+
+            var subList = observableList.subList(1, 3); // "item1", "item2"
+            
+            // add to sublist
+            subList.add("newItem");
+            assertEquals(1, addedCount.get());
+            assertEquals(0, removedCount.get());
+            
+            // remove from sublist
+            subList.remove("item1");
+            assertEquals(1, addedCount.get());
+            assertEquals(1, removedCount.get());
+            
+            // set in sublist
+            subList.set(0, "replacedItem");
+            assertEquals(2, addedCount.get());
+            assertEquals(2, removedCount.get());
+            
+            // clear sublist
+            subList.clear();
+            assertEquals(2, addedCount.get());
+            assertEquals(4, removedCount.get()); // "replacedItem" and "newItem" removed
+        }
+
+        @SuppressWarnings("unchecked")
+		@Test
+        @DisplayName("Test listIterator modifications trigger listeners")
+        void testListIteratorModifications() {
+            var observableList = ObservableList.wrap(new ArrayList<>(List.of("item0", "item1", "item2")));
+            AtomicInteger addedCount = new AtomicInteger(0);
+            AtomicInteger removedCount = new AtomicInteger(0);
+
+            observableList.addListener(ElementsAddedEventListener.class, addedItems -> addedCount.addAndGet(addedItems.size()));
+            observableList.addListener(ElementsRemovedEventListener.class, removedItems -> removedCount.addAndGet(removedItems.size()));
+
+            var iterator = observableList.listIterator();
+            // next returns item0
+            iterator.next();
+            // remove item0
+            iterator.remove();
+            assertEquals(1, removedCount.get());
+            
+            // next returns item1
+            iterator.next();
+            // set item1 to newItem1
+            iterator.set("newItem1");
+            assertEquals(2, removedCount.get());
+            assertEquals(1, addedCount.get());
+            
+            // add item3 before item2
+            iterator.add("item3");
+            assertEquals(2, addedCount.get());
         }
     }
 
