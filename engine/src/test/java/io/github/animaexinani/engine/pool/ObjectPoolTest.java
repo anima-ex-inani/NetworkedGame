@@ -147,6 +147,7 @@ class ObjectPoolTest {
         Set<PooledObject<TestObject>> acquiredObjects = Collections.synchronizedSet(new HashSet<>());
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
+        List<Throwable> failures = Collections.synchronizedList(new ArrayList<>(threadCount));
 
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
@@ -159,6 +160,10 @@ class ObjectPoolTest {
                     synchronized (acquiredObjects) {
                         acquiredObjects.addAll(acquired);
                     }
+                } catch (Throwable t) {
+                    synchronized (failures) {
+                        failures.add(t);
+                    }
                 } finally {
                     latch.countDown();
                 }
@@ -168,6 +173,7 @@ class ObjectPoolTest {
         latch.await();
         executor.shutdown();
         
+        assertEquals(0, failures.size());
         assertEquals(totalAcquisitions, acquiredObjects.size(), "All concurrently acquired objects must be unique");
     }
 }
