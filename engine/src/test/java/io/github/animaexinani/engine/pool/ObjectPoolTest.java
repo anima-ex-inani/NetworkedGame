@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -24,6 +25,8 @@ class ObjectPoolTest {
         int value = 0;
     }
 
+    private static final Consumer<TestObject> EMPTY_RESETTER = obj -> { };
+
     @Test
     void testAcquireCreatesNewWhenEmpty() {
         AtomicInteger creations = new AtomicInteger(0);
@@ -31,7 +34,7 @@ class ObjectPoolTest {
             creations.incrementAndGet();
             return new TestObject();
         };
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, supplier);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, supplier);
 
         PooledObject<TestObject> obj = pool.acquire();
         assertNotNull(obj);
@@ -53,7 +56,7 @@ class ObjectPoolTest {
 
         obj1.get().value = 42;
         pool.release(obj1);
-        
+
         // Re-acquiring should reset again
         PooledObject<TestObject> obj2 = pool.acquire();
         assertEquals(2, resets.get());
@@ -63,7 +66,7 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseAndReuse() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj1 = pool.acquire();
         pool.release(obj1);
@@ -74,7 +77,7 @@ class ObjectPoolTest {
 
     @Test
     void testDoubleReleaseThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj = pool.acquire();
         pool.release(obj);
@@ -84,7 +87,7 @@ class ObjectPoolTest {
 
     @Test
     void testAcquireCount() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         int count = 5;
         Collection<PooledObject<TestObject>> objects = pool.acquire(count);
@@ -94,14 +97,14 @@ class ObjectPoolTest {
 
     @Test
     void testAcquireNegativeCountThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         assertThrows(IllegalArgumentException.class, () -> pool.acquire(-1));
     }
 
     @Test
     void testReleaseCollection() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         Collection<PooledObject<TestObject>> objects = pool.acquire(3);
         pool.release(objects);
@@ -113,7 +116,7 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseCollectionWithDuplicatesThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj = pool.acquire();
         pool.release(obj);
@@ -124,26 +127,26 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseObjectFromDifferentPool() {
-        ObjectPool<TestObject> pool1 = ObjectPool.create(obj -> {}, TestObject::new);
-        ObjectPool<TestObject> pool2 = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool1 = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool2 = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> objFromPool1 = pool1.acquire();
-        
+
         // pool2 should accept an object that wasn't taken from it,
         // because the PooledObject itself knows how to reset.
         assertDoesNotThrow(() -> pool2.release(objFromPool1));
-        
+
         PooledObject<TestObject> reusedByPool2 = pool2.acquire();
         assertSame(objFromPool1, reusedByPool2);
     }
 
     @Test
     void testConcurrentAcquire() throws InterruptedException {
-        ObjectPool<TestObject> pool = ObjectPool.create(obj -> {}, TestObject::new);
+        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
         int threadCount = 10;
         int acquisitionsPerThread = 100;
         int totalAcquisitions = threadCount * acquisitionsPerThread;
-        
+
         Set<PooledObject<TestObject>> acquiredObjects = Collections.synchronizedSet(new HashSet<>());
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -172,7 +175,7 @@ class ObjectPoolTest {
 
         assertTrue(latch.await(30, TimeUnit.SECONDS), "Timed out waiting for threads to complete");
         executor.shutdown();
-        
+
         assertEquals(0, failures.size(), () -> "Worker threads failed: " + failures);
         assertEquals(totalAcquisitions, acquiredObjects.size(), "All concurrently acquired objects must be unique");
     }
