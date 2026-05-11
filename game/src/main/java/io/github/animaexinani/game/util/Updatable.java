@@ -10,7 +10,8 @@ public interface Updatable {
      * A function that is called to update the state of the object.
      * @param delta The time that has passed since the last update
      */
-    void update(Duration delta);
+    default void update(Duration delta) {
+    }
 
     /**
      * A function that is called to update the state of the object after the {@link #update}
@@ -18,5 +19,6 @@ public interface Updatable {
      * @param delta The time that has passed since the last update. This is the same value as passed
      *              to {@link #update}
      */
-    void postUpdate(Duration delta);
+    default void postUpdate(Duration delta) {
+    }
 }
