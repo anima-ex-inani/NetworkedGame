@@ -19,9 +19,6 @@ public interface Entity extends Updatable {
     /**
      * The physics body associated with this entity
      * @return The entity's physics body
-     * 
-     * @implSpec
-     * The physics body must have this entity as its user data.
      */
     PhysicsBody physicsBody();
 
