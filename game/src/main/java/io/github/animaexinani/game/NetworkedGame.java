@@ -15,10 +15,10 @@ import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
-import io.github.animaexinani.game.classes.Asteroid;
-import io.github.animaexinani.game.classes.Entity;
-import io.github.animaexinani.game.classes.GameWorld;
-import io.github.animaexinani.game.classes.Ship;
+import io.github.animaexinani.game.entities.Asteroid;
+import io.github.animaexinani.game.entities.Entity;
+import io.github.animaexinani.game.entities.GameWorld;
+import io.github.animaexinani.game.entities.Ship;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
