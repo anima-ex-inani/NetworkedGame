@@ -110,8 +110,9 @@ public interface ObjectPool<O> {
             @Override
             public void release(Collection<PooledObject<O>> objects) {
                 synchronized (this.available) {
+                    Set<PooledObject<O>> seen = new HashSet<>();
                     for (var object : objects) {
-                        if (this.available.contains(object)) {
+                        if (this.available.contains(object) || !seen.add(object)) {
                             throw new IllegalStateException("Object already in pool");
                         }
                     }
@@ -127,8 +128,7 @@ public interface ObjectPool<O> {
      * 
      * @return The acquired object
      * 
-     * @implSpec
-     *           Acquired objects should be guaranteed to be in their default state.
+     * @implSpec Acquired objects should be guaranteed to be in their default state.
      *           The caller must NOT need
      *           to call {@link PooledObject#reset()} after acquiring an object.
      */
@@ -140,10 +140,9 @@ public interface ObjectPool<O> {
      * @param count The number of objects to acquire
      * @return The acquired objects
      * 
-     * @implSpec
-     *           Acquired objects should be guaranteed to be in their default state.
-     *           The caller must NOT need
-     *           to call {@link PooledObject#reset()} after acquiring an object.
+     * @implSpec Acquired objects should be guaranteed to be in their default state.
+     *           The caller must NOT need to call {@link PooledObject#reset()} after
+     *           acquiring an object.
      */
     Collection<PooledObject<O>> acquire(int count);
 
@@ -152,8 +151,7 @@ public interface ObjectPool<O> {
      * 
      * @param object The object to release
      * 
-     * @apiNote
-     *          The pooled object should NOT be used after being returned to the
+     * @apiNote The pooled object should NOT be used after being returned to the
      *          pool.
      */
     void release(PooledObject<O> object);
@@ -163,8 +161,7 @@ public interface ObjectPool<O> {
      * 
      * @param objects The objects to release
      * 
-     * @apiNote
-     *          The pooled objects should NOT be used after being returned to the
+     * @apiNote The pooled objects should NOT be used after being returned to the
      *          pool.
      */
     void release(Collection<PooledObject<O>> objects);
