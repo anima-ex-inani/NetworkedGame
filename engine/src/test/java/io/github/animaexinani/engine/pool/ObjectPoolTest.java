@@ -34,7 +34,7 @@ class ObjectPoolTest {
             creations.incrementAndGet();
             return new TestObject();
         };
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, supplier);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, supplier);
 
         PooledObject<TestObject> obj = pool.acquire();
         assertNotNull(obj);
@@ -48,7 +48,7 @@ class ObjectPoolTest {
             resets.incrementAndGet();
             obj.value = 0;
         };
-        ObjectPool<TestObject> pool = ObjectPool.create(resetter, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(resetter, TestObject::new);
 
         // First acquire should reset newly created object
         PooledObject<TestObject> obj1 = pool.acquire();
@@ -66,7 +66,7 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseAndReuse() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj1 = pool.acquire();
         pool.release(obj1);
@@ -77,7 +77,7 @@ class ObjectPoolTest {
 
     @Test
     void testDoubleReleaseThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj = pool.acquire();
         pool.release(obj);
@@ -87,7 +87,7 @@ class ObjectPoolTest {
 
     @Test
     void testAcquireCount() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         int count = 5;
         Collection<PooledObject<TestObject>> objects = pool.acquire(count);
@@ -97,14 +97,14 @@ class ObjectPoolTest {
 
     @Test
     void testAcquireNegativeCountThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         assertThrows(IllegalArgumentException.class, () -> pool.acquire(-1));
     }
 
     @Test
     void testReleaseCollection() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         Collection<PooledObject<TestObject>> objects = pool.acquire(3);
         pool.release(objects);
@@ -116,7 +116,7 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseCollectionWithDuplicatesThrowsException() {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> obj = pool.acquire();
         pool.release(obj);
@@ -127,8 +127,8 @@ class ObjectPoolTest {
 
     @Test
     void testReleaseObjectFromDifferentPool() {
-        ObjectPool<TestObject> pool1 = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
-        ObjectPool<TestObject> pool2 = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool1 = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool2 = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
 
         PooledObject<TestObject> objFromPool1 = pool1.acquire();
 
@@ -142,7 +142,7 @@ class ObjectPoolTest {
 
     @Test
     void testConcurrentAcquire() throws InterruptedException {
-        ObjectPool<TestObject> pool = ObjectPool.create(EMPTY_RESETTER, TestObject::new);
+        ObjectPool<TestObject> pool = new BasicObjectPool<TestObject>(EMPTY_RESETTER, TestObject::new);
         int threadCount = 10;
         int acquisitionsPerThread = 100;
         int totalAcquisitions = threadCount * acquisitionsPerThread;
