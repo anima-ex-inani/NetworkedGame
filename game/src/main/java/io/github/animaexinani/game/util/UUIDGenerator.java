@@ -18,7 +18,7 @@ public final class UUIDGenerator {
      *           io.github.robsonkades:uuidv7 not having an importable module, which
      *           is required for libraries to be usable in this project.
      */
-    public UUID generateV7Uuid() {
+    public static UUID generateV7Uuid() {
         var random = ThreadLocalRandom.current();
 
         long currentTimeMillis = System.currentTimeMillis();
