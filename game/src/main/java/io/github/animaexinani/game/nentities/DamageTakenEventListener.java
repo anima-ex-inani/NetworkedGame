@@ -16,5 +16,5 @@ public interface DamageTakenEventListener extends EventListener {
      * @param shieldDamage The amount of shield damage that was taken
      * @param lethal Whether the damage was lethal
      */
-    void onDamageTaken(@NotNull LivingEntity entity, int healthDamage, int shieldDamage, boolean lethal);
+    void onDamageTaken(@NotNull Entity entity, int healthDamage, int shieldDamage, boolean lethal);
 }
