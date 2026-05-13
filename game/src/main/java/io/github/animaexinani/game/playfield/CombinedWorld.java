@@ -1,0 +1,191 @@
+package io.github.animaexinani.game.playfield;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import io.github.animaexinani.engine.point.PointF;
+import io.github.animaexinani.engine.rendering.Renderer;
+import io.github.animaexinani.engine.rendering.drawable.Drawable;
+import io.github.animaexinani.engine.rendering.transformable.Transformable;
+import io.github.animaexinani.game.nentities.Entity;
+
+/**
+ * A combined client and server-side representation of the game's playfield.
+ * 
+ * This class can be used to represent the game's playfield on both the client
+ * and server sides,
+ * deduplicating state when the same machine operates as both the client and the
+ * server.
+ */
+public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
+    static final class EntityData {
+        private final @NotNull Entity entity;
+        private @Nullable Drawable drawable;
+
+        public EntityData(@NotNull Entity entity, @Nullable Drawable drawable) {
+            this.entity = Objects.requireNonNull(entity);
+            this.drawable = drawable;
+        }
+    }
+
+    private final @NotNull Map<@NotNull UUID, @NotNull EntityData> entities;
+    private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
+    private final @NotNull UUID localPlayerId;
+
+    public CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId) {
+        this.entities = new HashMap<>();
+        for (Entity entity : Objects.requireNonNull(playerEntities)) {
+            Objects.requireNonNull(entity);
+            this.entities.put(entity.id(), new EntityData(entity, null));
+        }
+
+        this.localPlayerId = Objects.requireNonNull(localPlayerId);
+        this.cachedEntityCollection = playerEntities;
+    }
+
+    @Override
+    public @NotNull Collection<@NotNull Entity> entities() {
+        if (this.cachedEntityCollection != null) {
+            return this.cachedEntityCollection;
+        }
+
+        synchronized (this.entities) {
+            this.cachedEntityCollection = this.entities.values().stream().map((data) -> data.entity).toList();
+            return this.cachedEntityCollection;
+        }
+    }
+
+    @Override
+    public @Nullable Entity getEntity(@NotNull UUID id) {
+        synchronized (this.entities) {
+            var data = this.entities.get(id);
+            return data == null ? null : data.entity;
+        }
+    }
+
+    @Override
+    public boolean spawnEntity(@NotNull Entity entity) {
+        synchronized (this.entities) {
+            var id = entity.id();
+            var data = this.entities.get(id);
+            if (data == null) {
+                this.entities.put(id, new EntityData(entity, null));
+                this.cachedEntityCollection = null;
+                return true;
+            }
+
+            if (data.entity == entity) {
+                return false;
+            }
+
+            this.entities.put(id, new EntityData(entity, null));
+            this.cachedEntityCollection = null;
+            return true;
+        }
+    }
+
+    @Override
+    public boolean despawnEntity(@NotNull UUID id) {
+        synchronized (this.entities) {
+            var result = this.entities.remove(id) != null;
+            if (result) {
+                this.cachedEntityCollection = null;
+            }
+            return result;
+        }
+    }
+
+    @Override
+    public @NotNull Entity localPlayer() {
+        EntityData playerData;
+        
+        synchronized (this.entities) {
+            playerData = this.entities.get(this.localPlayerId);
+
+        }
+
+        if (playerData == null) {
+            throw new IllegalStateException("Local player not found");
+        }
+
+        return playerData.entity;
+    }
+
+    @Override
+    public void render(Renderer renderer) {
+        synchronized (this.entities) {
+            for (var entityData : this.entities.values()) {
+                if (entityData.drawable == null) {
+                    continue;
+                }
+
+                renderer.draw(entityData.drawable);
+            }
+        }
+    }
+
+    @Override
+    public boolean registerVisuals(@NotNull UUID entityId, @Nullable Drawable drawable) {
+        synchronized (this.entities) {
+            var data = this.entities.get(entityId);
+            if (data == null) {
+                return false;
+            }
+
+            var oldDrawable = data.drawable;
+            data.drawable = drawable;
+            return oldDrawable != drawable;
+        }
+    }
+
+    @Override
+    public boolean removeVisuals(@NotNull UUID entityId) {
+        synchronized (this.entities) {
+            var data = this.entities.get(entityId);
+            if (data == null) {
+                return false;
+            }
+
+            var oldDrawable = data.drawable;
+            data.drawable = null;
+            return oldDrawable != null;
+        }
+    }
+
+    @Override
+    public void update(Duration delta) {
+        synchronized (this.entities) {
+            for (var entityData : this.entities.values()) {
+                entityData.entity.update(delta);
+            }
+        }
+    }
+
+    @Override
+    public void postUpdate(Duration delta) {
+        synchronized (this.entities) {
+            for (var entityData : this.entities.values()) {
+                entityData.entity.postUpdate(delta);
+
+                if (entityData.drawable instanceof Transformable transformable) {
+                    var entityBody = entityData.entity.physicsBody();
+                    var entityTransform = entityBody.getTransform();
+
+                    var xPosition = entityTransform.getTranslationX();
+                    var yPosition = entityTransform.getTranslationY();
+                    var angle = entityTransform.getRotationAngle();
+
+                    transformable.translation(new PointF((float) xPosition, (float) yPosition));
+                    transformable.rotation((float) angle);
+                }
+            }
+        }
+    }
+}

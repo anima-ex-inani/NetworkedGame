@@ -15,7 +15,7 @@ import io.github.animaexinani.game.util.Updatable;
  */
 public interface Playfield extends Updatable {
     /**
-     * Gets an unmodifiable collection of all entities currently in the playfield.
+     * Gets a collection of all entities currently in the playfield.
      * 
      * @return All entities in the playfield
      */
