@@ -175,6 +175,9 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         this.deferredModifications = new ArrayList<>();
         for (Entity entity : Objects.requireNonNull(playerEntities)) {
             Objects.requireNonNull(entity);
+            if (this.entities.containsKey(entity.id())) {
+                throw new IllegalArgumentException("Duplicate entity ID: " + entity.id());
+            }
             this.entities.put(entity.id(), new EntityData(entity, null));
             entity.physicsBody().setUserData(entity);
             this.physicsWorld.addBody(entity.physicsBody());
