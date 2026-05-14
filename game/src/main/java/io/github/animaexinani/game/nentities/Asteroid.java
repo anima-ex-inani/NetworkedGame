@@ -39,6 +39,7 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
     private final EntityType type;
     private final Body physicsBody;
     private final List<DamageTakenEventListener> listeners = new CopyOnWriteArrayList<>();
+    private final List<ContactDamageDealtEventListener> contactDamageDealtListeners = new CopyOnWriteArrayList<>();
 
     private static final Map<EntityType, Supplier<Body>> ASTEROID_BODY_CREATORS = Map.of(
         EntityType.ASTEROID, () -> {
@@ -149,5 +150,15 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
     @Override
     public boolean removeDamageTakenListener(DamageTakenEventListener listener) {
         return this.listeners.remove(listener);
+    }
+
+    @Override
+    public boolean addContactDamageDealtListener(ContactDamageDealtEventListener listener) {
+        return this.contactDamageDealtListeners.add(listener);
+    }
+
+    @Override
+    public boolean removeContactDamageDealtListener(ContactDamageDealtEventListener listener) {
+        return this.contactDamageDealtListeners.remove(listener);
     }
 }

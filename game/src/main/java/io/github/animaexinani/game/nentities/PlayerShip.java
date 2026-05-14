@@ -26,6 +26,7 @@ public class PlayerShip implements Ship, ScreenWrappable {
     private int health;
     private int shield;
     private final List<DamageTakenEventListener> damageTakenListeners;
+    private final List<ContactDamageDealtEventListener> contactDamageDealtListeners = new CopyOnWriteArrayList<>();
 
     private Duration fireCooldown;
     private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(500);
@@ -131,6 +132,16 @@ public class PlayerShip implements Ship, ScreenWrappable {
     public boolean dealsContactDamageTo(Damageable target) {
         var targetType = target.type();
         return !targetType.player();
+    }
+
+    @Override
+    public boolean addContactDamageDealtListener(ContactDamageDealtEventListener listener) {
+        return this.contactDamageDealtListeners.add(listener);
+    }
+
+    @Override
+    public boolean removeContactDamageDealtListener(ContactDamageDealtEventListener listener) {
+        return this.contactDamageDealtListeners.remove(listener);
     }
 
     @Override

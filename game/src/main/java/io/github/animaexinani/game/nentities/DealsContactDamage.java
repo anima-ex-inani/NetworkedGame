@@ -39,4 +39,20 @@ public interface DealsContactDamage extends Entity {
      * @return true if this entity should deal contact damage to the given entity, false otherwise
      */
     boolean dealsContactDamageTo(Damageable target);
+    
+    /**
+     * Adds a contact damage dealt event listener to this entity.
+     * 
+     * @param listener the listener to add
+     * @return true if the collection of listeners was modified, false otherwise
+     */
+    boolean addContactDamageDealtListener(ContactDamageDealtEventListener listener);
+    
+    /**
+     * Removes a contact damage dealt event listener from this entity.
+     * 
+     * @param listener the listener to remove
+     * @return true if the collection of listeners was modified, false otherwise
+     */
+    boolean removeContactDamageDealtListener(ContactDamageDealtEventListener listener);
 }

@@ -34,4 +34,21 @@ public interface Bullet extends Entity {
      * @return true if this entity should deal damage to the given entity, false otherwise
      */
     boolean dealsDamageTo(Damageable target);
+    
+    /**
+     * Adds a damage dealt event listener to this bullet.
+     * 
+     * @param listener the listener to add
+     * @return true if the collection of listeners was modified, false otherwise
+     */
+    boolean addDamageDealtListener(DamageDealtEventListener listener);
+    
+    /**
+     * Removes a damage dealt event listener from this bullet.
+     * 
+     * @param listener the listener to remove
+     * @return true if the collection of listeners was modified, false otherwise
+     */
+    boolean removeDamageDealtListener(DamageDealtEventListener listener);
 }
+

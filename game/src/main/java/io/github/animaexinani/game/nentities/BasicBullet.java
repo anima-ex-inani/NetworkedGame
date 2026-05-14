@@ -1,7 +1,9 @@
 package io.github.animaexinani.game.nentities;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
@@ -25,6 +27,7 @@ public class BasicBullet implements Bullet {
     private long timeAliveMs;
     private long maxLifetimeMs;
     private boolean active;
+    private final List<DamageDealtEventListener> damageDealtListeners = new CopyOnWriteArrayList<>();
 
     private static final Vector2[] LOCAL_COORDS = {
             new Vector2(5.0, 0.0),
@@ -65,6 +68,7 @@ public class BasicBullet implements Bullet {
         this.body.setAngularVelocity(0);
         this.body.clearForce();
         this.body.clearTorque();
+        this.damageDealtListeners.clear();
         this.owner = null;
         this.playfield = null;
         this.onDespawn = null;
@@ -110,6 +114,16 @@ public class BasicBullet implements Bullet {
     public boolean dealsDamageTo(Damageable target) {
         // Bullet deals damage to anything that isn't its owner (if its owner is damageable)
         return target != this.owner;
+    }
+    
+    @Override
+    public boolean addDamageDealtListener(DamageDealtEventListener listener) {
+        return this.damageDealtListeners.add(listener);
+    }
+    
+    @Override
+    public boolean removeDamageDealtListener(DamageDealtEventListener listener) {
+        return this.damageDealtListeners.remove(listener);
     }
 
     @Override
