@@ -19,7 +19,7 @@ import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
-import io.github.animaexinani.game.collision.ContactDamageCollisionListener;
+import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.nentities.Entity;
 
@@ -51,8 +51,8 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         this.physicsWorld = new World<>();
         this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
         this.physicsWorld.getSettings().setMaximumTranslation(150.0);
-        
-        this.physicsWorld.addCollisionListener(new ContactDamageCollisionListener());
+
+        this.physicsWorld.addCollisionListener(new EntityCollisionListener());
         this.physicsWorld.addContactListener(new ContactDamageContactListener());
 
         this.entities = new HashMap<>();
@@ -90,6 +90,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
     }
 
+    /**
+     * @implNote Spawning an entity with the same ID as an existing entity will
+     *           replace the existing entity. Its visual representation will be
+     *           removed from the scene.
+     */
     @Override
     public boolean spawnEntity(@NotNull Entity entity) {
         synchronized (this.entities) {
