@@ -51,8 +51,12 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
     }
 
-    private enum ModificationType { SPAWN, DESPAWN }
-    private record Modification(@NotNull ModificationType type, @Nullable Entity entity, @Nullable UUID id) {}
+    private enum ModificationType {
+        SPAWN, DESPAWN
+    }
+
+    private record Modification(@NotNull ModificationType type, @Nullable Entity entity, @Nullable UUID id) {
+    }
 
     /**
      * A builder for creating {@link CombinedWorld} instances.
@@ -188,7 +192,7 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
         this.size = size;
         this.localPlayerId = Objects.requireNonNull(localPlayerId);
-        this.cachedEntityCollection = playerEntities;
+        this.cachedEntityCollection = this.entities.values().stream().map(data -> data.entity).toList();
     }
 
     /**
