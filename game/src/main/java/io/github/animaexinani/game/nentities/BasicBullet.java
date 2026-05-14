@@ -60,6 +60,7 @@ public class BasicBullet implements Bullet {
         this.body.setLinearVelocity(new Vector2(Math.cos(angle), Math.sin(angle)).multiply(speed));
         this.body.setAngularVelocity(0.0);
         this.body.setAtRest(false);
+        this.damageDealtListeners.add((_, _, _, _) -> this.despawn());
     }
 
     public void reset() {
@@ -124,6 +125,13 @@ public class BasicBullet implements Bullet {
     @Override
     public boolean removeDamageDealtListener(DamageDealtEventListener listener) {
         return this.damageDealtListeners.remove(listener);
+    }
+    
+    @Override
+    public void callDamageDealtListeners(Damageable target, int damage, boolean lethal) {
+        for (var listener : this.damageDealtListeners) {
+            listener.onDamageDealt(this, target, damage, lethal);
+        }
     }
 
     @Override

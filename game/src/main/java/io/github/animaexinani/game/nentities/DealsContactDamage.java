@@ -55,4 +55,15 @@ public interface DealsContactDamage extends Entity {
      * @return true if the collection of listeners was modified, false otherwise
      */
     boolean removeContactDamageDealtListener(ContactDamageDealtEventListener listener);
+    
+    /**
+     * Calls all contact damage dealt event listeners with the given parameters.
+     * 
+     * @param target the target entity
+     * @param damage the damage amount
+     * @param lethal whether the damage was lethal
+     * @param impulse the impulse of the contact
+     */
+    void callContactDamageDealtListeners(Damageable target, int damage, boolean lethal, double impulse);
 }
+

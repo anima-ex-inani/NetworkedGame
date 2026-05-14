@@ -5,8 +5,9 @@ public interface Damageable extends Entity {
      * Applies damage to this entity
      * 
      * @param damage The amount of damage to apply
+     * @return <code>true</code> if the entity took lethal damage, <code>false</code> otherwise
      */
-    void takeDamage(int damage);
+    boolean takeDamage(int damage);
 
     /**
      * Adds a listener that is notified when this entity takes damage

@@ -145,9 +145,16 @@ public class PlayerShip implements Ship, ScreenWrappable {
     }
 
     @Override
-    public void takeDamage(int damage) {
+    public void callContactDamageDealtListeners(Damageable target, int damage, boolean lethal, double impulse) {
+        for (var listener : this.contactDamageDealtListeners) {
+            listener.onContactDamageDealt(this, target, damage, lethal, impulse);
+        }
+    }
+
+    @Override
+    public boolean takeDamage(int damage) {
         if (damage <= 0) {
-            return;
+            return false;
         }
 
         int shieldDamage = StrictMath.min(this.shield, damage);
@@ -159,6 +166,8 @@ public class PlayerShip implements Ship, ScreenWrappable {
         for (var listener : this.damageTakenListeners) {
             listener.onDamageTaken(this, healthDamage, shieldDamage, lethal);
         }
+
+        return lethal;
     }
 
     @Override

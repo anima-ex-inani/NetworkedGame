@@ -128,9 +128,9 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
     }
 
     @Override
-    public void takeDamage(int damage) {
+    public boolean takeDamage(int damage) {
         if (damage <= 0) {
-            return;
+            return false;
         }
 
         int healthDamage = StrictMath.min(damage, this.health);
@@ -140,6 +140,8 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
         for (var listener : this.listeners) {
             listener.onDamageTaken(this, healthDamage, 0, lethal);
         }
+        
+        return lethal;
     }
 
     @Override
@@ -160,5 +162,12 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
     @Override
     public boolean removeContactDamageDealtListener(ContactDamageDealtEventListener listener) {
         return this.contactDamageDealtListeners.remove(listener);
+    }
+    
+    @Override
+    public void callContactDamageDealtListeners(Damageable target, int damage, boolean lethal, double impulse) {
+        for (var listener : this.contactDamageDealtListeners) {
+            listener.onContactDamageDealt(this, target, damage, lethal, impulse);
+        }
     }
 }

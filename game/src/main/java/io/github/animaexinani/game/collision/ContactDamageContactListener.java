@@ -35,7 +35,8 @@ public class ContactDamageContactListener extends ContactListenerAdapter<Physics
             var damage = dealer.contactDamage();
             damage *= dealer.contactDamageMultiplier(impulse);
             // Here we can use the impulse data. We apply the damage.
-            damageable.takeDamage(StrictMath.max(damage, dealer.minimumContactDamage()));
+            boolean lethal = damageable.takeDamage(StrictMath.max(damage, dealer.minimumContactDamage()));
+            dealer.callContactDamageDealtListeners(damageable, damage, lethal, impulse);
         }
     }
 }

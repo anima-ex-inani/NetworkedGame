@@ -50,5 +50,14 @@ public interface Bullet extends Entity {
      * @return true if the collection of listeners was modified, false otherwise
      */
     boolean removeDamageDealtListener(DamageDealtEventListener listener);
+
+    /**
+     * Calls all damage dealt event listeners with the given parameters.
+     * 
+     * @param target the target entity
+     * @param damage the damage amount
+     * @param lethal whether the damage was lethal
+     */
+    void callDamageDealtListeners(Damageable target, int damage, boolean lethal);
 }
 
