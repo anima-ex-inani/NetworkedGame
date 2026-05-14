@@ -56,8 +56,8 @@ public class PlayerShip implements Ship, ScreenWrappable {
         BodyFixture fixture = this.body.addFixture(shipShape);
         fixture.setDensity(0.001);  // ship weight
         this.body.setMass(MassType.NORMAL);
-        this.body.setLinearDamping(0.2);
-        this.body.setAngularDamping(2.0);
+        this.body.setLinearDamping(1.5);
+        this.body.setAngularDamping(3.0);
     }
 
     @Override
