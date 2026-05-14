@@ -135,6 +135,10 @@ public class PlayerShip implements Ship, ScreenWrappable {
 
     @Override
     public void takeDamage(int damage) {
+        if (damage <= 0) {
+            return;
+        }
+
         int shieldDamage = StrictMath.min(this.shield, damage);
         this.shield -= shieldDamage;
         int healthDamage = damage - shieldDamage;
