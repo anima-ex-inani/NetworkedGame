@@ -19,7 +19,7 @@ import io.github.animaexinani.game.playfield.ServerPlayfield;
 import io.github.animaexinani.game.util.UUIDGenerator;
 
 public class BasicBullet implements Bullet {
-    private final UUID id;
+    private UUID id;
     private final Body body;
     private Entity owner;
     private ServerPlayfield playfield;
@@ -47,6 +47,7 @@ public class BasicBullet implements Bullet {
     }
 
     public void activate(@NotNull ServerPlayfield playfield, @NotNull Entity owner, double x, double y, double angle, double speed, @NotNull Runnable onDespawn) {
+        this.id = UUIDGenerator.generateV7Uuid();
         this.playfield = playfield;
         this.owner = owner;
         this.onDespawn = onDespawn;
