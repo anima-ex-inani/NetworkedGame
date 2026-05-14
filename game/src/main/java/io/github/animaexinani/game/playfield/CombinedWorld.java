@@ -63,6 +63,9 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             this.physicsWorld.addBody(entity.physicsBody());
         }
 
+        if (!this.entities.containsKey(localPlayerId)) {
+            throw new IllegalArgumentException("Local player ID not found in player entities");
+        }
         this.localPlayerId = Objects.requireNonNull(localPlayerId);
         this.cachedEntityCollection = playerEntities;
     }
