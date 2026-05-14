@@ -52,7 +52,6 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
             body.setLinearDamping(0.0);
             body.setAngularDamping(0.0);
 
-            body.setUserData(new Asteroid(EntityType.ASTEROID, 0, 0, 0, 0));
             return body;
         }
     );
@@ -70,6 +69,7 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
         };
 
         this.physicsBody = ASTEROID_BODY_CREATORS.get(asteroidType).get();
+        this.physicsBody.setUserData(this);
     }
 
     @Override
