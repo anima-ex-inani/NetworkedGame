@@ -16,7 +16,12 @@ public enum EntityType {
     /**
      * The entity refers to an asteroid.
      */
-    ASTEROID;
+    ASTEROID,
+
+    /**
+     * The entity refers to a bullet.
+     */
+    BULLET;
 
     /**
      * Checks if the entity type refers to a player entity.
@@ -44,11 +49,10 @@ public enum EntityType {
 
     /**
      * Checks if the entity type refers to a bullet entity.
-     * @return Currently always returns false until bullets are implemented
+     * @return true if the entity type is BULLET, false otherwise
      */
     public boolean bullet() {
-        // TODO: Change the implementation when bullets are added
-        return false;
+        return this == BULLET;
     }
 
     /**
