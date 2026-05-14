@@ -13,7 +13,8 @@ import io.github.animaexinani.game.nentities.Entity;
 
 /**
  * A client-side representation of the game's playfield.
- * This interface focuses on rendering entities and managing their visual representations.
+ * This interface focuses on rendering entities and managing their visual
+ * representations.
  */
 public interface ClientPlayfield extends Playfield {
     /**
@@ -29,30 +30,36 @@ public interface ClientPlayfield extends Playfield {
      * 
      * @return The local player's entity
      */
-    @NotNull Entity localPlayer();
+    @NotNull
+    Entity localPlayer();
 
     /**
-     * Renders all entities in the playfield that have a registered visual representation.
+     * Renders all entities in the playfield that have a registered visual
+     * representation.
      * 
      * @param renderer The renderer to use for drawing
      */
     void render(@NotNull Renderer renderer);
-    
+
     /**
      * Associates a visual drawable component with an entity's unique identifier.
      * If a visual is already registered for the given ID, it will be overwritten.
      * 
      * @param entityId The UUID of the entity
-     * @param drawable The visual representation to associate with the entity
-     * @return <code>true</code> if the entity's visuals were changed, <code>false</code> otherwise
+     * @param drawable The visual representation to associate with the entity. If
+     *                 null, the entity's visuals will beremoved.
+     * @return <code>true</code> if the entity's visuals were changed,
+     *         <code>false</code> otherwise
      */
     boolean registerVisuals(@NotNull UUID entityId, @Nullable Drawable drawable);
-    
+
     /**
-     * Removes the visual representation associated with an entity's unique identifier.
+     * Removes the visual representation associated with an entity's unique
+     * identifier.
      * 
      * @param entityId The UUID of the entity whose visuals should be removed
-     * @return <code>true</code> if the entity's visuals were changed, <code>false</code> otherwise
+     * @return <code>true</code> if the entity's visuals were changed,
+     *         <code>false</code> otherwise
      */
     boolean removeVisuals(@NotNull UUID entityId);
 }
