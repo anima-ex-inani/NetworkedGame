@@ -2,6 +2,9 @@ package io.github.animaexinani.game.nentities;
 
 import java.util.Set;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a bullet within the game's playfield
  */
@@ -11,7 +14,7 @@ public interface Bullet extends Entity {
      * 
      * @return The bullet's owner
      */
-    Entity owner();
+    @Nullable Entity owner();
 
     /**
      * Gets the damage of this bullet
@@ -26,5 +29,5 @@ public interface Bullet extends Entity {
      * 
      * @return The entity types that this bullet should ignore
      */
-    Set<EntityType> ignoredEntities();
+    @NotNull Set<@NotNull EntityType> ignoredEntities();
 }
