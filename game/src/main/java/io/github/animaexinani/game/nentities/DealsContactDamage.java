@@ -16,6 +16,16 @@ public interface DealsContactDamage extends Entity {
     int contactDamage();
 
     /**
+     * Returns the minimum damage that can be dealt when this entity comes into contact with
+     * another entity.
+     * 
+     * This is used to ensure that even with low impulse, some damage is dealt.
+     * 
+     * @return the minimum damage amount
+     */
+    int minimumContactDamage();
+
+    /**
      * Returns the multiplier for the damage dealt when this entity comes into contact with
      * another entity.
      * 
