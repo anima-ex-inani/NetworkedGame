@@ -97,22 +97,17 @@ public class BasicBullet implements Bullet {
     }
 
     @Override
-    public int contactDamage() {
+    public int damage() {
         return 10_000;
     }
 
     @Override
-    public int minimumContactDamage() {
+    public int minimumDamage() {
         return 1;
     }
 
     @Override
-    public float contactDamageMultiplier(double impulse) {
-        return 1.0f;
-    }
-
-    @Override
-    public boolean dealsContactDamageTo(Damageable target) {
+    public boolean dealsDamageTo(Damageable target) {
         // Bullet deals damage to anything that isn't its owner (if its owner is damageable)
         return target != this.owner;
     }

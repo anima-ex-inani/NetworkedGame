@@ -64,7 +64,7 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
         this.type = asteroidType;
         this.id = UUID.randomUUID();
         this.health = switch (asteroidType) {
-            case EntityType.ASTEROID -> 500_000;
+            case EntityType.ASTEROID -> 50_000;
             default -> 1;
         };
 

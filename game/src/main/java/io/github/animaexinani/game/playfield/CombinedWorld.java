@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.dyn4j.dynamics.PhysicsBody;
 import org.dyn4j.geometry.Vector2;
@@ -23,8 +24,10 @@ import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.game.collision.EntityCollisionListener;
+import io.github.animaexinani.game.collision.BulletDamageContactListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScreenWrappable;
 import io.github.animaexinani.game.nentities.Ship;
@@ -48,8 +51,13 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
     }
 
+    private enum ModificationType { SPAWN, DESPAWN }
+    private record Modification(@NotNull ModificationType type, @Nullable Entity entity, @Nullable UUID id) {}
+
     private final @NotNull Map<@NotNull UUID, @NotNull EntityData> entities;
     private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
+    private final @NotNull Map<@NotNull EntityType, @NotNull Function<@NotNull Entity, @Nullable Drawable>> visualFactories;
+    private final @NotNull List<@NotNull Modification> deferredModifications;
     private final @NotNull UUID localPlayerId;
     private final @NotNull World<PhysicsBody> physicsWorld;
     private final @NotNull SizeF size;
@@ -61,8 +69,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
         this.physicsWorld.addCollisionListener(new EntityCollisionListener());
         this.physicsWorld.addContactListener(new ContactDamageContactListener());
+        this.physicsWorld.addContactListener(new BulletDamageContactListener());
 
         this.entities = new HashMap<>();
+        this.visualFactories = new HashMap<>();
+        this.deferredModifications = new ArrayList<>();
         for (Entity entity : Objects.requireNonNull(playerEntities)) {
             Objects.requireNonNull(entity);
             this.entities.put(entity.id(), new EntityData(entity, null));
@@ -76,6 +87,18 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         this.size = size;
         this.localPlayerId = Objects.requireNonNull(localPlayerId);
         this.cachedEntityCollection = playerEntities;
+    }
+
+    /**
+     * Registers a factory to create visual representations for entities of a given
+     * type when they are spawned.
+     * 
+     * @param type    The entity type to associate with the factory
+     * @param factory The factory function that creates a drawable for an entity
+     */
+    public void registerVisualFactory(@NotNull EntityType type,
+            @NotNull Function<@NotNull Entity, @Nullable Drawable> factory) {
+        this.visualFactories.put(Objects.requireNonNull(type), Objects.requireNonNull(factory));
     }
 
     @Override
@@ -110,40 +133,55 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
      */
     @Override
     public boolean spawnEntity(@NotNull Entity entity) {
+        synchronized (this.deferredModifications) {
+            this.deferredModifications.add(new Modification(ModificationType.SPAWN, entity, null));
+        }
+        return true;
+    }
+
+    @Override
+    public boolean despawnEntity(@NotNull UUID id) {
+        synchronized (this.deferredModifications) {
+            this.deferredModifications.add(new Modification(ModificationType.DESPAWN, null, id));
+        }
+        return true;
+    }
+
+    private void internalSpawnEntity(@NotNull Entity entity) {
         synchronized (this.entities) {
             var id = entity.id();
             var data = this.entities.get(id);
+
+            var visualFactory = this.visualFactories.get(entity.type());
+            Drawable visual = visualFactory == null ? null : visualFactory.apply(entity);
+
             if (data == null) {
                 entity.physicsBody().setUserData(entity);
                 this.physicsWorld.addBody(entity.physicsBody());
-                this.entities.put(id, new EntityData(entity, null));
+                this.entities.put(id, new EntityData(entity, visual));
                 this.cachedEntityCollection = null;
-                return true;
+                return;
             }
 
             if (data.entity == entity) {
-                return false;
+                return;
             }
 
             this.physicsWorld.removeBody(data.entity.physicsBody());
             entity.physicsBody().setUserData(entity);
             this.physicsWorld.addBody(entity.physicsBody());
-            this.entities.put(id, new EntityData(entity, null));
+            this.entities.put(id, new EntityData(entity, visual));
             this.cachedEntityCollection = null;
-            return true;
         }
     }
 
-    @Override
-    public boolean despawnEntity(@NotNull UUID id) {
+    private void internalDespawnEntity(@NotNull UUID id) {
         synchronized (this.entities) {
             var data = this.entities.remove(id);
             if (data != null) {
                 this.physicsWorld.removeBody(data.entity.physicsBody());
                 this.cachedEntityCollection = null;
-                return true;
             }
-            return false;
         }
     }
 
@@ -206,6 +244,16 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
     @Override
     public void preUpdate(Duration delta) {
+        synchronized (this.deferredModifications) {
+            for (var modification : this.deferredModifications) {
+                switch (modification.type) {
+                    case SPAWN -> this.internalSpawnEntity(Objects.requireNonNull(modification.entity));
+                    case DESPAWN -> this.internalDespawnEntity(Objects.requireNonNull(modification.id));
+                }
+            }
+            this.deferredModifications.clear();
+        }
+
         synchronized (this.entities) {
             for (var entityData : this.entities.values()) {
                 entityData.entity.preUpdate(delta);
@@ -248,20 +296,10 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
                 }
             }
 
-            List<UUID> deadEntities = new ArrayList<>();
-
             for (var entityData : this.entities.values()) {
                 entityData.entity.update(delta);
                 if (!entityData.entity.active()) {
-                    deadEntities.add(entityData.entity.id());
-                }
-            }
-
-            for (UUID id : deadEntities) {
-                var data = this.entities.remove(id);
-                if (data != null) {
-                    this.physicsWorld.removeBody(data.entity.physicsBody());
-                    this.cachedEntityCollection = null;
+                    this.despawnEntity(entityData.entity.id());
                 }
             }
         }
