@@ -7,6 +7,14 @@ import java.time.Duration;
  */
 public interface Updatable {
     /**
+     * A function that is called to update the state of the object before the {@link #update}
+     * function has been called.
+     * @param delta The time that has passed since the last update
+     */
+    default void preUpdate(Duration delta) {
+    }
+
+    /**
      * A function that is called to update the state of the object.
      * @param delta The time that has passed since the last update
      */

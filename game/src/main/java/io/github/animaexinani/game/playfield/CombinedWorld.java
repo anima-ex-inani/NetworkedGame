@@ -15,6 +15,8 @@ import org.dyn4j.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import io.github.animaexinani.engine.input.GameAction;
+import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
@@ -23,7 +25,9 @@ import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScreenWrappable;
+import io.github.animaexinani.game.nentities.Ship;
 
 /**
  * A combined client and server-side representation of the game's playfield.
@@ -197,6 +201,38 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             var oldDrawable = data.drawable;
             data.drawable = null;
             return oldDrawable != null;
+        }
+    }
+
+    @Override
+    public void preUpdate(Duration delta) {
+        synchronized (this.entities) {
+            for (var entityData : this.entities.values()) {
+                entityData.entity.preUpdate(delta);
+            }
+        }
+    }
+
+    @Override
+    public void handleInput(@NotNull GameInputListener input, @NotNull Duration delta) {
+        var player = this.localPlayer();
+        var body = player.physicsBody();
+
+        if (input.isHeld(GameAction.MOVE_UP)) {
+            double angle = body.getTransform().getRotationAngle();
+            Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(PlayerShip.THRUST_POWER);
+            body.applyForce(force);
+        }
+        if (input.isHeld(GameAction.MOVE_LEFT)) {
+            body.applyTorque(-PlayerShip.TURN_TORQUE);
+        }
+        if (input.isHeld(GameAction.MOVE_RIGHT)) {
+            body.applyTorque(PlayerShip.TURN_TORQUE);
+        }
+        if (input.isHeld(GameAction.ATTACK)) {
+            if (player instanceof Ship ship) {
+                ship.fireBullet(this);
+            }
         }
     }
 

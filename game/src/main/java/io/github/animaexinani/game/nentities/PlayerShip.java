@@ -31,6 +31,10 @@ public class PlayerShip implements Ship, ScreenWrappable {
     private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(500);
     private final BasicObjectPool<BasicBullet> bulletPool;
 
+    public static final double THRUST_POWER = 750.0;
+    public static final double TURN_TORQUE = 1500.0;
+    public static final double MAX_SPEED = 500.0;
+
     public static final @NotNull Collection<@NotNull PointF> LOCAL_COORDS = List.of(
             new PointF(30.0f, 0.0f),
             new PointF(-15.0f, 15.0f),
@@ -159,6 +163,13 @@ public class PlayerShip implements Ship, ScreenWrappable {
             if (this.fireCooldown.isNegative()) {
                 this.fireCooldown = Duration.ZERO;
             }
+        }
+
+        Vector2 velocity = this.body.getLinearVelocity();
+        if (velocity.getMagnitude() > MAX_SPEED) {
+            velocity.normalize();
+            velocity.multiply(MAX_SPEED);
+            this.body.setLinearVelocity(velocity);
         }
     }
 

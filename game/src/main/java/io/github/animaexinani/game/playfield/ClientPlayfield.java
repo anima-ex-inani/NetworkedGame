@@ -1,10 +1,12 @@
 package io.github.animaexinani.game.playfield;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.game.nentities.Entity;
@@ -14,6 +16,14 @@ import io.github.animaexinani.game.nentities.Entity;
  * This interface focuses on rendering entities and managing their visual representations.
  */
 public interface ClientPlayfield extends Playfield {
+    /**
+     * Handles input for the local player's entity.
+     * 
+     * @param input The input listener to query for held actions
+     * @param delta The time that has passed since the last update
+     */
+    void handleInput(@NotNull GameInputListener input, @NotNull Duration delta);
+
     /**
      * Gets the entity currently controlled by the local player.
      * 
