@@ -153,6 +153,9 @@ public class BasicBullet implements Bullet {
     }
 
     private void despawn() {
+        if (!this.active) {
+            return;
+        }
         if (this.playfield != null) {
             this.playfield.despawnEntity(this.id);
         }
