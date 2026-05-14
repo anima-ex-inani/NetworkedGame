@@ -69,6 +69,9 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
         };
 
         this.physicsBody = ASTEROID_BODY_CREATORS.get(asteroidType).get();
+        this.physicsBody.getTransform().setTranslation(startX, startY);
+        this.physicsBody.setLinearVelocity(velocityX, velocityY);
+        this.physicsBody.setAngularVelocity(Math.random() * 2.0 - 1.0);
         this.physicsBody.setUserData(this);
     }
 

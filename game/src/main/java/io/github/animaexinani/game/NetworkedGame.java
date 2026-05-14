@@ -127,9 +127,6 @@ public final class NetworkedGame extends Application {
 
         // add test asteroid
         var testAsteroid = new Asteroid(EntityType.ASTEROID, 200.0f, 200.0f, 60.0, 30.0);
-        testAsteroid.physicsBody().translate(200.0f, 200.0f);
-        testAsteroid.physicsBody().setLinearVelocity(new Vector2(60.0, 30.0));
-        testAsteroid.physicsBody().setAngularVelocity(Math.random() * 2.0 - 1.0);
         initialEntities.add(testAsteroid);
 
         Random rand = new Random();
@@ -141,9 +138,6 @@ public final class NetworkedGame extends Application {
             double vx = rand.nextDouble() * 100 - 50;
             double vy = rand.nextDouble() * 100 - 50;
             var asteroid = new Asteroid(EntityType.ASTEROID, x, y, vx, vy);
-            asteroid.physicsBody().translate(x, y);
-            asteroid.physicsBody().setLinearVelocity(new Vector2(vx, vy));
-            asteroid.physicsBody().setAngularVelocity(rand.nextDouble() * 2.0 - 1.0);
             initialEntities.add(asteroid);
         }
 
