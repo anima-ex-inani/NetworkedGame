@@ -54,6 +54,104 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     private enum ModificationType { SPAWN, DESPAWN }
     private record Modification(@NotNull ModificationType type, @Nullable Entity entity, @Nullable UUID id) {}
 
+    /**
+     * A builder for creating {@link CombinedWorld} instances.
+     */
+    public static final class Builder {
+        private final @NotNull List<@NotNull Entity> entities = new ArrayList<>();
+        private @Nullable UUID localPlayerId;
+        private @Nullable SizeF size;
+        private final @NotNull Map<@NotNull EntityType, @NotNull Function<@NotNull Entity, @Nullable Drawable>> visualFactories = new HashMap<>();
+
+        /**
+         * Adds an entity to the world.
+         * 
+         * @param entity The entity to add
+         * @return This builder
+         */
+        public @NotNull Builder withEntity(@NotNull Entity entity) {
+            this.entities.add(Objects.requireNonNull(entity));
+            return this;
+        }
+
+        /**
+         * Adds multiple entities to the world.
+         * 
+         * @param entities The entities to add
+         * @return This builder
+         */
+        public @NotNull Builder withEntities(@NotNull Collection<@NotNull Entity> entities) {
+            this.entities.addAll(Objects.requireNonNull(entities));
+            return this;
+        }
+
+        /**
+         * Sets the local player ID.
+         * 
+         * @param localPlayerId The ID of the local player entity
+         * @return This builder
+         */
+        public @NotNull Builder withLocalPlayerId(@NotNull UUID localPlayerId) {
+            this.localPlayerId = Objects.requireNonNull(localPlayerId);
+            return this;
+        }
+
+        /**
+         * Sets the size of the world.
+         * 
+         * @param size The world size
+         * @return This builder
+         */
+        public @NotNull Builder withSize(@NotNull SizeF size) {
+            this.size = Objects.requireNonNull(size);
+            return this;
+        }
+
+        /**
+         * Registers a factory to create visual representations for entities of a given
+         * type.
+         * 
+         * @param type    The entity type
+         * @param factory The factory function
+         * @return This builder
+         */
+        public @NotNull Builder withVisualFactory(@NotNull EntityType type,
+                @NotNull Function<@NotNull Entity, @Nullable Drawable> factory) {
+            this.visualFactories.put(Objects.requireNonNull(type), Objects.requireNonNull(factory));
+            return this;
+        }
+
+        /**
+         * Builds the {@link CombinedWorld} instance.
+         * 
+         * @return The created CombinedWorld
+         * @throws IllegalStateException if required fields are not set
+         */
+        public @NotNull CombinedWorld build() {
+            if (this.localPlayerId == null) {
+                throw new IllegalStateException("Local player ID must be set");
+            }
+            if (this.size == null) {
+                throw new IllegalStateException("Size must be set");
+            }
+
+            var world = new CombinedWorld(this.entities, this.localPlayerId, this.size);
+            this.visualFactories.forEach(world::registerVisualFactory);
+            this.entities.forEach(entity -> {
+                var visualFactory = this.visualFactories.get(entity.type());
+                if (visualFactory == null) {
+                    return;
+                }
+
+                var visual = visualFactory.apply(entity);
+                if (visual != null) {
+                    world.registerVisuals(entity.id(), visual);
+                }
+            });
+            return world;
+        }
+    }
+
     private final @NotNull Map<@NotNull UUID, @NotNull EntityData> entities;
     private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
     private final @NotNull Map<@NotNull EntityType, @NotNull Function<@NotNull Entity, @Nullable Drawable>> visualFactories;
@@ -62,7 +160,8 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     private final @NotNull World<PhysicsBody> physicsWorld;
     private final @NotNull SizeF size;
 
-    public CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId, SizeF size) {
+    private CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId,
+            @NotNull SizeF size) {
         this.physicsWorld = new World<>();
         this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
         this.physicsWorld.getSettings().setMaximumTranslation(150.0);
