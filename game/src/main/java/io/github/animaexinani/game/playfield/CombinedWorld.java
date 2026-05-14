@@ -286,7 +286,7 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
     @Override
     public void update(Duration delta) {
-        this.physicsWorld.update(delta.toMillis() / 1000.0);
+        this.physicsWorld.update(delta.toNanos() / 1_000_000_000.0);
 
         synchronized (this.entities) {
             var bounds = this.size();

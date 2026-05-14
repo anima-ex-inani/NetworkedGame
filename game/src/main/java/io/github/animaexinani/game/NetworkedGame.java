@@ -66,7 +66,7 @@ public final class NetworkedGame extends Application {
         this.accumulator += frameTime;
 
         while (this.accumulator >= TIME_STEP) {
-            Duration dt = Duration.ofMillis((long) (TIME_STEP * 1000));
+            Duration dt = Duration.ofNanos((long) (1_000_000_000L * TIME_STEP));
             
             this.combinedWorld.preUpdate(dt);
             this.combinedWorld.handleInput(this.inputListener, dt);
