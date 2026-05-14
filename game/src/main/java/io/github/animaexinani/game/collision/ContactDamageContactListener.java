@@ -28,12 +28,14 @@ public class ContactDamageContactListener extends ContactListenerAdapter<Physics
 
     private void applyDamageIfApplicable(Entity source, Entity target, double impulse) {
         if (source instanceof DealsContactDamage dealer && target instanceof Damageable damageable) {
-            if (!dealer.entitiesIgnoredForContactDamage().contains(target.type())) {
-                var damage = dealer.contactDamage();
-                damage *= dealer.contactDamageMultiplier(impulse);
-                // Here we can use the impulse data. We apply the damage.
-                damageable.takeDamage(StrictMath.max(damage, dealer.minimumContactDamage()));
+            if (!dealer.dealsContactDamageTo(damageable)) {
+                return;
             }
+
+            var damage = dealer.contactDamage();
+            damage *= dealer.contactDamageMultiplier(impulse);
+            // Here we can use the impulse data. We apply the damage.
+            damageable.takeDamage(StrictMath.max(damage, dealer.minimumContactDamage()));
         }
     }
 }

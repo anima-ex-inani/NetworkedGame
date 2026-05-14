@@ -1,6 +1,6 @@
 package io.github.animaexinani.game.nentities;
 
-public interface Damageable {
+public interface Damageable extends Entity {
     /**
      * Applies damage to this entity
      * 

@@ -1,7 +1,5 @@
 package io.github.animaexinani.game.nentities;
 
-import java.util.Set;
-
 /**
  * Represents an entity that deals damage when it comes into contact with
  * another entity.
@@ -35,10 +33,10 @@ public interface DealsContactDamage extends Entity {
     float contactDamageMultiplier(double impulse);
 
     /**
-     * Returns the set of entity types that this entity should ignore when dealing
-     * contact damage.
+     * Checks if this entity should deal contact damage to the given entity.
      * 
-     * @return the set of entity types to ignore
+     * @param target the entity to check
+     * @return true if this entity should deal contact damage to the given entity, false otherwise
      */
-    Set<EntityType> entitiesIgnoredForContactDamage();
+    boolean dealsContactDamageTo(Damageable target);
 }
