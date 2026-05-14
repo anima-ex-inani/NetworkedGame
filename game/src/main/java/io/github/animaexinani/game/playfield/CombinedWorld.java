@@ -19,9 +19,11 @@ import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
+import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.ScreenWrappable;
 
 /**
  * A combined client and server-side representation of the game's playfield.
@@ -46,8 +48,9 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
     private final @NotNull UUID localPlayerId;
     private final @NotNull World<PhysicsBody> physicsWorld;
+    private final @NotNull SizeF size;
 
-    public CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId) {
+    public CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId, SizeF size) {
         this.physicsWorld = new World<>();
         this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
         this.physicsWorld.getSettings().setMaximumTranslation(150.0);
@@ -66,6 +69,7 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         if (!this.entities.containsKey(localPlayerId)) {
             throw new IllegalArgumentException("Local player ID not found in player entities");
         }
+        this.size = size;
         this.localPlayerId = Objects.requireNonNull(localPlayerId);
         this.cachedEntityCollection = playerEntities;
     }
@@ -88,6 +92,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             var data = this.entities.get(id);
             return data == null ? null : data.entity;
         }
+    }
+
+    @Override
+    public @NotNull SizeF size() {
+        return this.size;
     }
 
     /**
@@ -196,6 +205,13 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         this.physicsWorld.update(delta.toMillis() / 1000.0);
 
         synchronized (this.entities) {
+            var bounds = this.size();
+            for (var entityData : this.entities.values()) {
+                if (entityData.entity instanceof ScreenWrappable wrappable) {
+                    wrappable.wrapToScreen(bounds);
+                }
+            }
+
             List<UUID> deadEntities = new ArrayList<>();
 
             for (var entityData : this.entities.values()) {

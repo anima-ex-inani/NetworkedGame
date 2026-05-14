@@ -1,6 +1,5 @@
 package io.github.animaexinani.game.nentities;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import io.github.animaexinani.engine.point.PointF;
 
-public class Asteroid implements Damageable, DealsContactDamage {
+public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable {
     private static final Collection<PointF> ASTEROID_LOCAL_POINTS = List.of(
             new PointF(20.0f, 0.0f),
             new PointF(10.0f, 15.0f),
@@ -147,11 +146,5 @@ public class Asteroid implements Damageable, DealsContactDamage {
     @Override
     public boolean removeDamageTakenListener(DamageTakenEventListener listener) {
         return this.listeners.remove(listener);
-    }
-
-    @Override
-    public void update(Duration delta) {
-        // TODO: Implement screen wrapping once world bounds are available in the new
-        // system
     }
 }

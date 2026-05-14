@@ -20,7 +20,7 @@ import io.github.animaexinani.engine.pool.PooledObject;
 import io.github.animaexinani.game.playfield.ServerPlayfield;
 import io.github.animaexinani.game.util.UUIDGenerator;
 
-public class PlayerShip implements Ship {
+public class PlayerShip implements Ship, ScreenWrappable {
     private final UUID id;
     private final Body body;
     private int health;
