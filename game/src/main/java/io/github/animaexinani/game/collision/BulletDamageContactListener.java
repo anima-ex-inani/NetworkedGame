@@ -26,10 +26,15 @@ public class BulletDamageContactListener extends ContactListenerAdapter<PhysicsB
 
     private void applyDamageIfApplicable(Entity source, Entity target) {
         if (source instanceof Bullet bullet && target instanceof Damageable damageable) {
-            var damage = bullet.damage();
-            boolean lethal = damageable.takeDamage(damage);
+            if (!bullet.dealsDamageTo(damageable)) {
+                return;
+            }
 
-            bullet.callDamageDealtListeners(damageable, damage, lethal);
+            var damage = bullet.damage();
+            var actualDamage = StrictMath.max(damage, bullet.minimumDamage());
+            boolean lethal = damageable.takeDamage(actualDamage);
+
+            bullet.callDamageDealtListeners(damageable, actualDamage, lethal);
         }
     }
 
