@@ -17,6 +17,12 @@ public interface Entity extends Updatable {
     UUID id();
 
     /**
+     * The type of entity this is.
+     * @return The entity's type
+     */
+    EntityType type();
+
+    /**
      * The physics body associated with this entity
      * @return The entity's physics body
      */
