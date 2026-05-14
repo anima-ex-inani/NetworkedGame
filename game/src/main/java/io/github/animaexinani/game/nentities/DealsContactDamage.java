@@ -16,6 +16,15 @@ public interface DealsContactDamage extends Entity {
     int contactDamage();
 
     /**
+     * Returns the multiplier for the damage dealt when this entity comes into contact with
+     * another entity.
+     * 
+     * @param impulse the impulse of the contact
+     * @return the damage multiplier
+     */
+    float contactDamageMultiplier(double impulse);
+
+    /**
      * Returns the set of entity types that this entity should ignore when dealing
      * contact damage.
      * 
