@@ -150,7 +150,7 @@ public final class NetworkedGame extends Application {
                 .withLocalPlayerId(this.playerShip.id())
                 .withSize(sizeF)
                 .withVisualFactory(EntityType.BULLET, entity -> {
-                    var bulletPoints = new PointF[] {
+                    PointF[] bulletPoints = {
                             new PointF(5.0f, 0.0f),
                             new PointF(-2.0f, 2.5f),
                             new PointF(-2.0f, -2.5f)
@@ -161,9 +161,9 @@ public final class NetworkedGame extends Application {
                     var points = Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new);
                     return new ConvexPolygon(points, new Color(0.6f, 0.6f, 0.6f, 1.0f));
                 })
-                .withVisualFactory(EntityType.PLAYER,
-                        entity -> new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new),
-                                new Color(0.0f, 1.0f, 0.0f, 1.0f)));
+                .withVisualFactory(EntityType.PLAYER, entity -> {
+                    return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN);
+                });
 
         this.combinedWorld = worldBuilder.build();
 
