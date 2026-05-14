@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.input.RebindingController;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
+import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
@@ -155,14 +156,16 @@ public final class NetworkedGame extends Application {
         });
 
         // register visuals
-        var shipVisuals = new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(0.0f, 1.0f, 0.0f, 1.0f));
-        this.combinedWorld.registerVisuals(this.playerShip.id(), shipVisuals);
-
         for (var entity : initialEntities) {
-            if (entity.type().asteroid()) {
-                var asteroidVisuals = new ConvexPolygon(Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new), new Color(0.6f, 0.6f, 0.6f, 1.0f));
-                this.combinedWorld.registerVisuals(entity.id(), asteroidVisuals);
-            }
+            Drawable entityVisuals = switch (entity.type()) {
+                case ASTEROID -> {
+                    var points = Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new);
+                    yield new ConvexPolygon(points, new Color(0.6f, 0.6f, 0.6f, 1.0f));
+                }
+                case PLAYER -> new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(0.0f, 1.0f, 0.0f, 1.0f));
+                default -> throw new IllegalStateException("Unexpected value: " + entity.type());
+            };
+            this.combinedWorld.registerVisuals(entity.id(), entityVisuals);
         }
 
         // actually create the InputSystem object in memory
