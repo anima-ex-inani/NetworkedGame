@@ -1,12 +1,17 @@
 package io.github.animaexinani.game.playfield;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.dyn4j.dynamics.PhysicsBody;
+import org.dyn4j.geometry.Vector2;
+import org.dyn4j.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +19,8 @@ import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
+import io.github.animaexinani.game.collision.ContactDamageCollisionListener;
+import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.nentities.Entity;
 
 /**
@@ -38,12 +45,22 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     private final @NotNull Map<@NotNull UUID, @NotNull EntityData> entities;
     private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
     private final @NotNull UUID localPlayerId;
+    private final @NotNull World<PhysicsBody> physicsWorld;
 
     public CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId) {
+        this.physicsWorld = new World<>();
+        this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
+        this.physicsWorld.getSettings().setMaximumTranslation(150.0);
+        
+        this.physicsWorld.addCollisionListener(new ContactDamageCollisionListener());
+        this.physicsWorld.addContactListener(new ContactDamageContactListener());
+
         this.entities = new HashMap<>();
         for (Entity entity : Objects.requireNonNull(playerEntities)) {
             Objects.requireNonNull(entity);
             this.entities.put(entity.id(), new EntityData(entity, null));
+            entity.physicsBody().setUserData(entity);
+            this.physicsWorld.addBody(entity.physicsBody());
         }
 
         this.localPlayerId = Objects.requireNonNull(localPlayerId);
@@ -76,6 +93,8 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             var id = entity.id();
             var data = this.entities.get(id);
             if (data == null) {
+                entity.physicsBody().setUserData(entity);
+                this.physicsWorld.addBody(entity.physicsBody());
                 this.entities.put(id, new EntityData(entity, null));
                 this.cachedEntityCollection = null;
                 return true;
@@ -85,6 +104,9 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
                 return false;
             }
 
+            this.physicsWorld.removeBody(data.entity.physicsBody());
+            entity.physicsBody().setUserData(entity);
+            this.physicsWorld.addBody(entity.physicsBody());
             this.entities.put(id, new EntityData(entity, null));
             this.cachedEntityCollection = null;
             return true;
@@ -94,18 +116,20 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     @Override
     public boolean despawnEntity(@NotNull UUID id) {
         synchronized (this.entities) {
-            var result = this.entities.remove(id) != null;
-            if (result) {
+            var data = this.entities.remove(id);
+            if (data != null) {
+                this.physicsWorld.removeBody(data.entity.physicsBody());
                 this.cachedEntityCollection = null;
+                return true;
             }
-            return result;
+            return false;
         }
     }
 
     @Override
     public @NotNull Entity localPlayer() {
         EntityData playerData;
-        
+
         synchronized (this.entities) {
             playerData = this.entities.get(this.localPlayerId);
 
@@ -161,9 +185,24 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
     @Override
     public void update(Duration delta) {
+        this.physicsWorld.update(delta.toMillis() / 1000.0);
+
         synchronized (this.entities) {
+            List<UUID> deadEntities = new ArrayList<>();
+
             for (var entityData : this.entities.values()) {
                 entityData.entity.update(delta);
+                if (!entityData.entity.active()) {
+                    deadEntities.add(entityData.entity.id());
+                }
+            }
+
+            for (UUID id : deadEntities) {
+                var data = this.entities.remove(id);
+                if (data != null) {
+                    this.physicsWorld.removeBody(data.entity.physicsBody());
+                    this.cachedEntityCollection = null;
+                }
             }
         }
     }
