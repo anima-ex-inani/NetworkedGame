@@ -24,8 +24,8 @@ public class BasicBullet implements Bullet {
     private Entity owner;
     private ServerPlayfield playfield;
     private Runnable onDespawn;
-    private long timeAliveMs;
-    private long maxLifetimeMs;
+    private Duration timeAlive;
+    private Duration maxLifetime;
     private boolean active;
     private final List<DamageDealtEventListener> damageDealtListeners = new CopyOnWriteArrayList<>();
 
@@ -51,8 +51,8 @@ public class BasicBullet implements Bullet {
         this.playfield = playfield;
         this.owner = owner;
         this.onDespawn = onDespawn;
-        this.timeAliveMs = 0;
-        this.maxLifetimeMs = 2000; // 2 seconds
+        this.timeAlive = Duration.ZERO;
+        this.maxLifetime = Duration.ofSeconds(2); // 2 seconds
         this.active = true;
 
         this.body.getTransform().setTranslation(x, y);
@@ -146,8 +146,8 @@ public class BasicBullet implements Bullet {
             return;
         }
 
-        this.timeAliveMs += delta.toMillis();
-        if (this.timeAliveMs >= this.maxLifetimeMs) {
+        this.timeAlive = this.timeAlive.plus(delta);
+        if (this.timeAlive.compareTo(this.maxLifetime) >= 0) {
             this.despawn();
         }
     }
