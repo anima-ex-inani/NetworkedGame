@@ -40,14 +40,19 @@ public class BasicObjectPool<O> implements ObjectPool<O> {
 
     @Override
     public PooledObject<O> acquire() {
+        PooledObject<O> object = null;
+
         synchronized (this.available) {
             var iterator = this.available.iterator();
             if (iterator.hasNext()) {
-                var object = iterator.next();
+                object = iterator.next();
                 iterator.remove();
-                object.reset();
-                return object;
             }
+        }
+
+        if (object != null) {
+            object.reset();
+            return object;
         }
 
         var newObject = new BasicPooledObject<>(this.supplier.get(), this.resetter);
@@ -76,7 +81,6 @@ public class BasicObjectPool<O> implements ObjectPool<O> {
 
         while (i < count) {
             var newObject = new BasicPooledObject<>(this.supplier.get(), this.resetter);
-            newObject.reset();
             objects.add(newObject);
             i++;
         }
