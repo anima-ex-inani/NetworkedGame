@@ -47,7 +47,7 @@ public interface ClientPlayfield extends Playfield {
      * 
      * @param entityId The UUID of the entity
      * @param drawable The visual representation to associate with the entity. If
-     *                 null, the entity's visuals will beremoved.
+     *                 null, the entity's visuals will be removed.
      * @return <code>true</code> if the entity's visuals were changed,
      *         <code>false</code> otherwise
      */

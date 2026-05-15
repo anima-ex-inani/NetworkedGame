@@ -5,7 +5,7 @@ package io.github.animaexinani.engine.pool;
  */
 public interface PooledObject<O> {
     /**
-     * Gets the underlying object
+     * Gets the underlying object within this instance.
      * 
      * @return The pooled object
      */
