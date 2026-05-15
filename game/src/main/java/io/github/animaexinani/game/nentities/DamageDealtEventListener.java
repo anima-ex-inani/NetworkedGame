@@ -2,6 +2,8 @@ package io.github.animaexinani.game.nentities;
 
 import java.util.EventListener;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * An event listener for when damage is dealt to a target.
  */
@@ -15,5 +17,5 @@ public interface DamageDealtEventListener extends EventListener {
      * @param damage the amount of damage dealt
      * @param lethal whether the damage was lethal
      */
-    void onDamageDealt(Entity source, Damageable target, int damage, boolean lethal);
+    void onDamageDealt(@NotNull Entity source, @NotNull Damageable target, int damage, boolean lethal);
 }
