@@ -394,6 +394,7 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     public void update(Duration delta) {
         this.physicsWorld.update(delta.toNanos() / 1_000_000_000.0);
 
+        List<UUID> toRemove = new ArrayList<>();
         synchronized (this.entities) {
             var bounds = this.size();
             for (var entityData : this.entities.values()) {
@@ -405,9 +406,13 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             for (var entityData : this.entities.values()) {
                 entityData.entity.update(delta);
                 if (!entityData.entity.active()) {
-                    this.despawnEntity(entityData.entity.id());
+                    toRemove.add(entityData.entity.id());
                 }
             }
+        }
+        
+        for (UUID id : toRemove) {
+            this.despawnEntity(id);
         }
     }
 
