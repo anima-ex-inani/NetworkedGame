@@ -5,7 +5,13 @@ public interface Damageable extends Entity {
      * Applies damage to this entity
      * 
      * @param damage The amount of damage to apply
-     * @return <code>true</code> if the entity took lethal damage, <code>false</code> otherwise
+     * @return <code>true</code> if the entity took lethal damage,
+     *         <code>false</code> otherwise
+     * 
+     * @implSpec It is possible for damage to be negative. The behavior in this case
+     *           is implementation-defined.
+     * @implSpec Damage taken listeners should NOT be notified if the entity takes
+     *           non-positive damage.
      */
     boolean takeDamage(int damage);
 

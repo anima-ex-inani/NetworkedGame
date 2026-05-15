@@ -24,7 +24,9 @@ public interface ObjectPool<O> {
      * 
      * @param count The number of objects to acquire
      * @return The acquired objects
+     * @throws IllegalArgumentException if count is negative
      * 
+     * @implSpec If count is 0, an empty collection should be returned.
      * @implSpec Acquired objects should be guaranteed to be in their default state.
      *           The caller must NOT need to call {@link PooledObject#reset()} after
      *           acquiring an object.
