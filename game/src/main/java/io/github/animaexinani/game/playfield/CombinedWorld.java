@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -23,14 +24,13 @@ import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
-import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.collision.BulletDamageContactListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
+import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScreenWrappable;
-import io.github.animaexinani.game.nentities.Ship;
 
 /**
  * A combined client and server-side representation of the game's playfield.
@@ -370,23 +370,12 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     @Override
     public void handleInput(@NotNull GameInputListener input, @NotNull Duration delta) {
         var player = this.localPlayer();
-        var body = player.physicsBody();
-
-        if (input.isHeld(GameAction.MOVE_UP)) {
-            double angle = body.getTransform().getRotationAngle();
-            Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(PlayerShip.THRUST_POWER);
-            body.applyForce(force);
-        }
-        if (input.isHeld(GameAction.MOVE_LEFT)) {
-            body.applyTorque(-PlayerShip.TURN_TORQUE);
-        }
-        if (input.isHeld(GameAction.MOVE_RIGHT)) {
-            body.applyTorque(PlayerShip.TURN_TORQUE);
-        }
-        if (input.isHeld(GameAction.ATTACK)) {
-            if (player instanceof Ship ship) {
-                ship.fireBullet(this);
-            }
+        if (player instanceof PlayerShip ship) {
+            // Grab the keys currently held down on the local keyboard
+            Set<GameAction> heldActions = input.getHeldActions();
+            
+            // Pass them to the ship
+            ship.processActions(heldActions, this); 
         }
     }
 
