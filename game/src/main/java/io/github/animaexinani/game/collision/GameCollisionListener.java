@@ -5,9 +5,9 @@ import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.world.NarrowphaseCollisionData;
 import org.dyn4j.world.listener.CollisionListenerAdapter;
 
-import io.github.animaexinani.game.classes.Asteroid;
-import io.github.animaexinani.game.classes.Bullet;
-import io.github.animaexinani.game.classes.Ship;
+import io.github.animaexinani.game.entities.Asteroid;
+import io.github.animaexinani.game.entities.Bullet;
+import io.github.animaexinani.game.entities.Ship;
 
 public class GameCollisionListener extends CollisionListenerAdapter<Body, BodyFixture> {
     
