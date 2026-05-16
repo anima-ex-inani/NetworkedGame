@@ -3,6 +3,7 @@ package io.github.animaexinani.game.nentities;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,6 +15,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 import org.jetbrains.annotations.NotNull;
 
+import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.pool.BasicObjectPool;
 import io.github.animaexinani.engine.pool.PooledObject;
@@ -218,5 +220,22 @@ public class PlayerShip implements Ship, ScreenWrappable {
 
         playfield.spawnEntity(bullet);
         this.fireCooldown = FIRE_COOLDOWN_RATE;
+    }
+
+    public void processActions(Set<GameAction> actions, ServerPlayfield playfield) {
+        if (actions.contains(GameAction.MOVE_UP)) {
+            double angle = this.body.getTransform().getRotationAngle();
+            Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(THRUST_POWER);
+            this.body.applyForce(force);
+        }
+        if (actions.contains(GameAction.MOVE_LEFT)) {
+            this.body.applyTorque(-TURN_TORQUE);
+        }
+        if (actions.contains(GameAction.MOVE_RIGHT)) {
+            this.body.applyTorque(TURN_TORQUE);
+        }
+        if (actions.contains(GameAction.ATTACK)) {
+            this.fireBullet(playfield);
+        }
     }
 }
