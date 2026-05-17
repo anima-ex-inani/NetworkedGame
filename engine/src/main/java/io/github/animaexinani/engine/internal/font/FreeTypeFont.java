@@ -38,7 +38,10 @@ public class FreeTypeFont implements Font {
         this.size = pixelSize;
 
         FT_Face face = FT_Face.create(faceHandle);
-        FreeType.FT_Set_Pixel_Sizes(face, 0, (int) pixelSize);
+        int setPixelSizesError = FreeType.FT_Set_Pixel_Sizes(face, 0, (int) pixelSize);
+        if (setPixelSizesError != 0) {
+            throw new RuntimeException("Failed to set pixel sizes for font: Error code: " + setPixelSizesError);
+        }
 
         this.lineHeight = (int) (face.size().metrics().height() >> 6);
         this.ascender = (int) (face.size().metrics().ascender() >> 6);
