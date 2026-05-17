@@ -11,7 +11,6 @@ import io.github.animaexinani.engine.assets.AssetKey;
 import io.github.animaexinani.engine.assets.AssetLoader;
 import io.github.animaexinani.engine.assets.AssetLoadingContext;
 import io.github.animaexinani.engine.assets.UnsupportedFormatException;
-import io.github.animaexinani.engine.font.Font;
 import io.github.animaexinani.engine.font.FontFace;
 
 public class FontLoader extends AssetLoader {
@@ -26,11 +25,11 @@ public class FontLoader extends AssetLoader {
 
     @Override
     public <T extends Asset> boolean supports(@NotNull Class<T> type) {
-        return type.equals(Font.class) || type.equals(FontFace.class);
+        return type.equals(FontFace.class);
     }
 
     @SuppressWarnings("unchecked")
-	@Override
+    @Override
     public <T extends Asset> T load(@NotNull AssetKey<T> key, @NotNull AssetLoadingContext context) throws IOException {
         if (!this.supports(key.type())) {
             throw new UnsupportedFormatException("This loader only supports Font and FontFace assets");
@@ -45,7 +44,8 @@ public class FontLoader extends AssetLoader {
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
             buffer.put(bytes).flip();
 
-            // The FreeTypeFontFace will keep a reference to the buffer to prevent it from being GC'd
+            // The FreeTypeFontFace will keep a reference to the buffer to prevent it from
+            // being GC'd
             // while the FreeType library is using it.
             return (T) new FreeTypeFontFace(buffer, this.freetypeLibrary());
         }
