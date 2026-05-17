@@ -1,17 +1,17 @@
 package io.github.animaexinani.engine.font;
 
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
-
-import java.util.Objects;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class Text implements Drawable, Transformable {
     private @NotNull FontFace font;
@@ -21,138 +21,235 @@ public class Text implements Drawable, Transformable {
     private @NotNull Color color;
     private @NotNull String text;
 
+    private @NotNull PointF translation = PointF.ZERO;
+    private @NotNull SizeF scale = SizeF.ONE;
+    private float rotation = 0.0f;
+    private @NotNull PointF pivot = PointF.ZERO;
+
+    private boolean geometryDirty = true;
+    private Font cachedFont;
+    private Vertex[] vertexCache = new Vertex[0];
+
+    public Text(@NotNull FontFace fontFace, @NotNull String text) {
+        this.font = Objects.requireNonNull(fontFace);
+        this.text = Objects.requireNonNull(text);
+        this.fontWeight = FontWeight.NORMAL;
+        this.fontStyle = FontStyle.NORMAL;
+        this.fontSize = 16.0f;
+        this.color = Color.WHITE;
+    }
+
     @NotNull
-    FontFace font() {
+    public FontFace font() {
         return this.font;
     }
 
-    void font(@NotNull FontFace font) {
+    public void font(@NotNull FontFace font) {
         this.font = Objects.requireNonNull(font);
+        this.cachedFont = null;
+        this.geometryDirty = true;
     }
 
     @NotNull
-    FontWeight fontWeight() {
+    public FontWeight fontWeight() {
         return this.fontWeight;
     }
 
-    void fontWeight(@NotNull FontWeight fontWeight) {
+    public void fontWeight(@NotNull FontWeight fontWeight) {
         this.fontWeight = Objects.requireNonNull(fontWeight);
+        this.cachedFont = null;
+        this.geometryDirty = true;
     }
 
     @NotNull
-    FontStyle fontStyle() {
+    public FontStyle fontStyle() {
         return this.fontStyle;
     }
 
-    void fontStyle(@NotNull FontStyle fontStyle) {
+    public void fontStyle(@NotNull FontStyle fontStyle) {
         this.fontStyle = Objects.requireNonNull(fontStyle);
+        this.cachedFont = null;
+        this.geometryDirty = true;
     }
 
-    float fontSize() {
+    public float fontSize() {
         return this.fontSize;
     }
 
-    void fontSize(float fontSize) {
+    public void fontSize(float fontSize) {
         if (!Float.isFinite(fontSize)) {
             throw new IllegalArgumentException("fontSize must be a finite number");
         }
-
         this.fontSize = fontSize;
+        this.cachedFont = null;
+        this.geometryDirty = true;
     }
 
     @NotNull
-    Color color() {
+    public Color color() {
         return this.color;
     }
 
-    void color(@NotNull Color color) {
+    public void color(@NotNull Color color) {
         this.color = Objects.requireNonNull(color);
+        this.geometryDirty = true;
     }
 
     @NotNull
-    String text() {
+    public String text() {
         return this.text;
     }
 
-    void text(@NotNull String text) {
+    public void text(@NotNull String text) {
         this.text = Objects.requireNonNull(text);
+        this.geometryDirty = true;
     }
 
     @Override
     public @NotNull PointF translation() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'translation'");
+        return this.translation;
     }
 
     @Override
     public void translation(@NotNull PointF translation) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'translation'");
+        this.translation = Objects.requireNonNull(translation);
+        this.geometryDirty = true;
     }
 
     @Override
     public float rotation() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'rotation'");
+        return this.rotation;
     }
 
     @Override
     public void rotation(float rotation) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'rotation'");
+        this.rotation = rotation;
+        this.geometryDirty = true;
     }
 
     @Override
     public @NotNull PointF pivot() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'pivot'");
+        return this.pivot;
     }
 
     @Override
     public void pivot(@NotNull PointF pivot) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'pivot'");
+        this.pivot = Objects.requireNonNull(pivot);
+        this.geometryDirty = true;
     }
 
     @Override
     public @NotNull SizeF scale() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'scale'");
+        return this.scale;
     }
 
     @Override
     public void scale(@NotNull SizeF scale) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'scale'");
+        this.scale = Objects.requireNonNull(scale);
+        this.geometryDirty = true;
     }
 
     @Override
     public int indexCount() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'indexCount'");
+        return this.text.length() * 6;
     }
 
     @Override
     public int indexAt(int index) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'indexAt'");
+        if (index < 0 || index >= this.indexCount()) {
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds");
+        }
+        int quad = index / 6;
+        int rem = index % 6;
+        int offset = quad * 4;
+        return switch (rem) {
+            case 0 -> offset;
+            case 1 -> offset + 1;
+            case 2 -> offset + 2;
+            case 3 -> offset + 1;
+            case 4 -> offset + 2;
+            case 5 -> offset + 3;
+            default -> throw new IllegalStateException();
+        };
     }
 
     @Override
     public int vertexCount() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'vertexCount'");
+        this.ensureGeometryUpdated();
+        return this.vertexCache.length;
     }
 
     @Override
     public @NotNull Vertex vertexAt(int index) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'vertexAt'");
+        this.ensureGeometryUpdated();
+        return this.vertexCache[index];
     }
 
     @Override
     public @Nullable Texture texture() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'texture'");
+        this.ensureGeometryUpdated();
+        if (this.cachedFont != null) {
+            return this.cachedFont.texture();
+        }
+        return null;
+    }
+
+    private void ensureGeometryUpdated() {
+        if (!this.geometryDirty) {
+            return;
+        }
+
+        if (this.cachedFont == null) {
+            this.cachedFont = this.font.fontAt(this.fontSize, this.fontWeight, this.fontStyle);
+        }
+
+        var transform = this.transform();
+        int charCount = this.text.length();
+        if (this.vertexCache.length != charCount * 4) {
+            this.vertexCache = new Vertex[charCount * 4];
+        }
+
+        float currentX = 0;
+        float currentY = 0; // Top aligned for now.
+
+        Texture tex = this.cachedFont.texture();
+
+        for (int i = 0; i < charCount; i++) {
+            int codePoint = this.text.codePointAt(i);
+            Glyph glyph = this.cachedFont.glyph(codePoint);
+
+            if (glyph == null) {
+                // If glyph is not loaded, just render nothing and don't advance,
+                // or we could advance by a default space. We'll skip for now.
+                for (int j = 0; j < 4; j++) {
+                    this.vertexCache[i * 4 + j] = new Vertex(PointF.ZERO, new Point(0, 0), this.color);
+                }
+                continue;
+            }
+
+            float x0 = currentX + glyph.xOffset();
+            float y0 = currentY + glyph.yOffset();
+            float x1 = x0 + glyph.width();
+            float y1 = y0 + glyph.height();
+
+            PointF tl = transform.transform(new PointF(x0, y0));
+            PointF tr = transform.transform(new PointF(x1, y0));
+            PointF bl = transform.transform(new PointF(x0, y1));
+            PointF br = transform.transform(new PointF(x1, y1));
+
+            Point uvTL = glyph.textureRect().topLeft();
+            Point uvTR = glyph.textureRect().topRight();
+            Point uvBL = glyph.textureRect().bottomLeft();
+            Point uvBR = glyph.textureRect().bottomRight();
+
+            this.vertexCache[i * 4 + 0] = new Vertex(tl, uvTL, this.color);
+            this.vertexCache[i * 4 + 1] = new Vertex(tr, uvTR, this.color);
+            this.vertexCache[i * 4 + 2] = new Vertex(bl, uvBL, this.color);
+            this.vertexCache[i * 4 + 3] = new Vertex(br, uvBR, this.color);
+
+            currentX += glyph.advance();
+        }
+
+        this.geometryDirty = false;
     }
 }
