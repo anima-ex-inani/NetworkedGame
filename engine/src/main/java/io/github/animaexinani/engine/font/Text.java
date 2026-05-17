@@ -20,6 +20,7 @@ public class Text implements Drawable, Transformable {
     private float fontSize;
     private @NotNull Color color;
     private @NotNull String text;
+    private @NotNull int[] codePoints = new int[0];
     private @NotNull TextOrigin origin = TextOrigin.BASELINE_LEFT;
 
     private @NotNull PointF translation = PointF.ZERO;
@@ -34,6 +35,7 @@ public class Text implements Drawable, Transformable {
     public Text(@NotNull FontFace fontFace, @NotNull String text) {
         this.font = Objects.requireNonNull(fontFace);
         this.text = Objects.requireNonNull(text);
+        this.codePoints = this.text.codePoints().toArray();
         this.fontWeight = FontWeight.NORMAL;
         this.fontStyle = FontStyle.NORMAL;
         this.fontSize = 16.0f;
@@ -106,6 +108,7 @@ public class Text implements Drawable, Transformable {
 
     public void text(@NotNull String text) {
         this.text = Objects.requireNonNull(text);
+        this.codePoints = this.text.codePoints().toArray();
         this.geometryDirty = true;
     }
 
@@ -165,7 +168,7 @@ public class Text implements Drawable, Transformable {
 
     @Override
     public int indexCount() {
-        return this.text.length() * 6;
+        return this.codePoints.length * 6;
     }
 
     @Override
@@ -218,14 +221,14 @@ public class Text implements Drawable, Transformable {
         }
 
         var transform = this.transform();
-        int charCount = this.text.length();
-        if (this.vertexCache.length != charCount * 4) {
-            this.vertexCache = new Vertex[charCount * 4];
+        int cpCount = this.codePoints.length;
+        if (this.vertexCache.length != cpCount * 4) {
+            this.vertexCache = new Vertex[cpCount * 4];
         }
 
         float totalWidth = 0.0f;
-        for (int i = 0; i < charCount; i++) {
-            Glyph glyph = this.cachedFont.glyph(this.text.codePointAt(i));
+        for (int i = 0; i < cpCount; i++) {
+            Glyph glyph = this.cachedFont.glyph(this.codePoints[i]);
             if (glyph != null) {
                 totalWidth += glyph.advance();
             }
@@ -251,8 +254,8 @@ public class Text implements Drawable, Transformable {
         float currentX = offsetX;
         float currentY = offsetY;
 
-        for (int i = 0; i < charCount; i++) {
-            int codePoint = this.text.codePointAt(i);
+        for (int i = 0; i < cpCount; i++) {
+            int codePoint = this.codePoints[i];
             Glyph glyph = this.cachedFont.glyph(codePoint);
 
             if (glyph == null) {
