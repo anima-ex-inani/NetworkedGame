@@ -119,6 +119,10 @@ public final class GPURenderer implements Renderer {
 
         Texture texture = drawable.texture();
         SDL_Texture nativeTexture;
+        if (texture instanceof io.github.animaexinani.engine.texture.LazyTexture lazyTex) {
+            texture = lazyTex.getOrCreateNativeTexture(this);
+        }
+
         if (texture instanceof NativeTexture texture1) {
             nativeTexture = texture1.getBackingTexture();
         } else if (Objects.isNull(texture)) {
