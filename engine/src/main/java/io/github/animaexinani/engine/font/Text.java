@@ -248,8 +248,6 @@ public class Text implements Drawable, Transformable {
         float currentX = offsetX;
         float currentY = offsetY;
 
-        Texture tex = this.cachedFont.texture();
-
         for (int i = 0; i < charCount; i++) {
             int codePoint = this.text.codePointAt(i);
             Glyph glyph = this.cachedFont.glyph(codePoint);
