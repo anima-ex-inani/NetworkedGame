@@ -5,8 +5,8 @@ package io.github.animaexinani.engine.font;
  */
 public record FontWeight(int value) {
     public FontWeight {
-        if (value < 0) {
-            throw new IllegalArgumentException("Weight must be positive");
+        if (value <= 0 || value > 1000) {
+            throw new IllegalArgumentException("Font weight must be between 1 and 1000 (inclusive)");
         }
     }
 
