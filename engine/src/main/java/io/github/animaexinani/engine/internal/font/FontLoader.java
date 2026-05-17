@@ -32,7 +32,7 @@ public class FontLoader extends AssetLoader {
     @Override
     public <T extends Asset> T load(@NotNull AssetKey<T> key, @NotNull AssetLoadingContext context) throws IOException {
         if (!this.supports(key.type())) {
-            throw new UnsupportedFormatException("This loader only supports Font and FontFace assets");
+            throw new UnsupportedFormatException("This loader only supports FontFace assets");
         }
 
         try (var stream = FontLoader.class.getResourceAsStream(key.key())) {
