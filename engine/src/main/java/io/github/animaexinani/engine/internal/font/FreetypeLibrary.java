@@ -58,7 +58,7 @@ public final class FreetypeLibrary implements AutoCloseable {
     
     public FreetypeLibrary() {
         this.nativeState = new NativeState(refCount, libraryHandleBuffer);
-        this.cleanable = GlobalCleaner.register(this, nativeState);
+        this.cleanable = GlobalCleaner.register(this, this.nativeState);
         this.closed = new AtomicBoolean(false);
     }
     
@@ -67,6 +67,6 @@ public final class FreetypeLibrary implements AutoCloseable {
         if (this.closed.getAndSet(true)) {
             return;
         }
-        cleanable.clean();
+        this.cleanable.clean();
     }
 }
