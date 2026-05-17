@@ -29,7 +29,8 @@ public class FontLoader extends AssetLoader {
         return type.equals(Font.class) || type.equals(FontFace.class);
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public <T extends Asset> T load(@NotNull AssetKey<T> key, @NotNull AssetLoadingContext context) throws IOException {
         if (!this.supports(key.type())) {
             throw new UnsupportedFormatException("This loader only supports Font and FontFace assets");
