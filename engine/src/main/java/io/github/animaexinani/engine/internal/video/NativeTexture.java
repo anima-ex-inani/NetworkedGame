@@ -21,7 +21,6 @@ public class NativeTexture implements Texture {
         public void run() {
             this.cleaned.setRelease(true);
             SDLRender.SDL_DestroyTexture(this.texture);
-            this.texture.close();
         }
 
         public NativeState(@NotNull SDL_Texture texture) {
