@@ -17,6 +17,8 @@ import org.lwjgl.util.freetype.FT_GlyphSlot;
 import org.lwjgl.util.freetype.FreeType;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,8 +47,8 @@ public class FreeTypeFont implements Font {
         int atlasWidth = 512;
         int atlasHeight = 512;
         ByteBuffer atlasBuffer = ByteBuffer.allocateDirect(atlasWidth * atlasHeight * 4)
-                .order(java.nio.ByteOrder.nativeOrder());
-        java.nio.IntBuffer atlasIntBuffer = atlasBuffer.asIntBuffer();
+                .order(ByteOrder.nativeOrder());
+        IntBuffer atlasIntBuffer = atlasBuffer.asIntBuffer();
 
         int currentX = 0;
         int currentY = 0;

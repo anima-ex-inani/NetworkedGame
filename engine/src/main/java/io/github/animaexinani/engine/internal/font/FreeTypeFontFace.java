@@ -7,9 +7,11 @@ import io.github.animaexinani.engine.font.FontWeight;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.freetype.FT_Face;
 import org.lwjgl.util.freetype.FreeType;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -26,7 +28,7 @@ public class FreeTypeFontFace implements FontFace, AutoCloseable {
         @Override
         public void run() {
             this.cleaned.setRelease(true);
-            org.lwjgl.util.freetype.FT_Face face = org.lwjgl.util.freetype.FT_Face.create(this.faceHandle);
+            FT_Face face = FT_Face.create(this.faceHandle);
             FreeType.FT_Done_Face(face);
         }
     }
@@ -34,7 +36,7 @@ public class FreeTypeFontFace implements FontFace, AutoCloseable {
     private final FreetypeLibrary library;
     private final ByteBuffer fontData;
     private final NativeState nativeState;
-    private final java.lang.ref.Cleaner.Cleanable cleanable;
+    private final Cleaner.Cleanable cleanable;
 
     public FreeTypeFontFace(@NotNull ByteBuffer fontData, @NotNull FreetypeLibrary library) {
         this.library = library;
