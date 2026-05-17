@@ -22,4 +22,5 @@ module io.github.animaexinani.engine {
     exports io.github.animaexinani.engine.windowing;
     exports io.github.animaexinani.engine.input;
     exports io.github.animaexinani.engine.pool;
+    exports io.github.animaexinani.engine.font;
 }
