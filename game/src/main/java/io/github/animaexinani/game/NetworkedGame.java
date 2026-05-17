@@ -21,6 +21,7 @@ import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.engine.font.Text;
+import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.font.FontFace;
 import io.github.animaexinani.engine.assets.AssetKey;
 
@@ -193,6 +194,7 @@ public final class NetworkedGame extends Application {
             var fontFace = this.assetManager().load(new AssetKey<>(FontFace.class, "/test.ttf")).get();
             this.entityCountText = new Text(fontFace, "Entities: 0");
             this.entityCountText.translation(new PointF(10.0f, 10.0f));
+            this.entityCountText.origin(TextOrigin.TOP_LEFT);
             this.entityCountText.fontSize(24.0f);
             this.entityCountText.color(Color.WHITE);
         } catch (Exception e) {

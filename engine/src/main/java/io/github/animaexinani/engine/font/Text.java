@@ -20,6 +20,7 @@ public class Text implements Drawable, Transformable {
     private float fontSize;
     private @NotNull Color color;
     private @NotNull String text;
+    private @NotNull TextOrigin origin = TextOrigin.BASELINE_LEFT;
 
     private @NotNull PointF translation = PointF.ZERO;
     private @NotNull SizeF scale = SizeF.ONE;
@@ -102,6 +103,16 @@ public class Text implements Drawable, Transformable {
 
     public void text(@NotNull String text) {
         this.text = Objects.requireNonNull(text);
+        this.geometryDirty = true;
+    }
+
+    @NotNull
+    public TextOrigin origin() {
+        return this.origin;
+    }
+
+    public void origin(@NotNull TextOrigin origin) {
+        this.origin = Objects.requireNonNull(origin);
         this.geometryDirty = true;
     }
 
@@ -209,8 +220,33 @@ public class Text implements Drawable, Transformable {
             this.vertexCache = new Vertex[charCount * 4];
         }
 
-        float currentX = 0;
-        float currentY = 0; // Top aligned for now.
+        float totalWidth = 0.0f;
+        for (int i = 0; i < charCount; i++) {
+            Glyph glyph = this.cachedFont.glyph(this.text.codePointAt(i));
+            if (glyph != null) {
+                totalWidth += glyph.advance();
+            }
+        }
+
+        float offsetX = switch (this.origin) {
+            case TOP_LEFT, CENTER_LEFT, BOTTOM_LEFT, BASELINE_LEFT -> 0.0f;
+            case TOP_CENTER, CENTER, BOTTOM_CENTER, BASELINE_CENTER -> -totalWidth / 2.0f;
+            case TOP_RIGHT, CENTER_RIGHT, BOTTOM_RIGHT, BASELINE_RIGHT -> -totalWidth;
+        };
+
+        float ascender = this.cachedFont.ascender();
+        float lineHeight = this.cachedFont.lineHeight();
+        float descender = lineHeight - ascender; // Approximation
+
+        float offsetY = switch (this.origin) {
+            case TOP_LEFT, TOP_CENTER, TOP_RIGHT -> ascender;
+            case CENTER_LEFT, CENTER, CENTER_RIGHT -> ascender - (lineHeight / 2.0f);
+            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> -descender;
+            case BASELINE_LEFT, BASELINE_CENTER, BASELINE_RIGHT -> 0.0f;
+        };
+
+        float currentX = offsetX;
+        float currentY = offsetY;
 
         Texture tex = this.cachedFont.texture();
 
