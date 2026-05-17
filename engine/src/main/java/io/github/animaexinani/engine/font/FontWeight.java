@@ -1,5 +1,7 @@
 package io.github.animaexinani.engine.font;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Font weight record for text rendering.
  */
@@ -10,12 +12,35 @@ public record FontWeight(int value) implements Comparable<FontWeight> {
         }
     }
 
-    public static int compare(FontWeight a, FontWeight b) {
+    /**
+     * Factory method for creating a {@link FontWeight} from an integer value.
+     * 
+     * @param value The weight value.
+     * @return The corresponding predefined {@link FontWeight} if available,
+     *         otherwise a new {@link FontWeight}.
+     */
+    public static @NotNull FontWeight of(int value) {
+        return switch (value) {
+            case 100 -> THIN;
+            case 200 -> EXTRA_LIGHT;
+            case 300 -> LIGHT;
+            case 400 -> BOOK;
+            case 500 -> MEDIUM;
+            case 600 -> SEMI_BOLD;
+            case 700 -> BOLD;
+            case 800 -> EXTRA_BOLD;
+            case 900 -> BLACK;
+            case 950 -> EXTRA_BLACK;
+            default -> new FontWeight(value);
+        };
+    }
+
+    public static int compare(@NotNull FontWeight a, @NotNull FontWeight b) {
         return Integer.compare(a.value, b.value);
     }
 
     @Override
-    public int compareTo(FontWeight o) {
+    public int compareTo(@NotNull FontWeight o) {
         return FontWeight.compare(this, o);
     }
 
