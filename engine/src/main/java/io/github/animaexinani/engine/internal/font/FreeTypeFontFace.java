@@ -33,10 +33,13 @@ public class FreeTypeFontFace implements FontFace, AutoCloseable {
         }
     }
 
+    @SuppressWarnings("unused") // Required to ensure that the font data outlives the FT_Face handle.
+    private final ByteBuffer fontData;
     private final NativeState nativeState;
     private final Cleaner.Cleanable cleanable;
 
     public FreeTypeFontFace(@NotNull ByteBuffer fontData, @NotNull FreetypeLibrary library) {
+        this.fontData = fontData;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer aface = stack.mallocPointer(1);
             int err = FreeType.FT_New_Memory_Face(library.libraryHandle(), fontData, 0, aface);
