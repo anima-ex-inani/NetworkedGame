@@ -3,11 +3,20 @@ package io.github.animaexinani.engine.font;
 /**
  * Font weight record for text rendering.
  */
-public record FontWeight(int value) {
+public record FontWeight(int value) implements Comparable<FontWeight> {
     public FontWeight {
         if (value <= 0 || value > 1000) {
             throw new IllegalArgumentException("Font weight must be between 1 and 1000 (inclusive)");
         }
+    }
+
+    public static int compare(FontWeight a, FontWeight b) {
+        return Integer.compare(a.value, b.value);
+    }
+
+    @Override
+    public int compareTo(FontWeight o) {
+        return FontWeight.compare(this, o);
     }
 
     /**
