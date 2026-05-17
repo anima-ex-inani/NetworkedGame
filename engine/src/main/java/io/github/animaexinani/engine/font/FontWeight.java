@@ -23,12 +23,12 @@ public record FontWeight(int value) {
     /**
      * Weight 200 - Extra Light/Ultra Light
      */
-    public static final FontWeight EXTRALIGHT = new FontWeight(200);
+    public static final FontWeight EXTRA_LIGHT = new FontWeight(200);
 
     /**
      * Weight 200 - Extra Light/Ultra Light
      */
-    public static final FontWeight ULTRALIGHT = FontWeight.EXTRALIGHT;
+    public static final FontWeight ULTRA_LIGHT = FontWeight.EXTRA_LIGHT;
 
     /**
      * Weight 300 - Light
@@ -58,7 +58,7 @@ public record FontWeight(int value) {
     /**
      * Weight 600 - Semi Bold
      */
-    public static final FontWeight SEMIBOLD = new FontWeight(600);
+    public static final FontWeight SEMI_BOLD = new FontWeight(600);
 
     /**
      * Weight 700 - Bold
@@ -68,12 +68,12 @@ public record FontWeight(int value) {
     /**
      * Weight 800 - Extra Bold/Ultra Bold
      */
-    public static final FontWeight EXTRABOLD = new FontWeight(800);
+    public static final FontWeight EXTRA_BOLD = new FontWeight(800);
 
     /**
      * Weight 800 - Extra Bold/Ultra Bold
      */
-    public static final FontWeight ULTRABOLD = FontWeight.EXTRABOLD;
+    public static final FontWeight ULTRA_BOLD = FontWeight.EXTRA_BOLD;
 
     /**
      * Weight 900 - Black/Heavy/Poster
@@ -93,10 +93,10 @@ public record FontWeight(int value) {
     /**
      * Weight 950 - Extra Black/Ultra Black
      */
-    public static final FontWeight EXTRABLACK = new FontWeight(950);
+    public static final FontWeight EXTRA_BLACK = new FontWeight(950);
 
     /**
      * Weight 950 - Extra Black/Ultra Black
      */
-    public static final FontWeight ULTRABLACK = FontWeight.EXTRABLACK;
+    public static final FontWeight ULTRA_BLACK = FontWeight.EXTRA_BLACK;
 }
