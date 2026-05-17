@@ -8,6 +8,7 @@ import io.github.animaexinani.engine.assets.AssetManager;
 import io.github.animaexinani.engine.audio.AudioSystem;
 import io.github.animaexinani.engine.internal.assets.AssetManagerImpl;
 import io.github.animaexinani.engine.internal.audio.NativeAudioSystem;
+import io.github.animaexinani.engine.internal.font.FontLoader;
 import io.github.animaexinani.engine.windowing.WindowFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -173,6 +174,8 @@ public abstract class Application implements AutoCloseable, Runnable {
         this.eventDispatcher = new EventDispatcher();
 
         this.running = new AtomicBoolean(false);
+
+        this.assetManager().registerLoader(new FontLoader());
     }
 
     /**
