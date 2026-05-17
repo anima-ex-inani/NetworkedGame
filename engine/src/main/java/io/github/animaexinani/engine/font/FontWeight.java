@@ -4,6 +4,12 @@ package io.github.animaexinani.engine.font;
  * Font weight record for text rendering.
  */
 public record FontWeight(int value) {
+    public FontWeight {
+        if (value < 0) {
+            throw new IllegalArgumentException("Weight must be positive");
+        }
+    }
+
     /**
      * Weight 100 - Thin/Hairline
      */

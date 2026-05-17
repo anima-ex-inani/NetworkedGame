@@ -81,6 +81,9 @@ public class Text implements Drawable, Transformable {
         if (!Float.isFinite(fontSize)) {
             throw new IllegalArgumentException("fontSize must be a finite number");
         }
+        if (fontSize < 0) {
+            throw new IllegalArgumentException("Font size must be non-negative");
+        }
         this.fontSize = fontSize;
         this.cachedFont = null;
         this.geometryDirty = true;
