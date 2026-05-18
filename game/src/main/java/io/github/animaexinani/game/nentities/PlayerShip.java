@@ -225,7 +225,9 @@ public class PlayerShip implements Ship, ScreenWrappable {
     public void processActions(Set<GameAction> actions, ServerPlayfield playfield) {
         if (actions.contains(GameAction.MOVE_UP)) {
             double angle = this.body.getTransform().getRotationAngle();
-            Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(THRUST_POWER);
+            double forceX = StrictMath.cos(angle) * THRUST_POWER;
+            double forceY = StrictMath.sin(angle) * THRUST_POWER;
+            Vector2 force = new Vector2(forceX, forceY);
             this.body.applyForce(force);
         }
         if (actions.contains(GameAction.MOVE_LEFT)) {
