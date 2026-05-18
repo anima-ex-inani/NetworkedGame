@@ -1,5 +1,6 @@
 package io.github.animaexinani.engine.rendering.drawable;
 
+import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
 import org.jetbrains.annotations.NotNull;
@@ -28,11 +29,16 @@ public final class Geometry implements Drawable {
     // --- Drawable ---
 
     @Override
+    public void draw(@NotNull RenderContext context) {
+        context.renderGeometry(this.vertices, this.indices, this.texture);
+    }
+
+    // --- Getters ---
+
     public int vertexCount() {
         return this.vertices.length;
     }
 
-    @Override
     public @NotNull Vertex vertexAt(int index) {
         if (index < 0 || index >= this.vertices.length) {
             throw new IndexOutOfBoundsException(
@@ -41,12 +47,10 @@ public final class Geometry implements Drawable {
         return this.vertices[index];
     }
 
-    @Override
     public int indexCount() {
         return this.indices.length;
     }
 
-    @Override
     public int indexAt(int index) {
         if (index < 0 || index >= this.indices.length) {
             throw new IndexOutOfBoundsException(
@@ -55,7 +59,6 @@ public final class Geometry implements Drawable {
         return this.indices[index];
     }
 
-    @Override
     public @Nullable Texture texture() {
         return this.texture;
     }

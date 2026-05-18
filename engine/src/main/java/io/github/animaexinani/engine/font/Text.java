@@ -3,6 +3,7 @@ package io.github.animaexinani.engine.font;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
+import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
@@ -31,6 +32,7 @@ public class Text implements Drawable, Transformable {
     private boolean geometryDirty = true;
     private Font cachedFont;
     private Vertex[] vertexCache = new Vertex[0];
+    private int[] indexCache = new int[0];
 
     public Text(@NotNull FontFace fontFace, @NotNull String text) {
         this.font = Objects.requireNonNull(fontFace);
@@ -166,12 +168,22 @@ public class Text implements Drawable, Transformable {
         this.geometryDirty = true;
     }
 
+    // --- Drawable ---
+
     @Override
+    public void draw(@NotNull RenderContext context) {
+        this.ensureGeometryUpdated();
+        Texture texture = null;
+        if (this.cachedFont != null) {
+            texture = this.cachedFont.texture();
+        }
+        context.renderGeometry(this.vertexCache, this.indexCache, texture);
+    }
+
     public int indexCount() {
         return this.codePoints.length * 6;
     }
 
-    @Override
     public int indexAt(int index) {
         if (index < 0 || index >= this.indexCount()) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds");
@@ -190,19 +202,16 @@ public class Text implements Drawable, Transformable {
         };
     }
 
-    @Override
     public int vertexCount() {
         this.ensureGeometryUpdated();
         return this.vertexCache.length;
     }
 
-    @Override
     public @NotNull Vertex vertexAt(int index) {
         this.ensureGeometryUpdated();
         return this.vertexCache[index];
     }
 
-    @Override
     public @Nullable Texture texture() {
         this.ensureGeometryUpdated();
         if (this.cachedFont != null) {
@@ -224,6 +233,20 @@ public class Text implements Drawable, Transformable {
         int cpCount = this.codePoints.length;
         if (this.vertexCache.length != cpCount * 4) {
             this.vertexCache = new Vertex[cpCount * 4];
+        }
+
+        if (this.indexCache.length != cpCount * 6) {
+            this.indexCache = new int[cpCount * 6];
+            for (int i = 0; i < cpCount; i++) {
+                int offset = i * 4;
+                int idx = i * 6;
+                this.indexCache[idx] = offset;
+                this.indexCache[idx + 1] = offset + 1;
+                this.indexCache[idx + 2] = offset + 2;
+                this.indexCache[idx + 3] = offset + 1;
+                this.indexCache[idx + 4] = offset + 2;
+                this.indexCache[idx + 5] = offset + 3;
+            }
         }
 
         float totalWidth = 0.0f;

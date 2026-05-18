@@ -1,16 +1,17 @@
 package io.github.animaexinani.engine.rendering.drawable;
 
-import java.util.Objects;
-
-import org.jetbrains.annotations.NotNull;
-
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
+import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.vertex.Vertex;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class ConvexPolygon implements Drawable, Transformable {
     private @NotNull PointF translation = PointF.ZERO;
@@ -37,6 +38,13 @@ public class ConvexPolygon implements Drawable, Transformable {
         }
     }
 
+    // --- Drawable ---
+
+    @Override
+    public void draw(@NotNull RenderContext context) {
+        context.renderGeometry(this.vertices(), this.indices, null);
+    }
+
     public @NotNull Vertex @NotNull [] vertices() {
         // 4. Null-check to see if we need to regenerate the vertices
         if (this.vertexCache == null) {
@@ -56,22 +64,18 @@ public class ConvexPolygon implements Drawable, Transformable {
     }
 
 
-    @Override
     public int indexCount() {
         return this.indices.length;
     }
 
-    @Override
     public int indexAt(int index) {
         return this.indices[index];
     }
 
-    @Override
     public int vertexCount() {
         return this.vertices().length;
     }
 
-    @Override
     public @NotNull Vertex vertexAt(int index) {
         return this.vertices()[index];
     }
@@ -80,8 +84,7 @@ public class ConvexPolygon implements Drawable, Transformable {
         return this.indices;
     }
 
-    @Override
-    public Texture texture() {
+    public @Nullable Texture texture() {
         return null;
     }
 

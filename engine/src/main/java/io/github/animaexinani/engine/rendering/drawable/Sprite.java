@@ -3,6 +3,7 @@ package io.github.animaexinani.engine.rendering.drawable;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rectangle.Rect;
+import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.Texture;
@@ -60,18 +61,15 @@ public class Sprite implements Drawable, Transformable {
         this.vertexCacheDirty = true;
     }
 
+    // --- Drawable ---
+
     @Override
-    public int vertexCount() {
-        return this.vertexCache.length;
+    public void draw(@NotNull RenderContext context) {
+        this.updateVertexCache();
+        context.renderGeometry(this.vertexCache, Sprite.INDICES, this.texture);
     }
 
-    @Override
-    public @NotNull Vertex vertexAt(int index) {
-        if (index < 0 || index >= this.vertexCache.length) {
-            throw new IndexOutOfBoundsException(
-                    "Vertex index " + index + " out of bounds for length " + this.vertexCache.length);
-        }
-
+    private void updateVertexCache() {
         if (this.vertexCacheDirty) {
             var currentTransform = this.transform();
 
@@ -87,16 +85,27 @@ public class Sprite implements Drawable, Transformable {
 
             this.vertexCacheDirty = false;
         }
+    }
+
+    public int vertexCount() {
+        return this.vertexCache.length;
+    }
+
+    public @NotNull Vertex vertexAt(int index) {
+        if (index < 0 || index >= this.vertexCache.length) {
+            throw new IndexOutOfBoundsException(
+                    "Vertex index " + index + " out of bounds for length " + this.vertexCache.length);
+        }
+
+        this.updateVertexCache();
 
         return this.vertexCache[index];
     }
 
-    @Override
     public int indexCount() {
         return Sprite.INDICES.length;
     }
 
-    @Override
     public int indexAt(int index) {
         if (index < 0 || index >= Sprite.INDICES.length) {
             throw new IndexOutOfBoundsException(
@@ -110,7 +119,6 @@ public class Sprite implements Drawable, Transformable {
      *
      * @return The texture.
      */
-    @Override
     public @NotNull Texture texture() {
         return this.texture;
     }
