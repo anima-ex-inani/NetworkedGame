@@ -99,9 +99,19 @@ public class GameServer {
 
     private void processInputs() {
         long now = System.nanoTime();
+        var iter = clientInputs.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            long age = now - entry.getValue().lastSeenNanos;
 
-        for (var entry : clientInputs.entrySet()) {
-            if (now - entry.getValue().lastSeenNanos > 200_000_000L) {
+            // Remove entries stale for more than 5 seconds (disconnected players)
+            if (age > 5_000_000_000L) {
+                iter.remove();
+                continue;
+            }
+
+            // Skip processing inputs older than 200ms
+            if (age > 200_000_000L) {
                 continue;
             }
 
@@ -129,7 +139,7 @@ public class GameServer {
                 bb.putFloat((float) t.getTranslationX());
                 bb.putFloat((float) t.getTranslationY());
                 bb.putFloat((float) t.getRotationAngle());
-                bb.putInt(100);
+                bb.putInt(100); // fixed for now but should be hp of entity.
             }
 
             byte[] data = Arrays.copyOf(bb.array(), bb.position());

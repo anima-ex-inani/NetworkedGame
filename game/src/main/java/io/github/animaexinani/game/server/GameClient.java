@@ -65,6 +65,13 @@ public class GameClient {
                 for (int i = 0; i < count; i++) {
                     UUID id = new UUID(bb.getLong(), bb.getLong());
                     int typeOrdinal = bb.getInt();
+                    
+                    var entityTypes = io.github.animaexinani.game.nentities.EntityType.values();
+                    if (typeOrdinal < 0 || typeOrdinal >= entityTypes.length) {
+                        LOGGER.warning("Invalid entity type ordinal: " + typeOrdinal);
+                        continue;
+                    }
+
                     float x = bb.getFloat();
                     float y = bb.getFloat();
                     float rot = bb.getFloat();
@@ -72,7 +79,7 @@ public class GameClient {
 
                     var snap = new EntitySnapshot(
                             id,
-                            io.github.animaexinani.game.nentities.EntityType.values()[typeOrdinal],
+                            entityTypes[typeOrdinal],
                             x, y, rot, health
                     );
 
