@@ -1,34 +1,31 @@
 package io.github.animaexinani.game;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import io.github.animaexinani.engine.Application;
 import io.github.animaexinani.engine.ApplicationOptions;
 import io.github.animaexinani.engine.color.Color;
-import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.input.InputBindings;
 import io.github.animaexinani.engine.input.RebindingController;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
-import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
 import io.github.animaexinani.game.nentities.Asteroid;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.EntitySnapshot;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
-
-import org.dyn4j.geometry.Vector2;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import io.github.animaexinani.game.server.GameClient;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
@@ -36,6 +33,7 @@ public final class NetworkedGame extends Application {
 
     // master world manager
     private final CombinedWorld combinedWorld;
+    private final GameClient gameClient;
     // keep a direct reference to the player's ship specifically so we can route
     // keyboard inputs to it
     private final PlayerShip playerShip;
@@ -58,35 +56,55 @@ public final class NetworkedGame extends Application {
     @Override
     protected boolean iterate() {
         long currentTime = System.nanoTime();
-        // divide by 1 billion to convert nanoseconds to seconds
         float frameTime = (currentTime - this.lastTime) / 1_000_000_000.0f;
         this.lastTime = currentTime;
 
-        // prevent the "Spiral of Death" if the window is dragged or minimized
-        if (frameTime > 0.25f)
-            frameTime = 0.25f;
-
-        // pour that time into our bucket
+        if (frameTime > 0.25f) frameTime = 0.25f;
         this.accumulator += frameTime;
 
+        // network/physics loop
         while (this.accumulator >= TIME_STEP) {
-            Duration dt = Duration.ofNanos((long) (1_000_000_000L * TIME_STEP));
+            // client send inputs to the server
+            this.gameClient.sendInputs();
 
-            this.combinedWorld.preUpdate(dt);
-            this.combinedWorld.handleInput(this.inputListener, dt);
-            this.combinedWorld.update(dt);
-            this.combinedWorld.postUpdate(dt);
+            // temporary server simulation bridge: To be replaced by a networking library
+            
+            // step the physics engine forward
+            java.time.Duration tickDuration = java.time.Duration.ofNanos((long)(TIME_STEP * 1_000_000_000.0));
+            this.combinedWorld.preUpdate(tickDuration);
+            this.combinedWorld.handleInput(this.inputListener, tickDuration); // Temporarily route local inputs to physics
+            this.combinedWorld.update(tickDuration);
+            this.combinedWorld.postUpdate(tickDuration);
 
-            // remove one tick's worth of time from the bucket
+            // server generates a snapshot of the new physics coordinates
+            List<EntitySnapshot> snapshots = new ArrayList<>();
+            for (Entity entity : this.combinedWorld.entities()) {
+                var transform = entity.physicsBody().getTransform();
+                snapshots.add(new EntitySnapshot(
+                    entity.id(),
+                    entity.type(),
+                    (float) transform.getTranslationX(),
+                    (float) transform.getTranslationY(),
+                    (float) transform.getRotationAngle(),
+                    100 // dummy health
+                ));
+            }
+
+            // network delivers the snapshot to the client
+            this.gameClient.onSnapshotReceived(snapshots);
             this.accumulator -= TIME_STEP;
         }
 
-        // the Render Loop
+        // renderloop
+        // move our visual shapes to match the last server snapshot
+        this.combinedWorld.interpolateVisuals(frameTime);
+
+        // draw to the screen
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
-
+        
         this.combinedWorld.render(renderer);
-
+        
         renderer.present();
         return true;
     }
@@ -179,6 +197,7 @@ public final class NetworkedGame extends Application {
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
 
         // reset the clock right before the constructor finishes!
+        this.gameClient = new GameClient(this.combinedWorld, this.inputListener, this.playerShip.id());
         this.lastTime = System.nanoTime();
     }
 }

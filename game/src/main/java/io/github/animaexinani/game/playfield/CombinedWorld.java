@@ -28,6 +28,7 @@ import io.github.animaexinani.game.collision.BulletDamageContactListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.EntitySnapshot;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScreenWrappable;
@@ -44,6 +45,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     static final class EntityData {
         private final @NotNull Entity entity;
         private @Nullable Drawable drawable;
+
+        // interpolation variables
+        public float targetX = 0f;
+        public float targetY = 0f;
+        public float targetRotation = 0f;
 
         public EntityData(@NotNull Entity entity, @Nullable Drawable drawable) {
             this.entity = Objects.requireNonNull(entity);
@@ -287,6 +293,33 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             if (data != null) {
                 this.physicsWorld.removeBody(data.entity.physicsBody());
                 this.cachedEntityCollection = null;
+            }
+        }
+    }
+
+    public void updateEntityTarget(EntitySnapshot snap) {
+        synchronized (this.entities) {
+            var data = this.entities.get(snap.id);
+            if (data != null) {
+                data.targetX = snap.x;
+                data.targetY = snap.y;
+                data.targetRotation = snap.rotation;
+            }
+        }
+    }
+
+    // A simple Lerp function
+    float lerp(float current, float target, float speed) {
+        return current + (target - current) * speed;
+    }
+
+    // Inside CombinedWorld's new interpolation method:
+    public void interpolateVisuals(float frameTime) {
+        for (var entityData : this.entities.values()) {
+            if (entityData.drawable instanceof Transformable t) {
+                float newX = lerp(t.translation().x(), entityData.targetX, 0.3f);
+                float newY = lerp(t.translation().y(), entityData.targetY, 0.3f);
+                t.translation(new PointF(newX, newY));
             }
         }
     }
