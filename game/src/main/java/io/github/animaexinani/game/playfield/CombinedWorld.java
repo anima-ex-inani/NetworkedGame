@@ -299,11 +299,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
     public void updateEntityTarget(EntitySnapshot snap) {
         synchronized (this.entities) {
-            var data = this.entities.get(snap.id);
+            var data = this.entities.get(snap.id());
             if (data != null) {
-                data.targetX = snap.x;
-                data.targetY = snap.y;
-                data.targetRotation = snap.rotation;
+                data.targetX = snap.x();
+                data.targetY = snap.y();
+                data.targetRotation = snap.rotation();
             }
         }
     }
