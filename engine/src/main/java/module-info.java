@@ -1,7 +1,8 @@
 module io.github.animaexinani.engine {
     requires org.lwjgl;
     requires org.lwjgl.sdl;
-    
+    requires org.lwjgl.freetype;
+
     requires transitive org.jetbrains.annotations;
     exports io.github.animaexinani.engine;
     exports io.github.animaexinani.engine.audio;
@@ -21,4 +22,5 @@ module io.github.animaexinani.engine {
     exports io.github.animaexinani.engine.windowing;
     exports io.github.animaexinani.engine.input;
     exports io.github.animaexinani.engine.pool;
+    exports io.github.animaexinani.engine.font;
 }

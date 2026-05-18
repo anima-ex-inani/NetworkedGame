@@ -20,6 +20,10 @@ import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
+import io.github.animaexinani.engine.font.Text;
+import io.github.animaexinani.engine.font.TextOrigin;
+import io.github.animaexinani.engine.font.FontFace;
+import io.github.animaexinani.engine.assets.AssetKey;
 
 import org.dyn4j.geometry.Vector2;
 
@@ -55,6 +59,8 @@ public final class NetworkedGame extends Application {
     // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
 
+    private Text entityCountText;
+
     @Override
     protected boolean iterate() {
         long currentTime = System.nanoTime();
@@ -86,6 +92,12 @@ public final class NetworkedGame extends Application {
         renderer.clear(Color.BLACK);
 
         this.combinedWorld.render(renderer);
+
+        if (this.entityCountText != null) {
+            int count = this.combinedWorld.entities().size();
+            this.entityCountText.text("Entities: " + count);
+            renderer.draw(this.entityCountText);
+        }
 
         renderer.present();
         return true;
@@ -177,6 +189,17 @@ public final class NetworkedGame extends Application {
         // tell the engine to send key presses to the inputSystem, not 'this'
         this.eventRegistry().register(KeyboardListener.class, this.inputListener);
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
+
+        try {
+            var fontFace = this.assetManager().load(new AssetKey<>(FontFace.class, "/test.ttf")).get();
+            this.entityCountText = new Text(fontFace, "Entities: 0");
+            this.entityCountText.translation(new PointF(10.0f, 10.0f));
+            this.entityCountText.origin(TextOrigin.TOP_LEFT);
+            this.entityCountText.fontSize(24.0f);
+            this.entityCountText.color(Color.WHITE);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to load test.ttf font", e);
+        }
 
         // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();

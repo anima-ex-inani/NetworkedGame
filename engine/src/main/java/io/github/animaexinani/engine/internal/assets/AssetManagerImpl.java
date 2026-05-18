@@ -13,7 +13,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class AssetManagerImpl extends AssetManager {
-    private final ExecutorService assetLoadingExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService assetLoadingExecutor = Executors.newCachedThreadPool(runnable -> {
+        var thread = new Thread(runnable);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final Map<@NotNull AssetKey<? extends Asset>, @NotNull CompletableFuture<? extends Asset>> pendingAssetLoads = new ConcurrentHashMap<>();
 

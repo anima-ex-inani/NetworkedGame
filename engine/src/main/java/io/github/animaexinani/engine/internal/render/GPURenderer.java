@@ -8,6 +8,7 @@ import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.Size;
+import io.github.animaexinani.engine.texture.LazyTexture;
 import io.github.animaexinani.engine.texture.PixelFormat;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.texture.TextureCreationException;
@@ -119,6 +120,10 @@ public final class GPURenderer implements Renderer {
 
         Texture texture = drawable.texture();
         SDL_Texture nativeTexture;
+        if (texture instanceof LazyTexture lazyTex) {
+            texture = lazyTex.getOrCreateNativeTexture(this);
+        }
+
         if (texture instanceof NativeTexture texture1) {
             nativeTexture = texture1.getBackingTexture();
         } else if (Objects.isNull(texture)) {
