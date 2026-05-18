@@ -21,11 +21,11 @@ import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
 import io.github.animaexinani.game.nentities.Asteroid;
 import io.github.animaexinani.game.nentities.Entity;
-import io.github.animaexinani.game.nentities.EntitySnapshot;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.game.server.GameClient;
+import io.github.animaexinani.game.server.GameServer;
 
 public final class NetworkedGame extends Application {
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
@@ -34,6 +34,8 @@ public final class NetworkedGame extends Application {
     // master world manager
     private final CombinedWorld combinedWorld;
     private final GameClient gameClient;
+    private final GameServer gameServer; // Authoritative network server instance
+    
     // keep a direct reference to the player's ship specifically so we can route
     // keyboard inputs to it
     private final PlayerShip playerShip;
@@ -48,8 +50,6 @@ public final class NetworkedGame extends Application {
     private long lastTime = 0;
     private double accumulator = 0.0;
 
-    // // 20 Ticks Per Second = 0.05 seconds per tick
-    // private static final double TIME_STEP = 1.0 / 20.0;
     // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
 
@@ -64,39 +64,13 @@ public final class NetworkedGame extends Application {
 
         // network/physics loop
         while (this.accumulator >= TIME_STEP) {
-            // client send inputs to the server
+            // client sends inputs to the UDP server asynchronously
             this.gameClient.sendInputs();
-
-            // temporary server simulation bridge: To be replaced by a networking library
-            
-            // step the physics engine forward
-            java.time.Duration tickDuration = java.time.Duration.ofNanos((long)(TIME_STEP * 1_000_000_000.0));
-            this.combinedWorld.preUpdate(tickDuration);
-            this.combinedWorld.handleInput(this.inputListener, tickDuration); // Temporarily route local inputs to physics
-            this.combinedWorld.update(tickDuration);
-            this.combinedWorld.postUpdate(tickDuration);
-
-            // server generates a snapshot of the new physics coordinates
-            List<EntitySnapshot> snapshots = new ArrayList<>();
-            for (Entity entity : this.combinedWorld.entities()) {
-                var transform = entity.physicsBody().getTransform();
-                snapshots.add(new EntitySnapshot(
-                    entity.id(),
-                    entity.type(),
-                    (float) transform.getTranslationX(),
-                    (float) transform.getTranslationY(),
-                    (float) transform.getRotationAngle(),
-                    100 // dummy health
-                ));
-            }
-
-            // network delivers the snapshot to the client
-            this.gameClient.onSnapshotReceived(snapshots);
             this.accumulator -= TIME_STEP;
         }
 
         // renderloop
-        // move our visual shapes to match the last server snapshot
+        // move our visual shapes to match the last server snapshot via the last server
         this.combinedWorld.interpolateVisuals(frameTime);
 
         // draw to the screen
@@ -111,6 +85,14 @@ public final class NetworkedGame extends Application {
 
     @Override
     public void close() {
+        // Shutdown network hooks and background execution loops
+        if (this.gameServer != null) {
+            this.gameServer.stop();
+        }
+        if (this.gameClient != null) {
+            this.gameClient.stop();
+        }
+
         try {
             this.mainWindow.close();
         } catch (Exception e) {
@@ -196,8 +178,15 @@ public final class NetworkedGame extends Application {
         this.eventRegistry().register(KeyboardListener.class, this.inputListener);
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
 
-        // reset the clock right before the constructor finishes!
+        // Spin up authoritative UDP server instance bound to port 9000
+        this.gameServer = new GameServer(this.combinedWorld, 9000);
+        this.gameServer.start();
+
+        // Connect UDP client to the local loopback server
         this.gameClient = new GameClient(this.combinedWorld, this.inputListener, this.playerShip.id());
+        this.gameClient.connect("127.0.0.1", 9000);
+
+        // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();
     }
 }

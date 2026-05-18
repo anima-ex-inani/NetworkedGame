@@ -1,90 +1,153 @@
 package io.github.animaexinani.game.server;
 
+import java.net.*;
+import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.PlayerShip;
-import io.github.animaexinani.game.network.PlayerInputMessage;
-import io.github.animaexinani.game.playfield.ServerPlayfield;
+import io.github.animaexinani.game.playfield.CombinedWorld;
 
 public class GameServer {
-    private final ServerPlayfield playfield;
-    
-    // thread safe map to hold the latest inputs sent by each client
-    private final Map<UUID, Set<GameAction>> clientInputs = new ConcurrentHashMap<>();
-    
-    private boolean running = false;
-    private final int TICKS_PER_SECOND = 60;
+    private static final Logger LOGGER = Logger.getLogger(GameServer.class.getName());
 
-    public GameServer(ServerPlayfield playfield) {
+    private final CombinedWorld playfield;
+    private final int port;
+    private DatagramSocket socket;
+
+    private volatile boolean running;
+    private long snapshotSequence = 0;
+
+    private record ClientConnection(InetAddress address, int port) {}
+    private record TimedInput(Set<GameAction> actions, long lastSeenNanos) {}
+
+    private final Set<ClientConnection> clients = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, TimedInput> clientInputs = new ConcurrentHashMap<>();
+
+    public GameServer(CombinedWorld playfield, int port) {
         this.playfield = playfield;
-    }
-    
-    // called by the networking library whenever a packet arrives from a client.
-    public void onInputMessageReceived(PlayerInputMessage message) {
-        // just store the latest input state. We will apply it during the next tick.
-        this.clientInputs.put(message.playerId, message.heldActions);
+        this.port = port;
     }
 
-    // starts the authoritative server loop in a dedicated background thread.
     public void start() {
-        this.running = true;
-        Thread serverThread = new Thread(this::runLoop, "Game-Server-Thread");
-        serverThread.start();
+        try {
+            socket = new DatagramSocket(port);
+            running = true;
+
+            new Thread(this::listenLoop, "ServerListener").start();
+            new Thread(this::runLoop, "ServerLoop").start();
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "server start failed", e);
+        }
     }
 
-    public void stop() {
-        this.running = false;
+    private void listenLoop() {
+        byte[] buf = new byte[256];
+
+        while (running) {
+            try {
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                socket.receive(packet);
+
+                clients.add(new ClientConnection(packet.getAddress(), packet.getPort()));
+
+                ByteBuffer bb = ByteBuffer.wrap(packet.getData(), 0, packet.getLength());
+
+                UUID playerId = new UUID(bb.getLong(), bb.getLong());
+                int flags = bb.getInt();
+
+                Set<GameAction> actions = EnumSet.noneOf(GameAction.class);
+                for (GameAction a : GameAction.values()) {
+                    if ((flags & (1 << a.ordinal())) != 0) {
+                        actions.add(a);
+                    }
+                }
+
+                clientInputs.put(playerId, new TimedInput(actions, System.nanoTime()));
+
+            } catch (Exception e) {
+                if (running) LOGGER.log(Level.WARNING, "listen failed", e);
+            }
+        }
     }
 
     private void runLoop() {
-        long lastTime = System.nanoTime();
-        long nsPerTick = 1_000_000_000 / TICKS_PER_SECOND;
+        long last = System.nanoTime();
+        long nsPerTick = 1_000_000_000L / 60L;
 
-        while (this.running) {
+        while (running) {
             long now = System.nanoTime();
-            Duration delta = Duration.ofNanos(now - lastTime);
-            lastTime = now;
+            Duration delta = Duration.ofNanos(now - last);
+            last = now;
 
-            // process all queued player actions
-            this.processPlayerInputs(delta);
+            processInputs();
+            playfield.update(delta);
+            broadcast();
 
-            // step the physics engine forward
-            this.playfield.update(delta);
-
-            // TODO: Broadcast the new game state to all clients here
-            // this.broadcastGameState(); or something like that
-
-            // sleep to maintain the target Tick Rate
-            long timeTaken = System.nanoTime() - now;
-            long sleepTimeMs = (nsPerTick - timeTaken) / 1_000_000;
-            
-            if (sleepTimeMs > 0) {
-                try {
-                    Thread.sleep(sleepTimeMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            long sleepMs = (nsPerTick - (System.nanoTime() - now)) / 1_000_000L;
+            if (sleepMs > 0) {
+                try { Thread.sleep(sleepMs); } catch (InterruptedException ignored) {}
             }
         }
     }
 
-    private void processPlayerInputs(Duration delta) {
-        for (Map.Entry<UUID, Set<GameAction>> entry : this.clientInputs.entrySet()) {
-            UUID playerId = entry.getKey();
-            Set<GameAction> actions = entry.getValue();
+    private void processInputs() {
+        long now = System.nanoTime();
 
-            Entity entity = this.playfield.getEntity(playerId);
-            
-            if (entity instanceof PlayerShip playerShip) {
-                // the server passes the network actions to the correct ship
-                playerShip.processActions(actions, this.playfield);
+        for (var entry : clientInputs.entrySet()) {
+            if (now - entry.getValue().lastSeenNanos > 200_000_000L) {
+                continue;
+            }
+
+            Entity e = playfield.getEntity(entry.getKey());
+            if (e instanceof PlayerShip ship) {
+                ship.processActions(entry.getValue().actions, playfield);
             }
         }
+    }
+
+    private void broadcast() {
+        try {
+            var entities = playfield.entities();
+
+            ByteBuffer bb = ByteBuffer.allocate(1400);
+            bb.putLong(snapshotSequence++);
+            bb.putInt(entities.size());
+
+            for (Entity entity : entities) {
+                var t = entity.physicsBody().getTransform();
+
+                bb.putLong(entity.id().getMostSignificantBits());
+                bb.putLong(entity.id().getLeastSignificantBits());
+                bb.putInt(entity.type().ordinal());
+                bb.putFloat((float) t.getTranslationX());
+                bb.putFloat((float) t.getTranslationY());
+                bb.putFloat((float) t.getRotationAngle());
+                bb.putInt(100);
+            }
+
+            byte[] data = Arrays.copyOf(bb.array(), bb.position());
+
+            for (ClientConnection client : clients) {
+                socket.send(new DatagramPacket(
+                        data, data.length,
+                        client.address(), client.port()
+                ));
+            }
+
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "broadcast failed", e);
+        }
+    }
+
+    public void stop() {
+        running = false;
+        if (socket != null) socket.close();
     }
 }
