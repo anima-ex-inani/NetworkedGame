@@ -15,8 +15,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.github.animaexinani.engine.input.GameAction;
+import io.github.animaexinani.game.nentities.Asteroid;
 import io.github.animaexinani.game.nentities.Damageable;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.LivingEntity;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScoutDrone;
@@ -48,6 +50,7 @@ public class GameServer {
     private static final int MAX_ENTITIES = 64;
 
     private long lastSpawnTime = System.nanoTime();
+    private long lastAsteroidSpawnTime = System.nanoTime();
 
     public GameServer(CombinedWorld playfield, int port) {
         this.playfield = playfield;
@@ -121,6 +124,45 @@ public class GameServer {
             long now = System.nanoTime();
             Duration delta = Duration.ofNanos(now - last);
             last = now;
+
+            // Asteroid spawner
+            if (now - lastAsteroidSpawnTime > 10_000_000_000L) { // every 10 seconds
+                lastAsteroidSpawnTime = now;
+
+                float spawnX = 0f;
+                float spawnY = 0f;
+                
+                // random speed between 50 and 150
+                double vx = 50.0 + (Math.random() * 100.0);
+                double vy = 50.0 + (Math.random() * 100.0);
+
+                // pick a random edge: 0=Top, 1=Bottom, 2=Left, 3=Right
+                int edge = (int) (Math.random() * 4);
+                switch (edge) {
+                    case 0 -> { // Top Edge
+                        spawnX = (float) (Math.random() * 1920);
+                        spawnY = 10f; // Just inside the top edge
+                    }
+                    case 1 -> { // Bottom Edge
+                        spawnX = (float) (Math.random() * 1920);
+                        spawnY = 1070f; // Just inside the bottom edge
+                        vy = -vy; // Invert Y velocity so it flies UP
+                    }
+                    case 2 -> { // Left Edge
+                        spawnX = 10f; // Just inside left edge
+                        spawnY = (float) (Math.random() * 1080);
+                    }
+                    case 3 -> { // Right Edge
+                        spawnX = 1910f; // Just inside right edge
+                        spawnY = (float) (Math.random() * 1080);
+                        vx = -vx; // Invert X velocity so it flies LEFT
+                    }
+                }
+
+                // create and spawn the asteroid
+                Asteroid asteroid = new Asteroid(EntityType.ASTEROID, spawnX, spawnY, vx, vy);
+                this.spawnEntity(asteroid);
+            }
 
             if (now - lastSpawnTime > 3_000_000_000L) { // every 3 seconds
                 lastSpawnTime = now;
