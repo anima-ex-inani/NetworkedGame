@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLEvents;
 import org.lwjgl.sdl.SDLInit;
-import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.sdl.SDL_Event;
 
 import io.github.animaexinani.engine.EventRegistry;

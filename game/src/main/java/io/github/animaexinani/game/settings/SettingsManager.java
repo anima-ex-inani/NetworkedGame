@@ -1,7 +1,6 @@
 package io.github.animaexinani.game.settings;
 
 import tools.jackson.dataformat.toml.TomlMapper;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;

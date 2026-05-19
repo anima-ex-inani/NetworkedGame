@@ -7,7 +7,6 @@ import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.ui.UIButton;
-import io.github.animaexinani.engine.ui.UIComponent;
 import io.github.animaexinani.engine.ui.UITextField;
 import io.github.animaexinani.engine.ui.UITextLabel;
 import io.github.animaexinani.engine.EventRegistry;

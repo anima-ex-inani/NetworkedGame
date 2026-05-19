@@ -3,7 +3,6 @@ package io.github.animaexinani.game;
 import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.rendering.Renderer;
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Manages the current game state and transitions between states.
