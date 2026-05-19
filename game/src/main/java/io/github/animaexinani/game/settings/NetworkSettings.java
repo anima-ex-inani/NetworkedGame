@@ -19,6 +19,9 @@ public class NetworkSettings {
     }
 
     public void setPreferredPort(int preferredPort) {
+        if (preferredPort < 0 || preferredPort > 65535) {
+            throw new IllegalArgumentException("Port must be between 0 and 65535");
+        }
         this.preferredPort = preferredPort;
     }
 
