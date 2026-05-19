@@ -87,7 +87,9 @@ public class GameServer {
             last = now;
 
             processInputs();
+            playfield.preUpdate(delta); 
             playfield.update(delta);
+            playfield.postUpdate(delta);
             broadcast();
 
             long sleepMs = (nsPerTick - (System.nanoTime() - now)) / 1_000_000L;

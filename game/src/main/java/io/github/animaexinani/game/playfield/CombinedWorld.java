@@ -313,13 +313,22 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         return current + (target - current) * speed;
     }
 
-    // Inside CombinedWorld's new interpolation method:
     public void interpolateVisuals(float frameTime) {
         for (var entityData : this.entities.values()) {
             if (entityData.drawable instanceof Transformable t) {
-                float newX = lerp(t.translation().x(), entityData.targetX, 0.3f);
-                float newY = lerp(t.translation().y(), entityData.targetY, 0.3f);
-                t.translation(new PointF(newX, newY));
+                float currentX = t.translation().x();
+                float currentY = t.translation().y();
+                
+                // snap threashold: if distance is massive, instantly teleport
+                if (Math.abs(currentX - entityData.targetX) > 100 || Math.abs(currentY - entityData.targetY) > 100) {
+                    t.translation(new PointF(entityData.targetX, entityData.targetY));
+                } else {
+                    // otherwise, smoothly glide
+                    float newX = lerp(currentX, entityData.targetX, 0.3f);
+                    float newY = lerp(currentY, entityData.targetY, 0.3f);
+                    t.translation(new PointF(newX, newY));
+                }
+                t.rotation(entityData.targetRotation);
             }
         }
     }
