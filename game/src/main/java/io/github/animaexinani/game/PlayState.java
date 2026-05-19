@@ -206,8 +206,10 @@ public class PlayState implements GameState, KeyboardListener {
 
     @Override
     public void onKeyEvent(KeyEvent event) {
+        if (this.stateManager.currentState() != this) return;
+        
         if (event.action() == KeyEvent.Action.PRESS && event.scancode() == 41) { // 41 is ESCAPE in SDL scancodes
-            this.stateManager.transitionTo(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this, this.settingsManager, this.rebindingController));
+            this.stateManager.pushState(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this, this.settingsManager, this.rebindingController));
         }
     }
 

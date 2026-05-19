@@ -46,7 +46,7 @@ public class PauseState extends BaseMenuState {
         float spacing = 100;
 
         this.components.add(this.createButton("Resume", centerX, startY, () -> {
-            this.stateManager.transitionTo(this.playState);
+            this.stateManager.popState();
         }));
 
         this.components.add(this.createButton("Quit to Menu", centerX, startY + spacing, () -> {
@@ -76,7 +76,7 @@ public class PauseState extends BaseMenuState {
         super.onKeyEvent(event);
         // Pressing ESC again resumes the game
         if (event.action() == KeyEvent.Action.PRESS && event.scancode() == 41) { // 41 is ESCAPE
-            this.stateManager.transitionTo(this.playState);
+            this.stateManager.popState();
         }
     }
 }
