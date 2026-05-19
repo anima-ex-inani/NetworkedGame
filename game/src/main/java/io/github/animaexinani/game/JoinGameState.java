@@ -48,6 +48,7 @@ public class JoinGameState extends BaseMenuState {
         UITextField ipField = new UITextField(ipFieldText);
         ipField.position(new PointF(centerX - 150, 230));
         ipField.size(new SizeF(300, 40));
+        ipField.text("127.0.0.1");
         this.components.add(ipField);
 
         // Port
@@ -72,8 +73,9 @@ public class JoinGameState extends BaseMenuState {
         this.components.add(this.createButton("Connect", centerX, 500, () -> {
             try {
                 int port = Integer.parseInt(portField.text());
-                if (port >= 0 && port <= 65535) {
-                    this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+                String host = ipField.text();
+                if (port >= 0 && port <= 65535 && !host.isBlank()) {
+                    this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController, host, port));
                 } else {
                     portField.backgroundColor(new Color(0.5f, 0.0f, 0.0f, 1.0f)); // Dark Red
                 }

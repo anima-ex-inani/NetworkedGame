@@ -11,7 +11,6 @@ import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.input.RebindingController;
 
 import java.time.Duration;
-import java.util.Random;
 
 /**
  * Simulates a connection attempt to a multiplayer game.
@@ -19,8 +18,10 @@ import java.util.Random;
 public class ConnectingState extends BaseMenuState {
     private final Text statusText;
     private Duration timer = Duration.ZERO;
-    private static final Duration CONNECTION_DELAY = Duration.ofSeconds(3);
-    private final Random random = new Random();
+    private static final Duration CONNECTION_DELAY = Duration.ofSeconds(1); // Short delay
+
+    private final String host;
+    private final int port;
 
     /**
      * Creates a new ConnectingState.
@@ -30,11 +31,15 @@ public class ConnectingState extends BaseMenuState {
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
      * @param rebindingController the rebinding controller
+     * @param host the host to connect to
+     * @param port the port to connect to
      */
-    public ConnectingState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
+    public ConnectingState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController, String host, int port) {
         super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
+        this.host = host;
+        this.port = port;
 
-        this.statusText = new Text(fontFace, "Connecting...");
+        this.statusText = new Text(fontFace, "Connecting to " + host + ":" + port + "...");
         this.statusText.fontSize(32.0f);
         this.statusText.color(Color.WHITE);
         this.statusText.origin(TextOrigin.CENTER);
@@ -49,13 +54,7 @@ public class ConnectingState extends BaseMenuState {
     public void update(Duration dt) {
         this.timer = this.timer.plus(dt);
         if (this.timer.compareTo(CONNECTION_DELAY) >= 0) {
-            if (this.random.nextBoolean()) {
-                // Success: Transition to PlayState as host (simulated)
-                this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController));
-            } else {
-                // Failure: Transition back (for now to main menu)
-                this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
-            }
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, NetworkedGame.Mode.CLIENT, this.host, this.port));
         }
     }
 

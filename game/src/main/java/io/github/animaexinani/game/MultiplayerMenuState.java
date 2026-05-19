@@ -57,7 +57,8 @@ public class MultiplayerMenuState extends BaseMenuState {
             // Save player name before starting
             this.settingsManager.getSettings().setPlayerName(nameField.text());
             this.settingsManager.save();
-            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController));
+            int port = this.settingsManager.getSettings().getNetworking().getPreferredPort();
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, NetworkedGame.Mode.LOCAL, "127.0.0.1", port));
         }));
         this.components.add(this.createButton("Join Game", centerX, startY + spacing, () -> {
             // Save player name before joining
