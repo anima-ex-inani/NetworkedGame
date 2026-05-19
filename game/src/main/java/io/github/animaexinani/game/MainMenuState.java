@@ -42,16 +42,4 @@ public class MainMenuState extends BaseMenuState {
             System.exit(0);
         }));
     }
-
-    private UIButton createButton(String label, float x, float y, Runnable onClick) {
-        Text text = new Text(this.fontFace, label);
-        text.fontSize(32.0f);
-        text.color(Color.WHITE);
-        text.origin(TextOrigin.CENTER);
-        
-        UIButton button = new UIButton(text, onClick);
-        button.position(new PointF(x - 150, y - 25));
-        button.size(new SizeF(300, 50));
-        return button;
-    }
 }

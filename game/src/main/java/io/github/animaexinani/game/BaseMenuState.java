@@ -1,8 +1,12 @@
 package io.github.animaexinani.game;
 
 import io.github.animaexinani.engine.font.FontFace;
+import io.github.animaexinani.engine.font.Text;
+import io.github.animaexinani.engine.font.TextOrigin;
+import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.point.PointF;
+import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.ui.UIButton;
 import io.github.animaexinani.engine.ui.UIComponent;
@@ -124,5 +128,25 @@ public abstract class BaseMenuState implements GameState, MouseDownListener, Mou
                 field.handleTextInput(text);
             }
         }
+    }
+
+    /**
+     * Helper method to create a button with standard styling and positioning.
+     * @param label the text to display on the button
+     * @param x the center x-coordinate
+     * @param y the center y-coordinate
+     * @param onClick the action to perform when clicked
+     * @return the created UIButton
+     */
+    protected UIButton createButton(String label, float x, float y, Runnable onClick) {
+        Text text = new Text(this.fontFace, label);
+        text.fontSize(32.0f);
+        text.color(Color.WHITE);
+        text.origin(TextOrigin.CENTER);
+        
+        UIButton button = new UIButton(text, onClick);
+        button.position(new PointF(x - 150, y - 25));
+        button.size(new SizeF(300, 50));
+        return button;
     }
 }
