@@ -138,9 +138,8 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
          * @throws IllegalStateException if required fields are not set
          */
         public @NotNull CombinedWorld build() {
-            // localPlayerId is optional: server-side worlds have no local player.
-            if (this.size == null) {
-                throw new IllegalStateException("Size must be set");
+            if (this.localPlayerId == null) {
+                throw new IllegalStateException("Local player ID must be set");
             }
 
             var world = new CombinedWorld(this.entities, this.localPlayerId, this.size);
@@ -164,13 +163,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     private @Nullable Collection<@NotNull Entity> cachedEntityCollection;
     private final @NotNull Map<@NotNull EntityType, @NotNull Function<@NotNull Entity, @Nullable Drawable>> visualFactories;
     private final @NotNull List<@NotNull Modification> deferredModifications;
-
-    /** Null when this world is used purely as a server-side simulation. */
-    private final @Nullable UUID localPlayerId;
+    private final @NotNull UUID localPlayerId;
     private final @NotNull World<PhysicsBody> physicsWorld;
     private final @NotNull SizeF size;
 
-    private CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @Nullable UUID localPlayerId,
+    private CombinedWorld(@NotNull Collection<@NotNull Entity> playerEntities, @NotNull UUID localPlayerId,
             @NotNull SizeF size) {
         this.physicsWorld = new World<>();
         this.physicsWorld.setGravity(new Vector2(0.0, 0.0));
@@ -193,12 +190,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             this.physicsWorld.addBody(entity.physicsBody());
         }
 
-        // Only validate that the local player entity exists when an ID was provided.
-        if (localPlayerId != null && !this.entities.containsKey(localPlayerId)) {
+         if (!this.entities.containsKey(localPlayerId)) {
             throw new IllegalArgumentException("Local player ID not found in player entities");
         }
         this.size = size;
-        this.localPlayerId = localPlayerId;
+        this.localPlayerId = Objects.requireNonNull(localPlayerId);
         this.cachedEntityCollection = this.entities.values().stream().map(data -> data.entity).toList();
     }
 
@@ -350,11 +346,6 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
 
     @Override
     public @NotNull Entity localPlayer() {
-        if (this.localPlayerId == null) {
-            throw new IllegalStateException(
-                    "localPlayer() called on a server-side CombinedWorld that has no local player");
-        }
-
         EntityData playerData;
         synchronized (this.entities) {
             playerData = this.entities.get(this.localPlayerId);
