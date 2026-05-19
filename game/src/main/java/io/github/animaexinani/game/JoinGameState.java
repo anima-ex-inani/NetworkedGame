@@ -12,6 +12,7 @@ import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.engine.input.RebindingController;
 
 /**
  * Screen to input IP and Port to join a game.
@@ -25,9 +26,10 @@ public class JoinGameState extends BaseMenuState {
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public JoinGameState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
-        super(window, stateManager, fontFace, eventRegistry, settingsManager);
+    public JoinGameState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
 
         float centerX = 1920 / 2.0f;
 
@@ -69,11 +71,11 @@ public class JoinGameState extends BaseMenuState {
         this.components.add(portField);
 
         this.components.add(this.createButton("Connect", centerX, 500, () -> {
-            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
 
         this.components.add(this.createButton("Back", centerX, 600, () -> {
-            this.stateManager.transitionTo(new MultiplayerMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new MultiplayerMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }
 }

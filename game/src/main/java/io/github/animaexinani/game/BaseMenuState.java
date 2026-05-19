@@ -5,6 +5,7 @@ import io.github.animaexinani.engine.font.Text;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.input.GameInputListener;
+import io.github.animaexinani.engine.input.RebindingController;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.rendering.Renderer;
@@ -34,6 +35,7 @@ public abstract class BaseMenuState implements GameState, MouseDownListener, Mou
     protected final EventRegistry eventRegistry;
     protected final Window window;
     protected final SettingsManager settingsManager;
+    protected final RebindingController rebindingController;
 
     /**
      * Creates a new BaseMenuState.
@@ -42,13 +44,15 @@ public abstract class BaseMenuState implements GameState, MouseDownListener, Mou
      * @param fontFace the font to use for UI
      * @param eventRegistry the event registry to register listeners
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public BaseMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
+    public BaseMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
         this.window = window;
         this.stateManager = stateManager;
         this.fontFace = fontFace;
         this.eventRegistry = eventRegistry;
         this.settingsManager = settingsManager;
+        this.rebindingController = rebindingController;
     }
 
     @Override

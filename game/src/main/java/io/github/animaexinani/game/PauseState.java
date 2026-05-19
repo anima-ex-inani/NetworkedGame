@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.engine.input.RebindingController;
 
 import java.time.Duration;
 
@@ -28,9 +29,10 @@ public class PauseState extends BaseMenuState {
      * @param eventRegistry the event registry
      * @param playState the active play state to continue updating/rendering
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public PauseState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, PlayState playState, SettingsManager settingsManager) {
-        super(window, stateManager, fontFace, eventRegistry, settingsManager);
+    public PauseState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, PlayState playState, SettingsManager settingsManager, RebindingController rebindingController) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
         this.playState = playState;
 
         this.pauseTitle = new Text(fontFace, "PAUSED");
@@ -48,7 +50,7 @@ public class PauseState extends BaseMenuState {
         }));
 
         this.components.add(this.createButton("Quit to Menu", centerX, startY + spacing, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }
 

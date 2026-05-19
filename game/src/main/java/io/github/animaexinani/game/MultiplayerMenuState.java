@@ -4,7 +4,6 @@ import io.github.animaexinani.engine.font.FontFace;
 import io.github.animaexinani.engine.font.Text;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.size.SizeF;
-import io.github.animaexinani.engine.ui.UIButton;
 import io.github.animaexinani.engine.ui.UITextField;
 import io.github.animaexinani.engine.ui.UITextLabel;
 import io.github.animaexinani.engine.EventRegistry;
@@ -12,6 +11,7 @@ import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.engine.input.RebindingController;
 
 /**
  * The multiplayer menu of the game.
@@ -25,9 +25,10 @@ public class MultiplayerMenuState extends BaseMenuState {
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public MultiplayerMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
-        super(window, stateManager, fontFace, eventRegistry, settingsManager);
+    public MultiplayerMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
 
         float centerX = 1920 / 2.0f;
         
@@ -56,19 +57,19 @@ public class MultiplayerMenuState extends BaseMenuState {
             // Save player name before starting
             this.settingsManager.getSettings().setPlayerName(nameField.text());
             this.settingsManager.save();
-            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
         this.components.add(this.createButton("Join Game", centerX, startY + spacing, () -> {
             // Save player name before joining
             this.settingsManager.getSettings().setPlayerName(nameField.text());
             this.settingsManager.save();
-            this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
         this.components.add(this.createButton("Back", centerX, startY + 2 * spacing, () -> {
             // Save player name when going back
             this.settingsManager.getSettings().setPlayerName(nameField.text());
             this.settingsManager.save();
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }
 }

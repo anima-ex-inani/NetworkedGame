@@ -72,6 +72,8 @@ public class UIButton extends UIComponent {
         this.isHovered = this.visible() && this.contains(x, y);
     }
 
+    public Text text() { return this.label; }
+
     public Color backgroundColor() { return this.backgroundColor; }
     public void backgroundColor(Color color) { this.backgroundColor = color; }
 

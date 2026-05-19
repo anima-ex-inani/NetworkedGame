@@ -19,6 +19,7 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.engine.input.RebindingController;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class PlayState implements GameState, KeyboardListener {
     private final EventRegistry eventRegistry;
     private final FontFace fontFace;
     private final SettingsManager settingsManager;
+    private final RebindingController rebindingController;
 
     /**
      * Creates a new PlayState.
@@ -45,13 +47,15 @@ public class PlayState implements GameState, KeyboardListener {
      * @param stateManager the state manager
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry, SettingsManager settingsManager) {
+    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
         this.window = window;
         this.fontFace = fontFace;
         this.stateManager = stateManager;
         this.eventRegistry = eventRegistry;
         this.settingsManager = settingsManager;
+        this.rebindingController = rebindingController;
 
         float width = window != null ? window.clientSize().width() : 1920.0f;
         float height = window != null ? window.clientSize().height() : 1080.0f;
@@ -144,7 +148,7 @@ public class PlayState implements GameState, KeyboardListener {
     @Override
     public void onKeyEvent(KeyEvent event) {
         if (event.action() == KeyEvent.Action.PRESS && event.scancode() == 41) { // 41 is ESCAPE in SDL scancodes
-            this.stateManager.transitionTo(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this, this.settingsManager));
+            this.stateManager.transitionTo(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this, this.settingsManager, this.rebindingController));
         }
     }
 

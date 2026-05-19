@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.engine.input.RebindingController;
 
 import java.time.Duration;
 import java.util.Random;
@@ -30,9 +31,10 @@ public class ConnectingState extends BaseMenuState {
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
+     * @param rebindingController the rebinding controller
      */
-    public ConnectingState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
-        super(window, stateManager, fontFace, eventRegistry, settingsManager);
+    public ConnectingState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
 
         this.statusText = new Text(fontFace, "Connecting...");
         this.statusText.fontSize(32.0f);
@@ -40,17 +42,9 @@ public class ConnectingState extends BaseMenuState {
         this.statusText.origin(TextOrigin.CENTER);
         this.statusText.translation(new PointF(1920 / 2.0f, 1080 / 2.0f));
 
-        Text cancelLabel = new Text(fontFace, "Cancel");
-        cancelLabel.fontSize(24.0f);
-        cancelLabel.color(Color.WHITE);
-        cancelLabel.origin(TextOrigin.CENTER);
-
-        UIButton cancelButton = new UIButton(cancelLabel, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
-        });
-        cancelButton.position(new PointF(1920 / 2.0f - 100, 700));
-        cancelButton.size(new SizeF(200, 50));
-        this.components.add(cancelButton);
+        this.components.add(this.createButton("Cancel", 1920 / 2.0f, 700, () -> {
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+        }));
     }
 
     @Override
@@ -59,10 +53,10 @@ public class ConnectingState extends BaseMenuState {
         if (this.timer.compareTo(CONNECTION_DELAY) >= 0) {
             if (this.random.nextBoolean()) {
                 // Success: Transition to PlayState as host (simulated)
-                this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager));
+                this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController));
             } else {
                 // Failure: Transition back (for now to main menu)
-                this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
+                this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
             }
         }
     }
