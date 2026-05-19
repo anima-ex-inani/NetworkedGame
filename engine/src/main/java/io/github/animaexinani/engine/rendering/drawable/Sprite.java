@@ -37,7 +37,8 @@ public class Sprite implements Drawable, Transformable {
      *
      * @param texture     The texture to use for the sprite.
      * @param textureRect The region of the texture to display.
-     * @throws NullPointerException if {@code texture} or {@code textureRect} is null.
+     * @throws NullPointerException if {@code texture} or {@code textureRect} is
+     *                              null.
      */
     public Sprite(@NotNull Texture texture, @NotNull Rect textureRect) {
         Objects.requireNonNull(texture);
@@ -58,15 +59,16 @@ public class Sprite implements Drawable, Transformable {
     public void draw(@NotNull RenderContext context) {
         var oldColor = this.texture.getColorModifier();
         this.texture.setColorModifier(this.tint);
+        try {
+            var transform = this.transform();
+            var originPos = transform.transform(PointF.ZERO);
+            var rightPos = transform.transform(new PointF(this.textureRect.width(), 0.0f));
+            var downPos = transform.transform(new PointF(0.0f, this.textureRect.height()));
 
-        var transform = this.transform();
-        var originPos = transform.transform(PointF.ZERO);
-        var rightPos = transform.transform(new PointF(this.textureRect.width(), 0.0f));
-        var downPos = transform.transform(new PointF(0.0f, this.textureRect.height()));
-
-        context.drawTextureAffine(this.texture, this.textureRect, originPos, rightPos, downPos);
-
-        this.texture.setColorModifier(oldColor);
+            context.drawTextureAffine(this.texture, this.textureRect, originPos, rightPos, downPos);
+        } finally {
+            this.texture.setColorModifier(oldColor);
+        }
     }
 
     /**
