@@ -28,14 +28,19 @@ public class SettingsManager {
      * @return the loaded or default settings
      */
     public PlayerSettings load() {
+        PlayerSettings loadedSettings;
         if (Files.exists(SETTINGS_PATH)) {
             try {
-                return this.mapper.readValue(SETTINGS_PATH.toFile(), PlayerSettings.class);
+                loadedSettings = this.mapper.readValue(SETTINGS_PATH.toFile(), PlayerSettings.class);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Failed to load settings from " + SETTINGS_PATH, e);
+                loadedSettings = new PlayerSettings();
             }
+        } else {
+            loadedSettings = new PlayerSettings();
         }
-        return new PlayerSettings();
+        loadedSettings.getNetworking().validateNetworkInterface();
+        return loadedSettings;
     }
 
     /**
