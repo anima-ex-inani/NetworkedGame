@@ -61,8 +61,27 @@ public class StrikeFighter implements Ship, ScreenWrappable {
     private Entity target;
     public void setTarget(Entity target) { this.target = target; }
 
+    private void retarget() {
+        // Scan the playfield for any active player ship
+        for (Entity entity : this.playfield.entities()) {
+            if (entity.type().player()) {
+                this.target = entity;
+                this.currentState = AIState.APPROACHING; // Reset state for the new target
+                break;
+            }
+        }
+    }
+
     @Override
     public void update(Duration delta) {
+        if (this.target != null && this.playfield.getEntity(this.target.id()) == null) {
+            this.target = null;
+        }
+
+        if (this.target == null) {
+            this.retarget();
+        }
+
         double currentAngle = this.body.getTransform().getRotationAngle();
         var myPos = this.body.getTransform().getTranslation();
 

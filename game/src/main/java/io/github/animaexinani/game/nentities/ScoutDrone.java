@@ -54,8 +54,26 @@ public class ScoutDrone implements Ship, ScreenWrappable {
         this.target = target;
     }
 
+    private void retarget() {
+        // Scan the playfield for any active player ship
+        for (Entity entity : this.playfield.entities()) {
+            if (entity.type().player()) { // Assuming type().player() returns true for players
+                this.target = entity;
+                break;
+            }
+        }
+    }
+
     @Override
     public void update(Duration delta) {
+        if (this.target != null && this.playfield.getEntity(this.target.id()) == null) {
+            this.target = null;
+        }
+
+        if (this.target == null) {
+            this.retarget();
+        }
+
         if (this.target != null && this.target.active()) {
             var targetPos = this.target.physicsBody().getTransform().getTranslation();
             var myPos = this.body.getTransform().getTranslation();
