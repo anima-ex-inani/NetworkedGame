@@ -10,34 +10,31 @@ import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 
 /**
- * The main menu of the game.
+ * The settings menu of the game.
  */
-public class MainMenuState extends BaseMenuState {
+public class SettingsState extends BaseMenuState {
 
     /**
-     * Creates a new MainMenuState.
+     * Creates a new SettingsState.
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      */
-    public MainMenuState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+    public SettingsState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
         super(stateManager, fontFace, eventRegistry);
 
         float centerX = 1920 / 2.0f;
         float startY = 300;
         float spacing = 100;
 
-        this.components.add(this.createButton("Singleplayer", centerX, startY, () -> {
-            this.stateManager.transitionTo(new SingleplayerMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+        this.components.add(this.createButton("Keybinds", centerX, startY, () -> {
+            // Keybinds settings
         }));
-        this.components.add(this.createButton("Multiplayer", centerX, startY + spacing, () -> {
-            this.stateManager.transitionTo(new MultiplayerMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+        this.components.add(this.createButton("Networking", centerX, startY + spacing, () -> {
+            // Networking settings
         }));
-        this.components.add(this.createButton("Settings", centerX, startY + 2 * spacing, () -> {
-            this.stateManager.transitionTo(new SettingsState(this.stateManager, this.fontFace, this.eventRegistry));
-        }));
-        this.components.add(this.createButton("Quit", centerX, startY + 3 * spacing, () -> {
-            System.exit(0);
+        this.components.add(this.createButton("Back", centerX, startY + 2 * spacing, () -> {
+            this.stateManager.transitionTo(new MainMenuState(this.stateManager, this.fontFace, this.eventRegistry));
         }));
     }
 
