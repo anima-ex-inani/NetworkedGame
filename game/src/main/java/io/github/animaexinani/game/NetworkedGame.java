@@ -25,6 +25,7 @@ import io.github.animaexinani.game.nentities.ClientNetworkEntity;
 import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
+import io.github.animaexinani.game.nentities.ServerNetworkEntity;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.game.server.GameClient;
 import io.github.animaexinani.game.server.GameServer;
@@ -209,8 +210,16 @@ public final class NetworkedGame extends Application {
                 serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
             }
 
+            UUID serverId = new UUID(0L, 0L);
+
+            ServerNetworkEntity serverDummy =
+                    new ServerNetworkEntity(serverId, EntityType.PLAYER);
+            
+            serverEntities.add(serverDummy);
+
             CombinedWorld serverWorld = new CombinedWorld.Builder()
                     .withEntities(serverEntities)
+                    .withLocalPlayerId(serverId)
                     .withSize(sizeF)
                     .build();
 
