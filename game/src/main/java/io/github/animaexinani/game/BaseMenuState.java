@@ -24,12 +24,13 @@ import io.github.animaexinani.game.settings.SettingsManager;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Base class for menu states that provides UI component management and event handling.
  */
 public abstract class BaseMenuState implements GameState, MouseDownListener, MouseMoveListener, KeyboardListener, TextInputListener {
-    protected final List<UIComponent> components = new ArrayList<>();
+    protected final List<UIComponent> components = new CopyOnWriteArrayList<>();
     protected final GameStateManager stateManager;
     protected final FontFace fontFace;
     protected final EventRegistry eventRegistry;
