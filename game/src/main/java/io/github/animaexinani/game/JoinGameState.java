@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.ui.UITextLabel;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.windowing.Window;
 
 /**
  * Screen to input IP and Port to join a game.
@@ -22,8 +23,8 @@ public class JoinGameState extends BaseMenuState {
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      */
-    public JoinGameState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(stateManager, fontFace, eventRegistry);
+    public JoinGameState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+        super(window, stateManager, fontFace, eventRegistry);
 
         float centerX = 1920 / 2.0f;
 
@@ -64,11 +65,11 @@ public class JoinGameState extends BaseMenuState {
         this.components.add(portField);
 
         this.components.add(this.createButton("Connect", centerX, 500, () -> {
-            this.stateManager.transitionTo(new ConnectingState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         }));
 
         this.components.add(this.createButton("Back", centerX, 600, () -> {
-            this.stateManager.transitionTo(new MultiplayerMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MultiplayerMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         }));
     }
 

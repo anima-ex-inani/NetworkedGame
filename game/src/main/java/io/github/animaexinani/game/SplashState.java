@@ -7,6 +7,7 @@ import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.windowing.Window;
 
 import java.time.Duration;
 
@@ -17,17 +18,20 @@ public class SplashState implements GameState {
     private final GameStateManager stateManager;
     private final FontFace fontFace;
     private final EventRegistry eventRegistry;
+    private final Window window;
     private final Text loadingText;
     private Duration timer = Duration.ZERO;
     private static final Duration SPLASH_DURATION = Duration.ofSeconds(2);
 
     /**
      * Creates a new SplashState.
+     * @param window the game window
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      */
-    public SplashState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+    public SplashState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+        this.window = window;
         this.stateManager = stateManager;
         this.fontFace = fontFace;
         this.eventRegistry = eventRegistry;
@@ -45,7 +49,7 @@ public class SplashState implements GameState {
     public void update(Duration dt) {
         this.timer = this.timer.plus(dt);
         if (this.timer.compareTo(SPLASH_DURATION) >= 0) {
-            this.stateManager.transitionTo(new MainMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         }
     }
 

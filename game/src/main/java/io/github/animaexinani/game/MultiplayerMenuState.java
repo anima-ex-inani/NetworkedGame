@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.ui.UITextLabel;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.windowing.Window;
 
 /**
  * The multiplayer menu of the game.
@@ -18,12 +19,13 @@ public class MultiplayerMenuState extends BaseMenuState {
 
     /**
      * Creates a new MultiplayerMenuState.
+     * @param window the game window
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      */
-    public MultiplayerMenuState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(stateManager, fontFace, eventRegistry);
+    public MultiplayerMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+        super(window, stateManager, fontFace, eventRegistry);
 
         float centerX = 1920 / 2.0f;
         
@@ -50,13 +52,13 @@ public class MultiplayerMenuState extends BaseMenuState {
 
         this.components.add(this.createButton("Create Game", centerX, startY, () -> {
             // In a real implementation, we'd go to LobbyState
-            this.stateManager.transitionTo(new PlayState(null, this.fontFace));
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry));
         }));
         this.components.add(this.createButton("Join Game", centerX, startY + spacing, () -> {
-            this.stateManager.transitionTo(new JoinGameState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         }));
         this.components.add(this.createButton("Back", centerX, startY + 2 * spacing, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         }));
     }
 

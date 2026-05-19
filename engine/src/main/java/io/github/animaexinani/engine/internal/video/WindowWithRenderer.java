@@ -193,6 +193,22 @@ public final class WindowWithRenderer implements Window, Renderer {
     }
 
     @Override
+    public void startTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to start text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StartTextInput(this.nativeState.windowHandle));
+    }
+
+    @Override
+    public void stopTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to stop text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StopTextInput(this.nativeState.windowHandle));
+    }
+
+    @Override
     public void close() {
         this.cleanable.clean();
     }

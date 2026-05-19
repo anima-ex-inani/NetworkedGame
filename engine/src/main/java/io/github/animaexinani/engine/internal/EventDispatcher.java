@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.sdl.SDLEvents;
 import org.lwjgl.sdl.SDLInit;
+import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.sdl.SDL_Event;
 
 import io.github.animaexinani.engine.EventRegistry;
@@ -20,6 +21,7 @@ import io.github.animaexinani.engine.listeners.MouseDownListener;
 import io.github.animaexinani.engine.listeners.MouseMoveListener;
 import io.github.animaexinani.engine.listeners.MouseUpListener;
 import io.github.animaexinani.engine.listeners.QuitEventListener;
+import io.github.animaexinani.engine.listeners.TextInputListener;
 import io.github.animaexinani.engine.events.KeyEvent;
 
 public final class EventDispatcher implements EventRegistry, AutoCloseable {
@@ -124,6 +126,11 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
                     var mouseMoveListeners = this.getListenersOfType(MouseMoveListener.class);
                     var motionEvent = this.nativeState.event.motion();
                     mouseMoveListeners.forEach(l -> l.onMouseMove(motionEvent.x(), motionEvent.y()));
+                }
+                case SDLEvents.SDL_EVENT_TEXT_INPUT -> {
+                    var textInputListeners = this.getListenersOfType(TextInputListener.class);
+                    var textInputEvent = this.nativeState.event.text();
+                    textInputListeners.forEach(l -> l.onTextInput(textInputEvent.textString()));
                 }
 
                 default -> {

@@ -9,6 +9,7 @@ import io.github.animaexinani.engine.windowing.Window;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.sdl.SDLInit;
+import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.sdl.SDLRender;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.sdl.SDL_MainThreadCallback;
@@ -86,6 +87,22 @@ public final class NativeWindow implements Window {
     public NativeWindow(long handle) {
         this.nativeState = new NativeState(handle);
         this.cleanable = GlobalCleaner.register(this, this.nativeState);
+    }
+
+    @Override
+    public void startTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to start text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StartTextInput(this.nativeState.handle));
+    }
+
+    @Override
+    public void stopTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to stop text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StopTextInput(this.nativeState.handle));
     }
 
     @Override

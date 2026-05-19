@@ -15,6 +15,9 @@ import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
+import io.github.animaexinani.engine.EventRegistry;
+import io.github.animaexinani.engine.listeners.KeyboardListener;
+import io.github.animaexinani.engine.events.KeyEvent;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,19 +27,28 @@ import java.util.Random;
 /**
  * The game state representing the active gameplay.
  */
-public class PlayState implements GameState {
+public class PlayState implements GameState, KeyboardListener {
     private final CombinedWorld combinedWorld;
     private final PlayerShip playerShip;
     private Text entityCountText;
     private final Window window;
+    private final GameStateManager stateManager;
+    private final EventRegistry eventRegistry;
+    private final FontFace fontFace;
 
     /**
      * Creates a new PlayState.
      * @param window the game window
      * @param fontFace the font to use for UI
+     * @param stateManager the state manager
+     * @param eventRegistry the event registry
      */
-    public PlayState(Window window, FontFace fontFace) {
+    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry) {
         this.window = window;
+        this.fontFace = fontFace;
+        this.stateManager = stateManager;
+        this.eventRegistry = eventRegistry;
+
         float width = window != null ? window.clientSize().width() : 1920.0f;
         float height = window != null ? window.clientSize().height() : 1080.0f;
         var centerX = width / 2.0f;
@@ -99,7 +111,7 @@ public class PlayState implements GameState {
 
     @Override
     public void enter() {
-        // Any specific entry logic
+        this.eventRegistry.register(KeyboardListener.class, this);
     }
 
     @Override
@@ -126,7 +138,14 @@ public class PlayState implements GameState {
     }
 
     @Override
+    public void onKeyEvent(KeyEvent event) {
+        if (event.action() == KeyEvent.Action.PRESS && event.scancode() == 41) { // 41 is ESCAPE in SDL scancodes
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+        }
+    }
+
+    @Override
     public void exit() {
-        // Any specific exit logic
+        this.eventRegistry.remove(KeyboardListener.class, this);
     }
 }

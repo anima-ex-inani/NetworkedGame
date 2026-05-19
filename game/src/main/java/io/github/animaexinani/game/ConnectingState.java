@@ -8,6 +8,7 @@ import io.github.animaexinani.engine.ui.UIButton;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
+import io.github.animaexinani.engine.windowing.Window;
 
 import java.time.Duration;
 import java.util.Random;
@@ -23,12 +24,13 @@ public class ConnectingState extends BaseMenuState {
 
     /**
      * Creates a new ConnectingState.
+     * @param window the game window
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      */
-    public ConnectingState(GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(stateManager, fontFace, eventRegistry);
+    public ConnectingState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+        super(window, stateManager, fontFace, eventRegistry);
 
         this.statusText = new Text(fontFace, "Connecting...");
         this.statusText.fontSize(32.0f);
@@ -42,7 +44,7 @@ public class ConnectingState extends BaseMenuState {
         cancelLabel.origin(TextOrigin.CENTER);
 
         UIButton cancelButton = new UIButton(cancelLabel, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
         });
         cancelButton.position(new PointF(1920 / 2.0f - 100, 700));
         cancelButton.size(new SizeF(200, 50));
@@ -55,10 +57,10 @@ public class ConnectingState extends BaseMenuState {
         if (this.timer.compareTo(CONNECTION_DELAY) >= 0) {
             if (this.random.nextBoolean()) {
                 // Success: Transition to PlayState as host (simulated)
-                this.stateManager.transitionTo(new PlayState(null, this.fontFace)); // Window is null here but we'll fix later
+                this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry));
             } else {
                 // Failure: Transition back (for now to main menu)
-                this.stateManager.transitionTo(new MainMenuState(this.stateManager, this.fontFace, this.eventRegistry));
+                this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
             }
         }
     }

@@ -44,35 +44,30 @@ public class UITextField extends UIComponent {
     }
 
     /**
-     * Handles key events for text input.
+     * Handles text input events.
+     * @param input the input text
+     */
+    public void handleTextInput(String input) {
+        if (!this.focused()) return;
+        this.text += input;
+    }
+
+    /**
+     * Handles key events for text input (control keys).
      * @param event the key event to handle
      */
     public void handleKeyEvent(KeyEvent event) {
         if (!this.focused() || event.action() == KeyEvent.Action.RELEASE) return;
 
-        // Very basic mapping for demo purposes. 
-        // In a real engine, we'd use SDL_EVENT_TEXT_INPUT.
-        // Scancodes for A-Z are roughly 4-29 in SDL2/3.
+        // Scancode 42 is Backspace in SDL
         int scancode = event.scancode();
-        
-        if (scancode >= 4 && scancode <= 29) { // A-Z
-            char c = (char) ('a' + (scancode - 4));
-            // Shift check would be needed here for uppercase
-            this.text += c;
-        } else if (scancode >= 30 && scancode <= 38) { // 1-9
-            this.text += (char) ('1' + (scancode - 30));
-        } else if (scancode == 39) { // 0
-            this.text += '0';
-        } else if (scancode == 42) { // Backspace
+        if (scancode == 42) {
             if (!this.text.isEmpty()) {
                 this.text = this.text.substring(0, this.text.length() - 1);
             }
-        } else if (scancode == 44) { // Space
-            this.text += " ";
-        } else if (scancode == 55) { // Period
-            this.text += ".";
         }
     }
+
 
     public String text() { return this.text; }
     public void text(String text) { this.text = text; }

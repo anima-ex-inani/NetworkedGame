@@ -126,7 +126,7 @@ public final class NetworkedGame extends Application {
         }
 
         // Initialize with SplashState
-        this.stateManager.transitionTo(new SplashState(this.stateManager, fontFace, this.eventRegistry()));
+        this.stateManager.transitionTo(new SplashState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry()));
 
         // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();
