@@ -7,11 +7,14 @@ import io.github.animaexinani.engine.internal.video.NativeTexture;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rectangle.Rect;
 import io.github.animaexinani.engine.rectangle.RectF;
+import io.github.animaexinani.engine.rendering.BlendMode;
+import io.github.animaexinani.engine.rendering.FlipMode;
 import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.Size;
+import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.LazyTexture;
 import io.github.animaexinani.engine.texture.PixelFormat;
 import io.github.animaexinani.engine.texture.Texture;
@@ -361,6 +364,33 @@ public final class GPURenderer implements Renderer {
         }
 
         @Override
+        public void drawRects(@NotNull RectF @NotNull [] rects, @NotNull Color color) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                var sdlRects = SDL_FRect.malloc(rects.length, stack);
+                for (int i = 0; i < rects.length; i++) {
+                    var dst = sdlRects.get(i);
+                    var src = rects[i];
+                    dst.x(src.left());
+                    dst.y(src.top());
+                    dst.w(src.width());
+                    dst.h(src.height());
+                }
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_SetRenderDrawColorFloat(GPURenderer.this.nativeState.handle, color.red(), color.green(), color.blue(), color.alpha())
+                );
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderRects(GPURenderer.this.nativeState.handle, sdlRects)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw rects", e);
+            }
+        }
+
+        @Override
         public void fillRect(float x, float y, float width, float height, @NotNull Color color) {
             if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
                 throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
@@ -380,6 +410,33 @@ public final class GPURenderer implements Renderer {
                 );
             } catch (SdlOperationFailedException e) {
                 throw new RenderingOperationFailedException("Failed to fill rect", e);
+            }
+        }
+
+        @Override
+        public void fillRects(@NotNull RectF @NotNull [] rects, @NotNull Color color) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                var sdlRects = SDL_FRect.malloc(rects.length, stack);
+                for (int i = 0; i < rects.length; i++) {
+                    var dst = sdlRects.get(i);
+                    var src = rects[i];
+                    dst.x(src.left());
+                    dst.y(src.top());
+                    dst.w(src.width());
+                    dst.h(src.height());
+                }
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_SetRenderDrawColorFloat(GPURenderer.this.nativeState.handle, color.red(), color.green(), color.blue(), color.alpha())
+                );
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderFillRects(GPURenderer.this.nativeState.handle, sdlRects)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to fill rects", e);
             }
         }
 
@@ -439,6 +496,243 @@ public final class GPURenderer implements Renderer {
         }
 
         @Override
+        public void drawTexture(@NotNull Texture texture, @Nullable Rect src, @Nullable RectF dst, double angle, @Nullable PointF center, @NotNull FlipMode flipMode) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            SDL_Texture nativeTexture;
+            if (texture instanceof LazyTexture lazyTex) {
+                texture = lazyTex.getOrCreateNativeTexture(GPURenderer.this);
+            }
+
+            if (texture instanceof NativeTexture texture1) {
+                nativeTexture = texture1.getBackingTexture();
+            } else {
+                throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                SDL_FRect sdlSrc = null;
+                if (src != null) {
+                    sdlSrc = SDL_FRect.malloc(stack);
+                    sdlSrc.x(src.left());
+                    sdlSrc.y(src.top());
+                    sdlSrc.w(src.width());
+                    sdlSrc.h(src.height());
+                }
+
+                SDL_FRect sdlDst = null;
+                if (dst != null) {
+                    sdlDst = SDL_FRect.malloc(stack);
+                    sdlDst.x(dst.left());
+                    sdlDst.y(dst.top());
+                    sdlDst.w(dst.width());
+                    sdlDst.h(dst.height());
+                }
+
+                SDL_FPoint sdlCenter = null;
+                if (center != null) {
+                    sdlCenter = SDL_FPoint.malloc(stack);
+                    sdlCenter.x(center.x());
+                    sdlCenter.y(center.y());
+                }
+
+                int sdlFlip = switch (flipMode) {
+                    case NONE -> SDLSurface.SDL_FLIP_NONE;
+                    case HORIZONTAL -> SDLSurface.SDL_FLIP_HORIZONTAL;
+                    case VERTICAL -> SDLSurface.SDL_FLIP_VERTICAL;
+                    case BOTH -> SDLSurface.SDL_FLIP_HORIZONTAL | SDLSurface.SDL_FLIP_VERTICAL;
+                };
+
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderTextureRotated(GPURenderer.this.nativeState.handle, nativeTexture, sdlSrc, sdlDst, angle, sdlCenter, sdlFlip)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw rotated texture", e);
+            }
+        }
+
+        @Override
+        public void drawTexture9Grid(@NotNull Texture texture, @Nullable Rect src, float leftWidth, float rightWidth, float topHeight, float bottomHeight, float scale, @Nullable RectF dst) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            SDL_Texture nativeTexture;
+            if (texture instanceof LazyTexture lazyTex) {
+                texture = lazyTex.getOrCreateNativeTexture(GPURenderer.this);
+            }
+
+            if (texture instanceof NativeTexture texture1) {
+                nativeTexture = texture1.getBackingTexture();
+            } else {
+                throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                SDL_FRect sdlSrc = null;
+                if (src != null) {
+                    sdlSrc = SDL_FRect.malloc(stack);
+                    sdlSrc.x(src.left());
+                    sdlSrc.y(src.top());
+                    sdlSrc.w(src.width());
+                    sdlSrc.h(src.height());
+                }
+
+                SDL_FRect sdlDst = null;
+                if (dst != null) {
+                    sdlDst = SDL_FRect.malloc(stack);
+                    sdlDst.x(dst.left());
+                    sdlDst.y(dst.top());
+                    sdlDst.w(dst.width());
+                    sdlDst.h(dst.height());
+                }
+
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderTexture9Grid(GPURenderer.this.nativeState.handle, nativeTexture, sdlSrc, leftWidth, rightWidth, topHeight, bottomHeight, scale, sdlDst)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw 9-grid texture", e);
+            }
+        }
+
+        @Override
+        public void drawTexture9GridTiled(@NotNull Texture texture, @Nullable Rect src, float leftWidth, float rightWidth, float topHeight, float bottomHeight, float scale, @Nullable RectF dst, float tileScale) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            SDL_Texture nativeTexture;
+            if (texture instanceof LazyTexture lazyTex) {
+                texture = lazyTex.getOrCreateNativeTexture(GPURenderer.this);
+            }
+
+            if (texture instanceof NativeTexture texture1) {
+                nativeTexture = texture1.getBackingTexture();
+            } else {
+                throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                SDL_FRect sdlSrc = null;
+                if (src != null) {
+                    sdlSrc = SDL_FRect.malloc(stack);
+                    sdlSrc.x(src.left());
+                    sdlSrc.y(src.top());
+                    sdlSrc.w(src.width());
+                    sdlSrc.h(src.height());
+                }
+
+                SDL_FRect sdlDst = null;
+                if (dst != null) {
+                    sdlDst = SDL_FRect.malloc(stack);
+                    sdlDst.x(dst.left());
+                    sdlDst.y(dst.top());
+                    sdlDst.w(dst.width());
+                    sdlDst.h(dst.height());
+                }
+
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderTexture9GridTiled(GPURenderer.this.nativeState.handle, nativeTexture, sdlSrc, leftWidth, rightWidth, topHeight, bottomHeight, scale, sdlDst, tileScale)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw 9-grid tiled texture", e);
+            }
+        }
+
+        @Override
+        public void drawTextureAffine(@NotNull Texture texture, @Nullable Rect src, @NotNull PointF origin, @NotNull PointF right, @NotNull PointF down) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            SDL_Texture nativeTexture;
+            if (texture instanceof LazyTexture lazyTex) {
+                texture = lazyTex.getOrCreateNativeTexture(GPURenderer.this);
+            }
+
+            if (texture instanceof NativeTexture texture1) {
+                nativeTexture = texture1.getBackingTexture();
+            } else {
+                throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                SDL_FRect sdlSrc = null;
+                if (src != null) {
+                    sdlSrc = SDL_FRect.malloc(stack);
+                    sdlSrc.x(src.left());
+                    sdlSrc.y(src.top());
+                    sdlSrc.w(src.width());
+                    sdlSrc.h(src.height());
+                }
+
+                var sdlOrigin = SDL_FPoint.malloc(stack);
+                sdlOrigin.x(origin.x());
+                sdlOrigin.y(origin.y());
+
+                var sdlRight = SDL_FPoint.malloc(stack);
+                sdlRight.x(right.x());
+                sdlRight.y(right.y());
+
+                var sdlDown = SDL_FPoint.malloc(stack);
+                sdlDown.x(down.x());
+                sdlDown.y(down.y());
+
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderTextureAffine(GPURenderer.this.nativeState.handle, nativeTexture, sdlSrc, sdlOrigin, sdlRight, sdlDown)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw affine texture", e);
+            }
+        }
+
+        @Override
+        public void drawTextureTiled(@NotNull Texture texture, @Nullable Rect src, float scale, @Nullable RectF dst) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            SDL_Texture nativeTexture;
+            if (texture instanceof LazyTexture lazyTex) {
+                texture = lazyTex.getOrCreateNativeTexture(GPURenderer.this);
+            }
+
+            if (texture instanceof NativeTexture texture1) {
+                nativeTexture = texture1.getBackingTexture();
+            } else {
+                throw new IllegalArgumentException("Unsupported texture type: " + texture.getClass().getName());
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                SDL_FRect sdlSrc = null;
+                if (src != null) {
+                    sdlSrc = SDL_FRect.malloc(stack);
+                    sdlSrc.x(src.left());
+                    sdlSrc.y(src.top());
+                    sdlSrc.w(src.width());
+                    sdlSrc.h(src.height());
+                }
+
+                SDL_FRect sdlDst = null;
+                if (dst != null) {
+                    sdlDst = SDL_FRect.malloc(stack);
+                    sdlDst.x(dst.left());
+                    sdlDst.y(dst.top());
+                    sdlDst.w(dst.width());
+                    sdlDst.h(dst.height());
+                }
+
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_RenderTextureTiled(GPURenderer.this.nativeState.handle, nativeTexture, sdlSrc, scale, sdlDst)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to draw tiled texture", e);
+            }
+        }
+
+        @Override
         public void clipRect(@Nullable Rect rect) {
             if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
                 throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
@@ -477,29 +771,6 @@ public final class GPURenderer implements Renderer {
         }
 
         @Override
-        public void viewport(@Nullable Rect rect) {
-            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
-                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
-            }
-
-            try (var stack = MemoryStack.stackPush()) {
-                SDL_Rect sdlRect = null;
-                if (rect != null) {
-                    sdlRect = SDL_Rect.malloc(stack);
-                    sdlRect.x(rect.left());
-                    sdlRect.y(rect.top());
-                    sdlRect.w(rect.width());
-                    sdlRect.h(rect.height());
-                }
-                SdlOperationFailedException.throwOnFailure(
-                        SDLRender.SDL_SetRenderViewport(GPURenderer.this.nativeState.handle, sdlRect)
-                );
-            } catch (SdlOperationFailedException e) {
-                throw new RenderingOperationFailedException("Failed to set viewport", e);
-            }
-        }
-
-        @Override
         public @NotNull Rect viewport() {
             if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
                 throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
@@ -513,6 +784,121 @@ public final class GPURenderer implements Renderer {
                 return new Rect(sdlRect.x(), sdlRect.y(), sdlRect.w(), sdlRect.h());
             } catch (SdlOperationFailedException e) {
                 throw new RenderingOperationFailedException("Failed to get viewport", e);
+            }
+        }
+
+        @Override
+        public void drawColor(@NotNull Color color) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_SetRenderDrawColorFloat(GPURenderer.this.nativeState.handle, color.red(), color.green(), color.blue(), color.alpha())
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to set draw color", e);
+            }
+        }
+
+        @Override
+        public @NotNull Color drawColor() {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                var r = stack.mallocFloat(1);
+                var g = stack.mallocFloat(1);
+                var b = stack.mallocFloat(1);
+                var a = stack.mallocFloat(1);
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_GetRenderDrawColorFloat(GPURenderer.this.nativeState.handle, r, g, b, a)
+                );
+                return new Color(r.get(0), g.get(0), b.get(0), a.get(0));
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to get draw color", e);
+            }
+        }
+
+        @Override
+        public void blendMode(@NotNull BlendMode blendMode) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            int sdlBlendMode = switch (blendMode) {
+                case NONE -> SDLBlendMode.SDL_BLENDMODE_NONE;
+                case BLEND -> SDLBlendMode.SDL_BLENDMODE_BLEND;
+                case ADD -> SDLBlendMode.SDL_BLENDMODE_ADD;
+                case MOD -> SDLBlendMode.SDL_BLENDMODE_MOD;
+                case MUL -> SDLBlendMode.SDL_BLENDMODE_MUL;
+            };
+
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_SetRenderDrawBlendMode(GPURenderer.this.nativeState.handle, sdlBlendMode)
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to set blend mode", e);
+            }
+        }
+
+        @Override
+        public @NotNull BlendMode blendMode() {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                var sdlBlendMode = stack.mallocInt(1);
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_GetRenderDrawBlendMode(GPURenderer.this.nativeState.handle, sdlBlendMode)
+                );
+                return switch (sdlBlendMode.get(0)) {
+                    case SDLBlendMode.SDL_BLENDMODE_NONE -> BlendMode.NONE;
+                    case SDLBlendMode.SDL_BLENDMODE_BLEND -> BlendMode.BLEND;
+                    case SDLBlendMode.SDL_BLENDMODE_ADD -> BlendMode.ADD;
+                    case SDLBlendMode.SDL_BLENDMODE_MOD -> BlendMode.MOD;
+                    case SDLBlendMode.SDL_BLENDMODE_MUL -> BlendMode.MUL;
+                    default -> BlendMode.NONE;
+                };
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to get blend mode", e);
+            }
+        }
+
+        @Override
+        public void scale(@NotNull SizeF scale) {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try {
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_SetRenderScale(GPURenderer.this.nativeState.handle, scale.width(), scale.height())
+                );
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to set scale", e);
+            }
+        }
+
+        @Override
+        public @NotNull SizeF scale() {
+            if (GPURenderer.this.nativeState.cleaned.getAcquire()) {
+                throw new IllegalStateException("Attempted to use RenderContext of a closed renderer");
+            }
+
+            try (var stack = MemoryStack.stackPush()) {
+                var scaleX = stack.mallocFloat(1);
+                var scaleY = stack.mallocFloat(1);
+                SdlOperationFailedException.throwOnFailure(
+                        SDLRender.SDL_GetRenderScale(GPURenderer.this.nativeState.handle, scaleX, scaleY)
+                );
+                return new SizeF(scaleX.get(0), scaleY.get(0));
+            } catch (SdlOperationFailedException e) {
+                throw new RenderingOperationFailedException("Failed to get scale", e);
             }
         }
     }
