@@ -3,6 +3,7 @@ package io.github.animaexinani.engine.ui;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.engine.font.Text;
+import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 import io.github.animaexinani.engine.point.PointF;
@@ -39,6 +40,7 @@ public class UITextField extends UIComponent {
         renderer.draw(background);
 
         this.textDisplay.text(this.text + (this.focused() ? "|" : ""));
+        this.textDisplay.origin(TextOrigin.CENTER_LEFT);
         this.textDisplay.translation(new PointF(this.position().x() + 5, this.position().y() + this.size().height() / 2.0f));
         renderer.draw(this.textDisplay);
     }
