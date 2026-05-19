@@ -165,7 +165,7 @@ public final class NetworkedGame extends Application {
 
             FontFace fontFace = null;
             try {
-                fontFace = this.assetManager().load(new AssetKey<>(FontFace.class, "/test.ttf")).get();
+                fontFace = this.assetManager().load(new AssetKey<>(FontFace.class, "/Oxanium-Medium.ttf")).get();
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Failed to load UI font", e);
             }
