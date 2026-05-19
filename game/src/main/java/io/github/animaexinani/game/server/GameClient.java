@@ -97,7 +97,7 @@ public class GameClient {
                         var t = freshEntity.physicsBody().getTransform();
                         t.setTranslation(x, y);
                         t.setRotation(rot);
-                        localWorld.spawnEntity(new io.github.animaexinani.game.nentities.ClientNetworkEntity(id, entityTypes[typeOrdinal]));
+                        localWorld.spawnEntity(freshEntity);
                     }
 
                     localWorld.updateEntityTarget(snap);
