@@ -111,6 +111,9 @@ public final class SDLRenderContext implements RenderContext {
 
             IntBuffer indexBuffer = stack.mallocInt(indexCount);
             for (int i = 0; i < indexCount; i++) {
+                if (indices[i] < 0 || indices[i] >= vertexCount) {
+                    throw new IllegalArgumentException("Index " + i + " is out of bounds: " + indices[i]);
+                }
                 indexBuffer.put(i, indices[i]);
             }
 
