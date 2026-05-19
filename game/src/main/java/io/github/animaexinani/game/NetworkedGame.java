@@ -209,6 +209,9 @@ public final class NetworkedGame extends Application {
 
     @Override
     public void close() {
+        if (this.stateManager != null) {
+            this.stateManager.transitionTo(null);
+        }
         if (this.gameServer != null) {
             this.gameServer.stop();
         }

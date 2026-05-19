@@ -52,9 +52,19 @@ public class GameServer {
     private long lastSpawnTime = System.nanoTime();
     private long lastAsteroidSpawnTime = System.nanoTime();
 
+    // Auto-stop logic for LOCAL mode
+    private final boolean stopWhenNoClients;
+    private long lastClientSeenTime = System.currentTimeMillis();
+    private static final long AUTO_STOP_DELAY_MS = 5000;
+
     public GameServer(CombinedWorld playfield, int port) {
+        this(playfield, port, false);
+    }
+
+    public GameServer(CombinedWorld playfield, int port, boolean stopWhenNoClients) {
         this.playfield = playfield;
         this.port = port;
+        this.stopWhenNoClients = stopWhenNoClients;
     }
 
     public void start() {
@@ -93,6 +103,7 @@ public class GameServer {
                 }
 
                 this.clientInputs.put(playerId, new TimedInput(actions, System.nanoTime()));
+                this.lastClientSeenTime = System.currentTimeMillis();
 
                 // Spawn a PlayerShip the very first time we hear from this client.
                 // spawnedPlayers guards against races if two packets arrive simultaneously.
@@ -207,6 +218,17 @@ public class GameServer {
             }
 
             this.processInputs();
+
+            // Auto-stop if no clients seen recently (for LOCAL mode integration)
+            if (this.stopWhenNoClients && !this.clientInputs.isEmpty()) {
+                // If we have clients, update the timer
+                this.lastClientSeenTime = System.currentTimeMillis();
+            } else if (this.stopWhenNoClients && System.currentTimeMillis() - this.lastClientSeenTime > AUTO_STOP_DELAY_MS) {
+                LOGGER.info("No clients connected for " + AUTO_STOP_DELAY_MS + "ms. Auto-stopping server.");
+                this.stop();
+                break;
+            }
+
             this.playfield.preUpdate(delta);
             this.playfield.update(delta);
             this.playfield.postUpdate(delta);

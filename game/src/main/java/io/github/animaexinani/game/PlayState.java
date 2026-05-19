@@ -95,7 +95,7 @@ public class PlayState implements GameState, KeyboardListener {
                     .withSize(sizeF)
                     .build();
 
-            this.gameServer = new GameServer(serverWorld, port);
+            this.gameServer = new GameServer(serverWorld, port, true);
             this.gameServer.start();
         } else {
             this.gameServer = null;

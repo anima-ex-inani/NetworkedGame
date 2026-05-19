@@ -20,8 +20,8 @@ public class GameStateManager {
         while (!this.stateStack.isEmpty()) {
             this.stateStack.pop().exit();
         }
-        this.stateStack.push(newState);
         if (newState != null) {
+            this.stateStack.push(newState);
             newState.enter();
         }
     }
@@ -31,8 +31,8 @@ public class GameStateManager {
      * @param newState the state to push
      */
     public void pushState(GameState newState) {
-        this.stateStack.push(newState);
         if (newState != null) {
+            this.stateStack.push(newState);
             newState.enter();
         }
     }
