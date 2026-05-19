@@ -1,9 +1,11 @@
 package io.github.animaexinani.game.server;
 
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,11 +83,10 @@ public class GameClient {
                     float y = bb.getFloat();
                     float rot = bb.getFloat();
                     int health = bb.getInt();
+                    int shield = bb.getInt();
 
                     var snap = new EntitySnapshot(
-                            id,
-                            entityTypes[typeOrdinal],
-                            x, y, rot, health
+                            id, entityTypes[typeOrdinal], x, y, rot, health, shield
                     );
                     
                     if (localWorld.getEntity(id) == null) {

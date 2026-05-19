@@ -27,6 +27,7 @@ import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.game.collision.BulletDamageContactListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
 import io.github.animaexinani.game.collision.EntityCollisionListener;
+import io.github.animaexinani.game.nentities.ClientNetworkEntity;
 import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntitySnapshot;
 import io.github.animaexinani.game.nentities.EntityType;
@@ -305,17 +306,50 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
                 data.targetX = snap.x();
                 data.targetY = snap.y();
                 data.targetRotation = snap.rotation();
+
+                // damage detection
+                if (data.entity instanceof ClientNetworkEntity ce) {
+                    // check shield damage
+                    if (snap.shield() < ce.shield()) {
+                        ce.flashTimer = 0.25f;
+                        ce.flashColor = new io.github.animaexinani.engine.color.Color(0.0f, 0.5f, 1.0f, 1.0f); // Blue
+                    } 
+                    // check Hull damage
+                    else if (snap.health() < ce.health()) {
+                        ce.flashTimer = 0.25f;
+                        ce.flashColor = new io.github.animaexinani.engine.color.Color(1.0f, 0.0f, 0.0f, 1.0f); // Red
+                    }
+                    
+                    ce.setHealth(snap.health());
+                    ce.setShield(snap.shield());
+                }
             }
         }
     }
 
-    // A simple Lerp function
+    // a simple Lerp function
     float lerp(float current, float target, float speed) {
         return current + (target - current) * speed;
     }
 
     public void interpolateVisuals(float frameTime) {
         for (var entityData : this.entities.values()) {
+
+            if (entityData.entity instanceof ClientNetworkEntity ce) {
+                boolean wasFlashing = ce.flashTimer > 0;
+                if (wasFlashing) {
+                    ce.flashTimer -= frameTime;
+                }
+                
+                // if they are actively flashing (or just stopped), rebuild their graphic to apply the color change!
+                if (wasFlashing) {
+                    var factory = this.visualFactories.get(ce.type());
+                    if (factory != null) {
+                        entityData.drawable = factory.apply(ce);
+                    }
+                }
+            }
+
             if (entityData.drawable instanceof Transformable t) {
                 float currentX = t.translation().x();
                 float currentY = t.translation().y();

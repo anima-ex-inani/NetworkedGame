@@ -28,6 +28,7 @@ public class BasicBullet implements Bullet {
     private Duration maxLifetime;
     private boolean active;
     private final List<DamageDealtEventListener> damageDealtListeners = new CopyOnWriteArrayList<>();
+    private int damageAmount = 10_000;
 
     private static final Vector2[] LOCAL_COORDS = {
             new Vector2(5.0, 0.0),
@@ -74,6 +75,7 @@ public class BasicBullet implements Bullet {
         this.owner = null;
         this.playfield = null;
         this.onDespawn = null;
+        this.damageAmount = 10_000;
     }
 
     @Override
@@ -104,7 +106,12 @@ public class BasicBullet implements Bullet {
 
     @Override
     public int damage() {
-        return 10_000;
+        return this.damageAmount;
+    }
+
+    // new setter so enemies can change the damage
+    public void damage(int value) {
+        this.damageAmount = value;
     }
 
     @Override

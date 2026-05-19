@@ -1,20 +1,27 @@
 package io.github.animaexinani.game.server;
 
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.github.animaexinani.engine.input.GameAction;
+import io.github.animaexinani.game.nentities.Damageable;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.LivingEntity;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScoutDrone;
-import io.github.animaexinani.game.nentities.LivingEntity;
+import io.github.animaexinani.game.nentities.StrikeFighter;
 import io.github.animaexinani.game.playfield.CombinedWorld;
-import io.github.animaexinani.game.nentities.Damageable;
 
 public class GameServer {
     private static final Logger LOGGER = Logger.getLogger(GameServer.class.getName());
@@ -118,30 +125,43 @@ public class GameServer {
             if (now - lastSpawnTime > 3_000_000_000L) { // every 3 seconds
                 lastSpawnTime = now;
                 
-
-                // only spawn drones if max entity is not reached
-                if (playfield.entities().size() < MAX_ENTITIES) {
-                    double margin = 100.0;
-                    double spawnX;
-                    double spawnY;
-
-                    if (Math.random() > 0.5) {
-                        spawnX = margin + (Math.random() * (1920 - (2 * margin)));
-                        spawnY = Math.random() > 0.5 ? margin : (1080 - margin);
-                    } else {
-                        spawnX = Math.random() > 0.5 ? margin : (1920 - margin);
-                        spawnY = margin + (Math.random() * (1080 - (2 * margin)));
+                // calculate the spawn coordinates
+                double margin = 100.0; 
+                double spawnX;
+                double spawnY;
+                
+                if (Math.random() > 0.5) {
+                    spawnX = margin + (Math.random() * (1920 - (2 * margin))); 
+                    spawnY = Math.random() > 0.5 ? margin : (1080 - margin);   
+                } else {
+                    spawnX = Math.random() > 0.5 ? margin : (1920 - margin);   
+                    spawnY = margin + (Math.random() * (1080 - (2 * margin))); 
+                }
+                
+                // pick which enemy to spawn
+                Entity spawnedEnemy;
+                
+                if (Math.random() < 0.20) {
+                    StrikeFighter fighter = new StrikeFighter(spawnX, spawnY, this.playfield);
+                    
+                    if (!clientInputs.isEmpty()) {
+                        UUID firstPlayer = clientInputs.keySet().iterator().next();
+                        fighter.setTarget(playfield.getEntity(firstPlayer));
                     }
-
-                    ScoutDrone drone = new ScoutDrone(spawnX, spawnY);
-
+                    spawnedEnemy = fighter;
+                    
+                } else { 
+                    ScoutDrone drone = new ScoutDrone(spawnX, spawnY, this.playfield);
+                    
                     if (!clientInputs.isEmpty()) {
                         UUID firstPlayer = clientInputs.keySet().iterator().next();
                         drone.setTarget(playfield.getEntity(firstPlayer));
                     }
-
-                    this.spawnEntity(drone);
+                    spawnedEnemy = drone;
                 }
+
+                // add it to the world
+                this.spawnEntity(spawnedEnemy);
             }
 
             processInputs();
@@ -185,7 +205,7 @@ public class GameServer {
 
     // payload sizes
     private static final int HEADER_BYTES = 12;
-    private static final int ENTITY_BYTES = 36;
+    private static final int ENTITY_BYTES = 46;
     private static final int MAX_UDP_PAYLOAD = 65_507;
 
 
@@ -220,10 +240,14 @@ public class GameServer {
                 bb.putFloat((float) t.getRotationAngle());
 
                 int currentHp = 100;
+                int currentShield = 0;
+                
                 if (entity instanceof LivingEntity living) {
                     currentHp = living.health();
+                    currentShield = living.shield();
                 }
                 bb.putInt(currentHp);
+                bb.putInt(currentShield);
                 written++;
             }
 

@@ -56,6 +56,7 @@ public final class NetworkedGame extends Application {
     // null when mode == SERVER
     private final CombinedWorld combinedWorld;
     private final GameClient gameClient;
+    private final UUID myPlayerId;
 
     // null when mode == CLIENT
     private final GameServer gameServer;
@@ -115,21 +116,41 @@ public final class NetworkedGame extends Application {
             return true;
         }
 
-        // Send queued inputs at the fixed network tick rate
+        // send queued inputs at the fixed network tick rate
         while (this.accumulator >= TIME_STEP) {
             this.gameClient.sendInputs();
             this.accumulator -= TIME_STEP;
         }
 
-        // Flush spawn/despawn queues so newly received network entities appear
+        // flush spawn/despawn queues so newly received network entities appear
         this.combinedWorld.preUpdate(java.time.Duration.ZERO);
 
-        // Glide dummy visuals toward the latest server snapshot
+        // glide dummy visuals toward the latest server snapshot
         this.combinedWorld.interpolateVisuals(frameTime);
-
+        
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
         this.combinedWorld.render(renderer);
+
+        if (this.gameClient != null && this.myPlayerId != null) {
+            Entity localPlayer = this.combinedWorld.getEntity(this.myPlayerId);
+            
+            if (localPlayer instanceof ClientNetworkEntity cp) {
+                float barWidth = 400f;
+                float barHeight = 20f;
+                float startX = (1920f - barWidth) / 2f;
+                float startY = 1000f; // Bottom center
+
+                // draw Hull with a red background
+                float hpPercent = Math.max(0, cp.health()) / 100_000f;
+                renderer.draw(createRect(startX, startY + 25, barWidth * hpPercent, barHeight, new Color(1f, 0f, 0f, 1f)));
+
+                // Draw shield with a blue background
+                float shieldPercent = Math.max(0, cp.shield()) / 100_000f;
+                renderer.draw(createRect(startX, startY, barWidth * shieldPercent, barHeight, new Color(0f, 0.5f, 1f, 1f)));
+            }
+        }
+
         renderer.present();
 
         return true;
@@ -203,17 +224,17 @@ public final class NetworkedGame extends Application {
         if (mode == Mode.CLIENT || mode == Mode.LOCAL) {
             // Generate a stable identity for this session. The server will
             // create a PlayerShip keyed to this UUID on first contact.
-            UUID myPlayerId = UUIDGenerator.generateV7Uuid();
+            this.myPlayerId = UUIDGenerator.generateV7Uuid();
 
             // The client world starts with a single dummy entity for the local
             // player so the renderer has something to track before the first
             // server snapshot arrives.
             ClientNetworkEntity localDummy =
-                    new ClientNetworkEntity(myPlayerId, EntityType.PLAYER);
+                    new ClientNetworkEntity(this.myPlayerId, EntityType.PLAYER);
 
             this.combinedWorld = new CombinedWorld.Builder()
                     .withEntity(localDummy)
-                    .withLocalPlayerId(myPlayerId)
+                    .withLocalPlayerId(this.myPlayerId)
                     .withSize(sizeF)
                     .withVisualFactory(EntityType.BULLET, entity -> new ConvexPolygon(
                             new PointF[]{
@@ -225,14 +246,21 @@ public final class NetworkedGame extends Application {
                             Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID)
                                     .toArray(PointF[]::new),
                             new Color(0.6f, 0.6f, 0.6f, 1.0f)))
-                    .withVisualFactory(EntityType.PLAYER, entity -> new ConvexPolygon(
-                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN))
-                    .withVisualFactory(EntityType.SCOUT_DRONE, entity -> new ConvexPolygon(
-                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new),
-                            new Color(1.0f, 0.0f, 0.0f, 1.0f)))
-                    .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> new ConvexPolygon(
-                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new),
-                            new Color(1.0f, 0.0f, 1.0f, 1.0f)))
+                    .withVisualFactory(EntityType.PLAYER, entity -> {
+                        Color c = new Color(0.0f, 1.0f, 0.0f, 1.0f); // Base Green
+                        if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
+                        return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
+                    })
+                    .withVisualFactory(EntityType.SCOUT_DRONE, entity -> {
+                        Color c = new Color(1.0f, 1.0f, 0.0f, 1.0f); // Base Yellow
+                        if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
+                        return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
+                    })
+                    .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> {
+                        Color c = new Color(1.0f, 0.0f, 1.0f, 1.0f); // Base Magenta
+                        if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
+                        return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
+                    })
                     .build();
 
             this.gameClient = new GameClient(this.combinedWorld, this.inputListener, myPlayerId);
@@ -240,8 +268,16 @@ public final class NetworkedGame extends Application {
         } else {
             this.combinedWorld = null;
             this.gameClient = null;
+            this.myPlayerId = null;
         }
 
         this.lastTime = System.nanoTime();
+    }
+
+    private ConvexPolygon createRect(float x, float y, float width, float height, Color color) {
+        return new ConvexPolygon(new PointF[] {
+            new PointF(x, y), new PointF(x + width, y),
+            new PointF(x + width, y + height), new PointF(x, y + height)
+        }, color);
     }
 }
