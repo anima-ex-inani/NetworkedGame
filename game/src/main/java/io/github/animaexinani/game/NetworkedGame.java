@@ -147,8 +147,8 @@ public final class NetworkedGame extends Application {
             LOGGER.log(Level.WARNING, "Failed to load test.ttf font", e);
         }
 
-        // Initialize with SplashState
-        this.stateManager.transitionTo(new SplashState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry(), this.settingsManager, this.rebindingController));
+        // Initialize with MainMenuState
+        this.stateManager.transitionTo(new MainMenuState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry(), this.settingsManager, this.rebindingController));
 
         // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();
