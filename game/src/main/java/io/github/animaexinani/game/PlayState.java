@@ -8,28 +8,20 @@ import io.github.animaexinani.engine.input.GameInputListener;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
-import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.windowing.Window;
-import io.github.animaexinani.game.nentities.Asteroid;
 import io.github.animaexinani.game.nentities.ClientNetworkEntity;
 import io.github.animaexinani.game.nentities.Entity;
-import io.github.animaexinani.game.nentities.EntityType;
-import io.github.animaexinani.game.nentities.PlayerShip;
-import io.github.animaexinani.game.nentities.ServerNetworkEntity;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.game.server.GameClient;
 import io.github.animaexinani.game.server.GameServer;
-import io.github.animaexinani.game.util.UUIDGenerator;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.input.RebindingController;
+import io.github.animaexinani.game.network.GameConnection;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -50,18 +42,16 @@ public class PlayState implements GameState, KeyboardListener {
     private final UUID myPlayerId;
 
     /**
-     * Creates a new PlayState.
+     * Creates a new PlayState with an existing game connection.
      * @param window the game window
      * @param fontFace the font to use for UI
      * @param stateManager the state manager
      * @param eventRegistry the event registry
      * @param settingsManager the settings manager
      * @param rebindingController the rebinding controller
-     * @param mode the mode (LOCAL or CLIENT)
-     * @param host the server host (if CLIENT)
-     * @param port the server port
+     * @param connection the active game connection
      */
-    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController, NetworkedGame.Mode mode, String host, int port) {
+    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController, GameConnection connection) {
         this.window = window;
         this.fontFace = fontFace;
         this.stateManager = stateManager;
@@ -69,75 +59,10 @@ public class PlayState implements GameState, KeyboardListener {
         this.settingsManager = settingsManager;
         this.rebindingController = rebindingController;
 
-        float width = window != null ? window.clientSize().width() : 1920.0f;
-        float height = window != null ? window.clientSize().height() : 1080.0f;
-        var sizeF = new SizeF(width, height);
-
-        // --- Server setup (LOCAL mode) ---
-        if (mode == NetworkedGame.Mode.LOCAL) {
-            List<Entity> serverEntities = new ArrayList<>();
-            Random rand = new Random();
-            for (int i = 0; i < 5; i++) {
-                float x = rand.nextFloat() * sizeF.width();
-                float y = rand.nextFloat() * sizeF.height();
-                double vx = rand.nextDouble() * 100 - 50;
-                double vy = rand.nextDouble() * 100 - 50;
-                serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
-            }
-
-            UUID serverId = new UUID(0L, 0L);
-            ServerNetworkEntity serverDummy = new ServerNetworkEntity(serverId, EntityType.PLAYER);
-            serverEntities.add(serverDummy);
-
-            CombinedWorld serverWorld = new CombinedWorld.Builder()
-                    .withEntities(serverEntities)
-                    .withLocalPlayerId(serverId)
-                    .withSize(sizeF)
-                    .build();
-
-            this.gameServer = new GameServer(serverWorld, port, true);
-            this.gameServer.start();
-        } else {
-            this.gameServer = null;
-        }
-
-        // --- Client setup ---
-        this.myPlayerId = UUIDGenerator.generateV7Uuid();
-        ClientNetworkEntity localDummy = new ClientNetworkEntity(this.myPlayerId, EntityType.PLAYER);
-
-        this.combinedWorld = new CombinedWorld.Builder()
-                .withEntity(localDummy)
-                .withLocalPlayerId(this.myPlayerId)
-                .withSize(sizeF)
-                .withVisualFactory(EntityType.BULLET, entity -> new ConvexPolygon(
-                        new PointF[]{
-                            new PointF(5.0f, 0.0f),
-                            new PointF(-2.0f, 2.5f),
-                            new PointF(-2.0f, -2.5f)
-                        }, Color.WHITE))
-                .withVisualFactory(EntityType.ASTEROID, entity -> new ConvexPolygon(
-                        Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID)
-                                .toArray(PointF[]::new),
-                        new Color(0.6f, 0.6f, 0.6f, 1.0f)))
-                .withVisualFactory(EntityType.PLAYER, entity -> {
-                    Color c = new Color(0.0f, 1.0f, 0.0f, 1.0f);
-                    if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
-                    return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
-                })
-                .withVisualFactory(EntityType.SCOUT_DRONE, entity -> {
-                    Color c = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-                    if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
-                    return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
-                })
-                .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> {
-                    Color c = new Color(1.0f, 0.0f, 1.0f, 1.0f);
-                    if (entity instanceof ClientNetworkEntity ce) c = ce.getVisualColor(c);
-                    return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
-                })
-                .build();
-        
-        this.gameClient = new GameClient(this.combinedWorld, this.myPlayerId);
-        this.gameClient.connect(host, port);
+        this.gameServer = connection.gameServer();
+        this.gameClient = connection.gameClient();
+        this.combinedWorld = connection.combinedWorld();
+        this.myPlayerId = connection.myPlayerId();
 
         if (fontFace != null) {
             this.entityCountText = new Text(fontFace, "Entities: 0");

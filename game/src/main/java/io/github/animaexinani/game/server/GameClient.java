@@ -47,6 +47,14 @@ public class GameClient {
         }
     }
 
+    /**
+     * Returns whether the client has received at least one snapshot from the server.
+     * @return true if connected, false otherwise
+     */
+    public boolean isConnected() {
+        return this.lastSequence > -1;
+    }
+
     private void listenLoop() {
         byte[] buf = new byte[1400];
 

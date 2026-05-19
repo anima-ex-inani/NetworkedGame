@@ -5,6 +5,9 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.input.RebindingController;
+import io.github.animaexinani.engine.size.SizeF;
+import io.github.animaexinani.game.network.GameConnection;
+import io.github.animaexinani.game.network.GameConnectionFactory;
 
 /**
  * The singleplayer menu of the game.
@@ -29,7 +32,10 @@ public class SingleplayerMenuState extends BaseMenuState {
 
         this.components.add(this.createButton("New Game", centerX, startY, () -> {
             int port = this.settingsManager.getSettings().getNetworking().getPreferredPort();
-            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, NetworkedGame.Mode.LOCAL, "127.0.0.1", port));
+            float width = window != null ? window.clientSize().width() : 1920.0f;
+            float height = window != null ? window.clientSize().height() : 1080.0f;
+            GameConnection connection = GameConnectionFactory.createLocalConnection(new SizeF(width, height), port);
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, connection));
         }));
         this.components.add(this.createButton("High Scores", centerX, startY + spacing, () -> {
             // High scores logic

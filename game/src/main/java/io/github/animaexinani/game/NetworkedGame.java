@@ -31,6 +31,8 @@ import io.github.animaexinani.game.nentities.ServerNetworkEntity;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.game.server.GameServer;
 import io.github.animaexinani.game.settings.SettingsManager;
+import io.github.animaexinani.game.network.GameConnection;
+import io.github.animaexinani.game.network.GameConnectionFactory;
 
 /**
  * The main application class for the Networked Game.
@@ -169,7 +171,11 @@ public final class NetworkedGame extends Application {
             }
 
             if (mode == Mode.CLIENT) {
-                this.stateManager.transitionTo(new PlayState(this.mainWindow, fontFace, this.stateManager, this.eventRegistry(), this.settingsManager, this.rebindingController, Mode.CLIENT, host, port));
+                float width = this.mainWindow.clientSize().width();
+                float height = this.mainWindow.clientSize().height();
+                GameConnection connection = GameConnectionFactory.createClientConnection(new SizeF(width, height));
+                connection.gameClient().connect(host, port);
+                this.stateManager.transitionTo(new PlayState(this.mainWindow, fontFace, this.stateManager, this.eventRegistry(), this.settingsManager, this.rebindingController, connection));
             } else {
                 this.stateManager.transitionTo(new MainMenuState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry(), this.settingsManager, this.rebindingController));
             }

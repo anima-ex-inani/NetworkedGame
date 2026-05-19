@@ -12,6 +12,9 @@ import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.input.RebindingController;
+import io.github.animaexinani.engine.size.SizeF;
+import io.github.animaexinani.game.network.GameConnection;
+import io.github.animaexinani.game.network.GameConnectionFactory;
 
 /**
  * The multiplayer menu of the game.
@@ -58,7 +61,12 @@ public class MultiplayerMenuState extends BaseMenuState {
             this.settingsManager.getSettings().setPlayerName(nameField.text());
             this.settingsManager.save();
             int port = this.settingsManager.getSettings().getNetworking().getPreferredPort();
-            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, NetworkedGame.Mode.LOCAL, "127.0.0.1", port));
+
+            float width = window != null ? window.clientSize().width() : 1920.0f;
+            float height = window != null ? window.clientSize().height() : 1080.0f;
+            GameConnection connection = GameConnectionFactory.createLocalConnection(new SizeF(width, height), port);
+
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, connection));
         }));
         this.components.add(this.createButton("Join Game", centerX, startY + spacing, () -> {
             // Save player name before joining
