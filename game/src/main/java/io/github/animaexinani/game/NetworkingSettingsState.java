@@ -137,12 +137,16 @@ public class NetworkingSettingsState extends BaseMenuState {
         this.components.add(this.createButton("Apply", centerX - 160, 950, () -> {
             try {
                 int port = Integer.parseInt(this.portField.text());
-                this.settingsManager.getSettings().getNetworking().setPreferredPort(port);
-                this.settingsManager.getSettings().getNetworking().setNetworkInterface(this.selectedInterface);
-                this.settingsManager.save();
-                this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+                if (port >= 0 && port <= 65535) {
+                    this.settingsManager.getSettings().getNetworking().setPreferredPort(port);
+                    this.settingsManager.getSettings().getNetworking().setNetworkInterface(this.selectedInterface);
+                    this.settingsManager.save();
+                    this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+                } else {
+                    this.portField.backgroundColor(new Color(0.5f, 0.0f, 0.0f, 1.0f)); // Dark Red
+                }
             } catch (NumberFormatException e) {
-                // Ignore invalid port for now
+                this.portField.backgroundColor(new Color(0.5f, 0.0f, 0.0f, 1.0f)); // Dark Red
             }
         }));
 

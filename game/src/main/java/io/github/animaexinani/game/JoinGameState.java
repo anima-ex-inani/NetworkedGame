@@ -71,7 +71,16 @@ public class JoinGameState extends BaseMenuState {
         this.components.add(portField);
 
         this.components.add(this.createButton("Connect", centerX, 500, () -> {
-            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+            try {
+                int port = Integer.parseInt(portField.text());
+                if (port >= 0 && port <= 65535) {
+                    this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
+                } else {
+                    portField.backgroundColor(new Color(0.5f, 0.0f, 0.0f, 1.0f)); // Dark Red
+                }
+            } catch (NumberFormatException e) {
+                portField.backgroundColor(new Color(0.5f, 0.0f, 0.0f, 1.0f)); // Dark Red
+            }
         }));
 
         this.components.add(this.createButton("Back", centerX, 600, () -> {

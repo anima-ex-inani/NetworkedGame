@@ -73,4 +73,7 @@ public class UITextField extends UIComponent {
 
     public String text() { return this.text; }
     public void text(String text) { this.text = text; }
+
+    public Color backgroundColor() { return this.backgroundColor; }
+    public void backgroundColor(Color backgroundColor) { this.backgroundColor = backgroundColor; }
 }
