@@ -7,7 +7,6 @@ import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
 import io.github.animaexinani.engine.texture.Texture;
-import io.github.animaexinani.engine.vertex.Vertex;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -33,12 +32,6 @@ public class Sprite implements Drawable, Transformable {
 
     private @NotNull Rect textureRect;
 
-    private @NotNull Vertex @NotNull [] vertexCache;
-
-    private boolean vertexCacheDirty;
-
-    private static final int @NotNull [] INDICES = {0, 1, 2, 1, 2, 3};
-
     /**
      * Creates a new sprite with the given texture and texture region.
      *
@@ -57,61 +50,23 @@ public class Sprite implements Drawable, Transformable {
         this.tint = Color.WHITE;
         this.texture = texture;
         this.textureRect = textureRect;
-        this.vertexCache = new Vertex[4];
-        this.vertexCacheDirty = true;
     }
 
     // --- Drawable ---
 
     @Override
     public void draw(@NotNull RenderContext context) {
-        this.updateVertexCache();
-        context.renderGeometry(this.vertexCache, Sprite.INDICES, this.texture);
-    }
+        var oldColor = this.texture.getColorModifier();
+        this.texture.setColorModifier(this.tint);
 
-    private void updateVertexCache() {
-        if (this.vertexCacheDirty) {
-            var currentTransform = this.transform();
+        var transform = this.transform();
+        var originPos = transform.transform(PointF.ZERO);
+        var rightPos = transform.transform(new PointF(this.textureRect.width(), 0.0f));
+        var downPos = transform.transform(new PointF(0.0f, this.textureRect.height()));
 
-            var topLeftPosition = currentTransform.transform(PointF.ZERO);
-            var topRightPosition = currentTransform.transform(new PointF(this.textureRect.width(), 0.0F));
-            var bottomLeftPosition = currentTransform.transform(new PointF(0.0F, this.textureRect.height()));
-            var bottomRightPosition = currentTransform.transform(new PointF(this.textureRect.width(), this.textureRect.height()));
+        context.drawTextureAffine(this.texture, this.textureRect, originPos, rightPos, downPos);
 
-            this.vertexCache[0] = new Vertex(topLeftPosition, this.textureRect.topLeft(), this.tint);
-            this.vertexCache[1] = new Vertex(topRightPosition, this.textureRect.topRight(), this.tint);
-            this.vertexCache[2] = new Vertex(bottomLeftPosition, this.textureRect.bottomLeft(), this.tint);
-            this.vertexCache[3] = new Vertex(bottomRightPosition, this.textureRect.bottomRight(), this.tint);
-
-            this.vertexCacheDirty = false;
-        }
-    }
-
-    public int vertexCount() {
-        return this.vertexCache.length;
-    }
-
-    public @NotNull Vertex vertexAt(int index) {
-        if (index < 0 || index >= this.vertexCache.length) {
-            throw new IndexOutOfBoundsException(
-                    "Vertex index " + index + " out of bounds for length " + this.vertexCache.length);
-        }
-
-        this.updateVertexCache();
-
-        return this.vertexCache[index];
-    }
-
-    public int indexCount() {
-        return Sprite.INDICES.length;
-    }
-
-    public int indexAt(int index) {
-        if (index < 0 || index >= Sprite.INDICES.length) {
-            throw new IndexOutOfBoundsException(
-                    "Index " + index + " out of bounds for length " + Sprite.INDICES.length);
-        }
-        return Sprite.INDICES[index];
+        this.texture.setColorModifier(oldColor);
     }
 
     /**
@@ -159,7 +114,6 @@ public class Sprite implements Drawable, Transformable {
 
             this.textureRect = textureRect;
             this.origin = new PointF(px * this.textureRect.width(), py * this.textureRect.height());
-            this.vertexCacheDirty = true;
         }
     }
 
@@ -174,7 +128,6 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.translation.equals(translation)) {
             this.translation = translation;
-            this.vertexCacheDirty = true;
         }
     }
 
@@ -187,7 +140,6 @@ public class Sprite implements Drawable, Transformable {
     public void rotation(float rotation) {
         if (this.rotation != rotation) {
             this.rotation = rotation;
-            this.vertexCacheDirty = true;
         }
     }
 
@@ -202,7 +154,6 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.origin.equals(pivot)) {
             this.origin = pivot;
-            this.vertexCacheDirty = true;
         }
     }
 
@@ -217,7 +168,6 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.scale.equals(scale)) {
             this.scale = scale;
-            this.vertexCacheDirty = true;
         }
     }
 
@@ -225,7 +175,6 @@ public class Sprite implements Drawable, Transformable {
     public void reset() {
         Transformable.super.reset();
         this.origin = new PointF(this.textureRect.width() / 2.0F, this.textureRect.height() / 2.0F);
-        this.vertexCacheDirty = true;
     }
 
     /**
@@ -248,7 +197,6 @@ public class Sprite implements Drawable, Transformable {
 
         if (!this.tint.equals(tint)) {
             this.tint = tint;
-            this.vertexCacheDirty = true;
         }
     }
 }
