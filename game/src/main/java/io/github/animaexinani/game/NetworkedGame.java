@@ -3,6 +3,7 @@ package io.github.animaexinani.game;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,38 +21,82 @@ import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
 import io.github.animaexinani.game.nentities.Asteroid;
+import io.github.animaexinani.game.nentities.ClientNetworkEntity;
 import io.github.animaexinani.game.nentities.Entity;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.game.server.GameClient;
 import io.github.animaexinani.game.server.GameServer;
+import io.github.animaexinani.game.util.UUIDGenerator;
 
 public final class NetworkedGame extends Application {
+
+    /**
+     * Determines whether this instance runs as a dedicated server, a pure client,
+     * or both on the same machine (LOCAL).
+     *
+     * Pass --server or --client on the command line to choose; omitting either flag
+     * defaults to LOCAL mode, which is the original single-machine behaviour.
+     */
+    public enum Mode {
+        /** Authoritative simulation only — no rendering, no GameClient. */
+        SERVER,
+        /** Rendering + input only — no GameServer, connects to a remote host. */
+        CLIENT,
+        /** Both server and client on the same machine (loopback). */
+        LOCAL
+    }
+
     private static final Logger LOGGER = Logger.getLogger(NetworkedGame.class.getName());
+
+    private final Mode mode;
     private final Window mainWindow;
 
-    // master world manager
+    // null when mode == SERVER
     private final CombinedWorld combinedWorld;
     private final GameClient gameClient;
-    private final GameServer gameServer; // Authoritative network server instance
-    
-    // keep a direct reference to the player's ship specifically so we can route
-    // keyboard inputs to it
-    private final PlayerShip playerShip;
 
-    // instantiate Input System
+    // null when mode == CLIENT
+    private final GameServer gameServer;
+
     private final GameInputListener inputListener;
     private final RebindingController rebindingController;
 
-    private static final ApplicationOptions OPTIONS = new ApplicationOptions("Networked Game", "0.1.0-alpha.5",
-            "io.github.animaexinani.networkedgame");
+    private static final ApplicationOptions OPTIONS = new ApplicationOptions(
+            "Networked Game", "0.1.0-alpha.5", "io.github.animaexinani.networkedgame");
 
     private long lastTime = 0;
     private double accumulator = 0.0;
-
-    // 60 for now for smoother gameplay
     private static final double TIME_STEP = 1.0 / 60.0;
+
+    /**
+     * Usage:
+     *   (no args)              — LOCAL mode, server on :9000, client → 127.0.0.1:9000
+     *   --server [--port P]    — dedicated server on port P (default 9000)
+     *   --client [--host H] [--port P]  — client connecting to H:P
+     */
+    static void main(String[] args) {
+        // default
+        Mode mode = Mode.LOCAL;
+        String host = "127.0.0.1";
+        int port = 9000;
+
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i].toLowerCase()) {
+                case "--server" -> mode = Mode.SERVER;
+                case "--client" -> mode = Mode.CLIENT;
+                case "--host"   -> { if (i + 1 < args.length) host = args[++i]; }
+                case "--port"   -> { if (i + 1 < args.length) port = Integer.parseInt(args[++i]); }
+                default -> LOGGER.warning("Unknown argument: " + args[i]);
+            }
+        }
+
+        LOGGER.info("Starting in mode: " + mode + "  host=" + host + "  port=" + port);
+        try (var game = new NetworkedGame(mode, host, port)) {
+            game.run();
+        }
+    }
 
     @Override
     protected boolean iterate() {
@@ -62,131 +107,141 @@ public final class NetworkedGame extends Application {
         if (frameTime > 0.25f) frameTime = 0.25f;
         this.accumulator += frameTime;
 
-        // network Output Loop
+        if (this.mode == Mode.SERVER) {
+            // The server's own runLoop thread does all the work.
+            // iterate() is only called because Application requires it;
+            // just yield so we don't busy-spin the render thread.
+            try { Thread.sleep(16); } catch (InterruptedException ignored) {}
+            return true;
+        }
+
+        // Send queued inputs at the fixed network tick rate
         while (this.accumulator >= TIME_STEP) {
             this.gameClient.sendInputs();
             this.accumulator -= TIME_STEP;
         }
 
-        // client Render Loop
-        // flush the spawn/despawn queues so new network entities appear
-        this.combinedWorld.preUpdate(java.time.Duration.ZERO); 
-        
-        // glide the dummy visuals toward the latest server snapshot
+        // Flush spawn/despawn queues so newly received network entities appear
+        this.combinedWorld.preUpdate(java.time.Duration.ZERO);
+
+        // Glide dummy visuals toward the latest server snapshot
         this.combinedWorld.interpolateVisuals(frameTime);
 
-        // draw everything
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
         this.combinedWorld.render(renderer);
         renderer.present();
-        
+
         return true;
     }
 
     @Override
     public void close() {
-        // shutdown network hooks and background execution loops
         if (this.gameServer != null) {
             this.gameServer.stop();
         }
         if (this.gameClient != null) {
             this.gameClient.stop();
         }
-
         try {
             this.mainWindow.close();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e, () -> "Unhandled exception when closing window");
         }
-
         super.close();
     }
 
-    static void main() {
-        try (var game = new NetworkedGame()) {
-            game.run();
-        }
-    }
+    public NetworkedGame(Mode mode, String serverHost, int serverPort) {
+        super(OPTIONS);
+        this.mode = mode;
 
-    public NetworkedGame() {
-        super(NetworkedGame.OPTIONS);
-
-        var windowOptions = new WindowOptions("Networked Game", 1920, 1080);
+        // A window is always created; in SERVER mode it is present but nothing
+        // is drawn to it beyond the initial clear.
+        var windowOptions = new WindowOptions("Networked Game [" + mode + "]", 1920, 1080);
         windowOptions.setResizable(true);
-
-        var windowFactory = super.windowFactory();
-        this.mainWindow = windowFactory.createWindow(windowOptions);
+        this.mainWindow = super.windowFactory().createWindow(windowOptions);
 
         var clientSize = this.mainWindow.clientSize();
         var sizeF = new SizeF(clientSize.width(), clientSize.height());
 
-        float centerX = clientSize.width() / 2.0f;
-        float centerY = clientSize.height() / 2.0f;
-
-        // create real world server
-        this.playerShip = new PlayerShip();
-        this.playerShip.physicsBody().translate(centerX, centerY);
-
-        List<Entity> serverEntities = new ArrayList<>();
-        serverEntities.add(this.playerShip);
-
-        // add server asteroids
-        Random rand = new Random();
-        for (int i = 0; i < 5; i++) {
-            float x = rand.nextFloat() * clientSize.width();
-            float y = rand.nextFloat() * clientSize.height();
-            double vx = rand.nextDouble() * 100 - 50;
-            double vy = rand.nextDouble() * 100 - 50;
-            serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
-        }
-
-        CombinedWorld serverWorld = new CombinedWorld.Builder()
-                .withEntities(serverEntities)
-                .withLocalPlayerId(this.playerShip.id())
-                .withSize(sizeF)
-                .build();
-
-        // client only gets a dummy representation of the player to satisfy the builder
-        io.github.animaexinani.game.nentities.ClientNetworkEntity dummyPlayer = 
-            new io.github.animaexinani.game.nentities.ClientNetworkEntity(this.playerShip.id(), EntityType.PLAYER);
-
-        this.combinedWorld = new CombinedWorld.Builder()
-                .withEntity(dummyPlayer)
-                .withLocalPlayerId(this.playerShip.id())
-                .withSize(sizeF)
-                .withVisualFactory(EntityType.BULLET, entity -> new ConvexPolygon(
-                        new PointF[]{new PointF(5.0f, 0.0f), new PointF(-2.0f, 2.5f), new PointF(-2.0f, -2.5f)}, Color.WHITE))
-                .withVisualFactory(EntityType.ASTEROID, entity -> new ConvexPolygon(
-                        Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new), new Color(0.6f, 0.6f, 0.6f, 1.0f)))
-                .withVisualFactory(EntityType.PLAYER, entity -> new ConvexPolygon(
-                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN))
-                .withVisualFactory(EntityType.SCOUT_DRONE, entity -> new ConvexPolygon(
-                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(1.0f, 0.0f, 0.0f, 1.0f))) // Red
-                .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> new ConvexPolygon(
-                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(1.0f, 0.0f, 1.0f, 1.0f))) // Magenta
-                .build();
-
-        // actually create the InputSystem object in memory
+        // Input system
         var bindings = InputBindings.defaultBindings();
         this.inputListener = new GameInputListener(bindings);
         this.rebindingController = new RebindingController(bindings);
-
         this.assetManager().registerLoader(new ResourceLoader());
-
-        // tell the engine to send key presses to the inputSystem, not 'this'
         this.eventRegistry().register(KeyboardListener.class, this.inputListener);
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
 
-        // spin up authoritative UDP server instance bound to port 9000
-        this.gameServer = new GameServer(serverWorld, 9000);
-        this.gameServer.start();
+        // --- Server setup (SERVER and LOCAL modes) ---------------------------
+        if (mode == Mode.SERVER || mode == Mode.LOCAL) {
+            List<Entity> serverEntities = new ArrayList<>();
 
-        // connect UDP client to the local loopback server
-        this.gameClient = new GameClient(this.combinedWorld, this.inputListener, this.playerShip.id());
-        this.gameClient.connect("127.0.0.1", 9000);
+            // Seed the world with a handful of asteroids.
+            // Player ships are NOT pre-created here; they are spawned by
+            // GameServer the first time a client's UUID is seen (see GameServer).
+            Random rand = new Random();
+            for (int i = 0; i < 5; i++) {
+                float x = rand.nextFloat() * clientSize.width();
+                float y = rand.nextFloat() * clientSize.height();
+                double vx = rand.nextDouble() * 100 - 50;
+                double vy = rand.nextDouble() * 100 - 50;
+                serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
+            }
 
-        // reset the clock right before the constructor finishes!
+            CombinedWorld serverWorld = new CombinedWorld.Builder()
+                    .withEntities(serverEntities)
+                    .withSize(sizeF)
+                    .build();
+
+            this.gameServer = new GameServer(serverWorld, serverPort);
+            this.gameServer.start();
+        } else {
+            this.gameServer = null;
+        }
+
+        // --- Client setup (CLIENT and LOCAL modes) ---------------------------
+        if (mode == Mode.CLIENT || mode == Mode.LOCAL) {
+            // Generate a stable identity for this session. The server will
+            // create a PlayerShip keyed to this UUID on first contact.
+            UUID myPlayerId = UUIDGenerator.generateV7Uuid();
+
+            // The client world starts with a single dummy entity for the local
+            // player so the renderer has something to track before the first
+            // server snapshot arrives.
+            ClientNetworkEntity localDummy =
+                    new ClientNetworkEntity(myPlayerId, EntityType.PLAYER);
+
+            this.combinedWorld = new CombinedWorld.Builder()
+                    .withEntity(localDummy)
+                    .withLocalPlayerId(myPlayerId)
+                    .withSize(sizeF)
+                    .withVisualFactory(EntityType.BULLET, entity -> new ConvexPolygon(
+                            new PointF[]{
+                                new PointF(5.0f, 0.0f),
+                                new PointF(-2.0f, 2.5f),
+                                new PointF(-2.0f, -2.5f)
+                            }, Color.WHITE))
+                    .withVisualFactory(EntityType.ASTEROID, entity -> new ConvexPolygon(
+                            Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID)
+                                    .toArray(PointF[]::new),
+                            new Color(0.6f, 0.6f, 0.6f, 1.0f)))
+                    .withVisualFactory(EntityType.PLAYER, entity -> new ConvexPolygon(
+                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN))
+                    .withVisualFactory(EntityType.SCOUT_DRONE, entity -> new ConvexPolygon(
+                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new),
+                            new Color(1.0f, 0.0f, 0.0f, 1.0f)))
+                    .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> new ConvexPolygon(
+                            PlayerShip.LOCAL_COORDS.toArray(PointF[]::new),
+                            new Color(1.0f, 0.0f, 1.0f, 1.0f)))
+                    .build();
+
+            this.gameClient = new GameClient(this.combinedWorld, this.inputListener, myPlayerId);
+            this.gameClient.connect(serverHost, serverPort);
+        } else {
+            this.combinedWorld = null;
+            this.gameClient = null;
+        }
+
         this.lastTime = System.nanoTime();
     }
 }
