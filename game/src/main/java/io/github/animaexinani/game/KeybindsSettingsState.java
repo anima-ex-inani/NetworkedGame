@@ -14,14 +14,14 @@ import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.engine.input.RebindingController;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
  * Settings menu for keyboard configuration.
  */
 public class KeybindsSettingsState extends BaseMenuState {
-    private final Map<GameAction, UIButton> rebindButtons = new HashMap<>();
+    private final Map<GameAction, UIButton> rebindButtons = new EnumMap<>(GameAction.class);
     private GameAction activeRebindAction = null;
 
     public KeybindsSettingsState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
