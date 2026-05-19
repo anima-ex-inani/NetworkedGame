@@ -26,6 +26,7 @@ public class GameClient {
     private int serverPort;
     private volatile boolean running;
     private long lastSequence = -1;
+    private long lastPacketTimeNanos = -1;
 
     public GameClient(CombinedWorld localWorld, UUID myPlayerId) {
         this.localWorld = localWorld;
@@ -55,6 +56,14 @@ public class GameClient {
         return this.lastSequence > -1;
     }
 
+    /**
+     * Returns the system time in nanoseconds when the last packet was received.
+     * @return the last packet time in nanos, or -1 if no packet has been received
+     */
+    public long getLastPacketTimeNanos() {
+        return this.lastPacketTimeNanos;
+    }
+
     private void listenLoop() {
         // Increase buffer size to handle full snapshot packets (up to 64 entities)
         byte[] buf = new byte[4096];
@@ -71,6 +80,7 @@ public class GameClient {
                 long seq = bb.getLong();
                 if (seq <= this.lastSequence) continue;
                 this.lastSequence = seq;
+                this.lastPacketTimeNanos = System.nanoTime();
 
                 int count = bb.getInt();
                 

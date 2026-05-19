@@ -24,13 +24,11 @@ public class ConnectingState extends BaseMenuState {
     private final Text statusText;
     private Duration timer = Duration.ZERO;
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration ERROR_DELAY = Duration.ofSeconds(2);
     private static final Duration PING_INTERVAL = Duration.ofMillis(500);
     private Duration pingTimer = Duration.ZERO;
 
     private final GameConnection connection;
     private final GameInputListener emptyInputListener;
-    private boolean failed = false;
 
     /**
      * Creates a new ConnectingState.
@@ -68,14 +66,6 @@ public class ConnectingState extends BaseMenuState {
 
     @Override
     public void update(Duration dt) {
-        if (this.failed) {
-            this.timer = this.timer.plus(dt);
-            if (this.timer.compareTo(ERROR_DELAY) >= 0) {
-                this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
-            }
-            return;
-        }
-
         this.timer = this.timer.plus(dt);
         this.pingTimer = this.pingTimer.plus(dt);
 
@@ -88,11 +78,8 @@ public class ConnectingState extends BaseMenuState {
         if (this.connection.gameClient().isConnected()) {
             this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager, this.rebindingController, this.connection));
         } else if (this.timer.compareTo(TIMEOUT) >= 0) {
-            this.failed = true;
-            this.timer = Duration.ZERO;
-            this.statusText.text("Connection Failed");
-            this.statusText.color(new Color(1.0f, 0.0f, 0.0f, 1.0f));
             this.connection.gameClient().stop();
+            this.stateManager.transitionTo(new ErrorMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController, "Connection Failed: Server unreachable."));
         }
     }
 

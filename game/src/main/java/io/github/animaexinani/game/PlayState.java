@@ -80,6 +80,18 @@ public class PlayState implements GameState, KeyboardListener {
 
     @Override
     public void update(Duration dt) {
+        // Server timeout check (only for remote clients)
+        if (this.gameClient != null && this.gameServer == null) {
+            long lastPacketTime = this.gameClient.getLastPacketTimeNanos();
+            if (lastPacketTime != -1) {
+                long now = System.nanoTime();
+                if (now - lastPacketTime > 5_000_000_000L) { // 5 seconds
+                    this.stateManager.transitionTo(new ErrorMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController, "Connection to server lost."));
+                    return;
+                }
+            }
+        }
+
         // flush spawn/despawn queues so newly received network entities appear
         this.combinedWorld.preUpdate(Duration.ZERO);
 
