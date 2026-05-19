@@ -135,7 +135,7 @@ public class GameClient {
                     new DatagramPacket(data, data.length, this.serverAddress, this.serverPort);
 
             this.socket.send(packet);
-            System.out.println("Sent input packet to server");
+            LOGGER.fine("Sent input packet to server");
 
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "send failed", e);
