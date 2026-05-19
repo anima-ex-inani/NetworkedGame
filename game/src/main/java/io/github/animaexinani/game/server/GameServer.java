@@ -38,7 +38,7 @@ public class GameServer {
     private record ClientConnection(InetAddress address, int port) {}
     private record TimedInput(Set<GameAction> actions, long lastSeenNanos) {}
 
-    private final Set<ClientConnection> clients = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, ClientConnection> clients = new ConcurrentHashMap<>();
     private final Map<UUID, TimedInput> clientInputs = new ConcurrentHashMap<>();
 
     /**
@@ -88,12 +88,22 @@ public class GameServer {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 this.socket.receive(packet);
 
-                this.clients.add(new ClientConnection(packet.getAddress(), packet.getPort()));
-
                 ByteBuffer bb = ByteBuffer.wrap(packet.getData(), 0, packet.getLength());
+
+                if (bb.remaining() < 20) continue;
 
                 UUID playerId = new UUID(bb.getLong(), bb.getLong());
                 int flags = bb.getInt();
+
+                // Check for disconnect flag (bit 31)
+                if ((flags & 0x80000000) != 0) {
+                    LOGGER.info("Client " + playerId + " requested disconnect.");
+                    this.disconnectClient(playerId);
+                    this.clientInputs.remove(playerId);
+                    continue;
+                }
+
+                this.clients.put(playerId, new ClientConnection(packet.getAddress(), packet.getPort()));
 
                 Set<GameAction> actions = EnumSet.noneOf(GameAction.class);
                 for (GameAction a : GameAction.values()) {
@@ -115,6 +125,15 @@ public class GameServer {
                 if (this.running) LOGGER.log(Level.WARNING, "listen failed", e);
             }
         }
+    }
+
+    /**
+     * Removes all server-side state for a client and despawns their ship.
+     */
+    private void disconnectClient(UUID playerId) {
+        this.clients.remove(playerId);
+        this.spawnedPlayers.remove(playerId);
+        this.playfield.despawnEntity(playerId);
     }
 
     /**
@@ -250,6 +269,7 @@ public class GameServer {
 
             // Remove entries stale for more than 5 seconds (disconnected players)
             if (age > 5_000_000_000L) {
+                this.disconnectClient(entry.getKey());
                 iter.remove();
                 continue;
             }
@@ -269,7 +289,7 @@ public class GameServer {
 
     // payload sizes
     private static final int HEADER_BYTES = 12;
-    private static final int ENTITY_BYTES = 46;
+    private static final int ENTITY_BYTES = 40;
 
 
     private void broadcast() {
@@ -312,7 +332,7 @@ public class GameServer {
 
             byte[] data = Arrays.copyOf(bb.array(), bb.position());
 
-            for (ClientConnection client : this.clients) {
+            for (ClientConnection client : this.clients.values()) {
                 this.socket.send(new DatagramPacket(
                         data, data.length,
                         client.address(), client.port()
