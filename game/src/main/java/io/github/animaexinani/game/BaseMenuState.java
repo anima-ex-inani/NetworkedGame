@@ -18,6 +18,7 @@ import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.events.KeyEvent;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public abstract class BaseMenuState implements GameState, MouseDownListener, Mou
     protected final FontFace fontFace;
     protected final EventRegistry eventRegistry;
     protected final Window window;
+    protected final SettingsManager settingsManager;
 
     /**
      * Creates a new BaseMenuState.
@@ -39,12 +41,14 @@ public abstract class BaseMenuState implements GameState, MouseDownListener, Mou
      * @param stateManager the state manager
      * @param fontFace the font to use for UI
      * @param eventRegistry the event registry to register listeners
+     * @param settingsManager the settings manager
      */
-    public BaseMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+    public BaseMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
         this.window = window;
         this.stateManager = stateManager;
         this.fontFace = fontFace;
         this.eventRegistry = eventRegistry;
+        this.settingsManager = settingsManager;
     }
 
     @Override

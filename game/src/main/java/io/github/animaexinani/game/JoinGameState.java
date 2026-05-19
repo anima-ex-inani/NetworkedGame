@@ -11,6 +11,7 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 /**
  * Screen to input IP and Port to join a game.
@@ -19,12 +20,14 @@ public class JoinGameState extends BaseMenuState {
 
     /**
      * Creates a new JoinGameState.
+     * @param window the game window
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
+     * @param settingsManager the settings manager
      */
-    public JoinGameState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(window, stateManager, fontFace, eventRegistry);
+    public JoinGameState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager);
 
         float centerX = 1920 / 2.0f;
 
@@ -62,14 +65,15 @@ public class JoinGameState extends BaseMenuState {
         UITextField portField = new UITextField(portFieldText);
         portField.position(new PointF(centerX - 150, 330));
         portField.size(new SizeF(300, 40));
+        portField.text(String.valueOf(this.settingsManager.getSettings().getNetworking().getPreferredPort()));
         this.components.add(portField);
 
         this.components.add(this.createButton("Connect", centerX, 500, () -> {
-            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new ConnectingState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
 
         this.components.add(this.createButton("Back", centerX, 600, () -> {
-            this.stateManager.transitionTo(new MultiplayerMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MultiplayerMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
     }
 }

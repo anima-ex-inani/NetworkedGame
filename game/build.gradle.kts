@@ -22,6 +22,7 @@ java {
 dependencies {
     implementation(project(":engine"))
     implementation(libs.dyn4j)
+    implementation(libs.jackson.toml)
     compileOnly(libs.jetbrains.annotations)
     testImplementation(libs.junit)
     testRuntimeOnly(libs.junit.platform)

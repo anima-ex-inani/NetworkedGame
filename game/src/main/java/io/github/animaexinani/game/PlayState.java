@@ -18,6 +18,7 @@ import io.github.animaexinani.game.playfield.CombinedWorld;
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.events.KeyEvent;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class PlayState implements GameState, KeyboardListener {
     private final GameStateManager stateManager;
     private final EventRegistry eventRegistry;
     private final FontFace fontFace;
+    private final SettingsManager settingsManager;
 
     /**
      * Creates a new PlayState.
@@ -42,12 +44,14 @@ public class PlayState implements GameState, KeyboardListener {
      * @param fontFace the font to use for UI
      * @param stateManager the state manager
      * @param eventRegistry the event registry
+     * @param settingsManager the settings manager
      */
-    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry) {
+    public PlayState(Window window, FontFace fontFace, GameStateManager stateManager, EventRegistry eventRegistry, SettingsManager settingsManager) {
         this.window = window;
         this.fontFace = fontFace;
         this.stateManager = stateManager;
         this.eventRegistry = eventRegistry;
+        this.settingsManager = settingsManager;
 
         float width = window != null ? window.clientSize().width() : 1920.0f;
         float height = window != null ? window.clientSize().height() : 1080.0f;
@@ -140,7 +144,7 @@ public class PlayState implements GameState, KeyboardListener {
     @Override
     public void onKeyEvent(KeyEvent event) {
         if (event.action() == KeyEvent.Action.PRESS && event.scancode() == 41) { // 41 is ESCAPE in SDL scancodes
-            this.stateManager.transitionTo(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this));
+            this.stateManager.transitionTo(new PauseState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this, this.settingsManager));
         }
     }
 

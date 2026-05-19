@@ -11,6 +11,7 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 /**
  * The multiplayer menu of the game.
@@ -23,9 +24,10 @@ public class MultiplayerMenuState extends BaseMenuState {
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
+     * @param settingsManager the settings manager
      */
-    public MultiplayerMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(window, stateManager, fontFace, eventRegistry);
+    public MultiplayerMenuState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager);
 
         float centerX = 1920 / 2.0f;
         
@@ -44,21 +46,29 @@ public class MultiplayerMenuState extends BaseMenuState {
         UITextField nameField = new UITextField(fieldText);
         nameField.position(new PointF(centerX - 150, 230));
         nameField.size(new SizeF(300, 40));
-        nameField.text("Player");
+        nameField.text(this.settingsManager.getSettings().getPlayerName());
         this.components.add(nameField);
 
         float startY = 400;
         float spacing = 100;
 
         this.components.add(this.createButton("Create Game", centerX, startY, () -> {
-            // In a real implementation, we'd go to LobbyState
-            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry));
+            // Save player name before starting
+            this.settingsManager.getSettings().setPlayerName(nameField.text());
+            this.settingsManager.save();
+            this.stateManager.transitionTo(new PlayState(this.window, this.fontFace, this.stateManager, this.eventRegistry, this.settingsManager));
         }));
         this.components.add(this.createButton("Join Game", centerX, startY + spacing, () -> {
-            this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            // Save player name before joining
+            this.settingsManager.getSettings().setPlayerName(nameField.text());
+            this.settingsManager.save();
+            this.stateManager.transitionTo(new JoinGameState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
         this.components.add(this.createButton("Back", centerX, startY + 2 * spacing, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            // Save player name when going back
+            this.settingsManager.getSettings().setPlayerName(nameField.text());
+            this.settingsManager.save();
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
     }
 }

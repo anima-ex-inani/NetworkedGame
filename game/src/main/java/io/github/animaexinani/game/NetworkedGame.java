@@ -10,6 +10,7 @@ import io.github.animaexinani.engine.listeners.KeyboardListener;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.windowing.WindowOptions;
 import io.github.animaexinani.game.assets.ResourceLoader;
+import io.github.animaexinani.game.settings.SettingsManager;
 import io.github.animaexinani.engine.font.FontFace;
 import io.github.animaexinani.engine.assets.AssetKey;
 
@@ -26,6 +27,7 @@ public final class NetworkedGame extends Application {
 
     // State management
     private final GameStateManager stateManager;
+    private final SettingsManager settingsManager;
 
     // instantiate Input System
     private final GameInputListener inputListener;
@@ -116,6 +118,7 @@ public final class NetworkedGame extends Application {
         this.eventRegistry().register(KeyboardListener.class, this.inputListener);
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
 
+        this.settingsManager = new SettingsManager();
         this.stateManager = new GameStateManager();
 
         FontFace fontFace = null;
@@ -126,7 +129,7 @@ public final class NetworkedGame extends Application {
         }
 
         // Initialize with SplashState
-        this.stateManager.transitionTo(new SplashState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry()));
+        this.stateManager.transitionTo(new SplashState(this.mainWindow, this.stateManager, fontFace, this.eventRegistry(), this.settingsManager));
 
         // reset the clock right before the constructor finishes!
         this.lastTime = System.nanoTime();

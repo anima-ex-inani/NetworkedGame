@@ -9,6 +9,7 @@ import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.events.KeyEvent;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 import java.time.Duration;
 
@@ -26,9 +27,10 @@ public class PauseState extends BaseMenuState {
      * @param fontFace the font to use
      * @param eventRegistry the event registry
      * @param playState the active play state to continue updating/rendering
+     * @param settingsManager the settings manager
      */
-    public PauseState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, PlayState playState) {
-        super(window, stateManager, fontFace, eventRegistry);
+    public PauseState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, PlayState playState, SettingsManager settingsManager) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager);
         this.playState = playState;
 
         this.pauseTitle = new Text(fontFace, "PAUSED");
@@ -46,7 +48,7 @@ public class PauseState extends BaseMenuState {
         }));
 
         this.components.add(this.createButton("Quit to Menu", centerX, startY + spacing, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
     }
 

@@ -9,6 +9,7 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 /**
  * The settings menu of the game.
@@ -21,9 +22,10 @@ public class SettingsState extends BaseMenuState {
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
+     * @param settingsManager the settings manager
      */
-    public SettingsState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
-        super(window, stateManager, fontFace, eventRegistry);
+    public SettingsState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
+        super(window, stateManager, fontFace, eventRegistry, settingsManager);
 
         float centerX = 1920 / 2.0f;
         float startY = 300;
@@ -36,7 +38,7 @@ public class SettingsState extends BaseMenuState {
             // Networking settings
         }));
         this.components.add(this.createButton("Back", centerX, startY + 2 * spacing, () -> {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }));
     }
 }

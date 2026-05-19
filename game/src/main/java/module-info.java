@@ -5,4 +5,9 @@ module io.github.animaexinani.game {
     requires org.dyn4j;
     requires java.logging;
     requires java.desktop;
+
+    requires tools.jackson.databind;
+    requires tools.jackson.dataformat.toml;
+
+    opens io.github.animaexinani.game.settings to tools.jackson.databind;
 }

@@ -8,6 +8,7 @@ import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.windowing.Window;
+import io.github.animaexinani.game.settings.SettingsManager;
 
 import java.time.Duration;
 
@@ -19,6 +20,7 @@ public class SplashState implements GameState {
     private final FontFace fontFace;
     private final EventRegistry eventRegistry;
     private final Window window;
+    private final SettingsManager settingsManager;
     private final Text loadingText;
     private Duration timer = Duration.ZERO;
     private static final Duration SPLASH_DURATION = Duration.ofSeconds(2);
@@ -29,12 +31,14 @@ public class SplashState implements GameState {
      * @param stateManager the state manager
      * @param fontFace the font to use
      * @param eventRegistry the event registry
+     * @param settingsManager the settings manager
      */
-    public SplashState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry) {
+    public SplashState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager) {
         this.window = window;
         this.stateManager = stateManager;
         this.fontFace = fontFace;
         this.eventRegistry = eventRegistry;
+        this.settingsManager = settingsManager;
         this.loadingText = new Text(fontFace, "Loading...");
         this.loadingText.fontSize(48.0f);
         this.loadingText.color(Color.WHITE);
@@ -49,7 +53,7 @@ public class SplashState implements GameState {
     public void update(Duration dt) {
         this.timer = this.timer.plus(dt);
         if (this.timer.compareTo(SPLASH_DURATION) >= 0) {
-            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry));
+            this.stateManager.transitionTo(new MainMenuState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager));
         }
     }
 
