@@ -7,6 +7,10 @@ public record Color(float red, float green, float blue, float alpha) {
 
     public static final Color GREEN = new Color(0.0f, 1.0f, 0.0f, 1.0f);
 
+    public static final Color GRAY = new Color(0.5f, 0.5f, 0.5f, 1.0f);
+
+    public static final Color LIGHT_GRAY = new Color(0.75f, 0.75f, 0.75f, 1.0f);
+
     public Color {
         red = StrictMath.clamp(red, 0.0F, 1.0F);
         green = StrictMath.clamp(green, 0.0F, 1.0F);
