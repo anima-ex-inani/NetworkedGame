@@ -56,7 +56,8 @@ public class GameClient {
     }
 
     private void listenLoop() {
-        byte[] buf = new byte[1400];
+        // Increase buffer size to handle full snapshot packets (up to 64 entities)
+        byte[] buf = new byte[4096];
 
         while (this.running) {
             try {
@@ -64,6 +65,8 @@ public class GameClient {
                 this.socket.receive(packet);
 
                 ByteBuffer bb = ByteBuffer.wrap(packet.getData(), 0, packet.getLength());
+
+                if (bb.remaining() < 12) continue; // Basic header check
 
                 long seq = bb.getLong();
                 if (seq <= this.lastSequence) continue;
@@ -75,6 +78,8 @@ public class GameClient {
                 Set<UUID> receivedIds = new HashSet<>();
 
                 for (int i = 0; i < count; i++) {
+                    if (bb.remaining() < 40) break; // Ensure we have enough data for one entity
+
                     UUID id = new UUID(bb.getLong(), bb.getLong());
                     int typeOrdinal = bb.getInt();
 
@@ -119,39 +124,40 @@ public class GameClient {
     }
 
     public void sendInputs(GameInputListener inputListener) {
-        Set<GameAction> actions = inputListener.getHeldActions();
         if (this.socket == null) return;
+        
+        Set<GameAction> actions = inputListener.getHeldActions();
+        int flags = 0;
+        for (GameAction action : actions) {
+            flags |= (1 << action.ordinal());
+        }
+        
+        this.sendPacket(flags);
+    }
+
+    private void sendPacket(int flags) {
+        if (this.socket == null || this.serverAddress == null) return;
 
         try {
-            ByteBuffer bb = ByteBuffer.allocate(32);
-
+            ByteBuffer bb = ByteBuffer.allocate(20);
             bb.putLong(this.myPlayerId.getMostSignificantBits());
             bb.putLong(this.myPlayerId.getLeastSignificantBits());
-
-            int flags = 0;
-            for (GameAction action : actions) {
-                flags |= (1 << action.ordinal());
-            }
-
             bb.putInt(flags);
 
-            byte[] data = new byte[bb.position()];
-            bb.flip();
-            bb.get(data);
-
-            DatagramPacket packet =
-                    new DatagramPacket(data, data.length, this.serverAddress, this.serverPort);
-
+            byte[] data = bb.array();
+            DatagramPacket packet = new DatagramPacket(data, bb.position(), this.serverAddress, this.serverPort);
             this.socket.send(packet);
-            LOGGER.fine("Sent input packet to server");
-
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "send failed", e);
         }
     }
 
     public void stop() {
-        this.running = false;
-        if (this.socket != null) this.socket.close();
+        if (this.running) {
+            // Send a disconnect notification (bit 31)
+            this.sendPacket(0x80000000);
+            this.running = false;
+            if (this.socket != null) this.socket.close();
+        }
     }
 }
