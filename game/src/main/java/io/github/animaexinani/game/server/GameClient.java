@@ -71,7 +71,12 @@ public class GameClient {
                 for (int i = 0; i < count; i++) {
                     UUID id = new UUID(bb.getLong(), bb.getLong());
                     int typeOrdinal = bb.getInt();
-                    receivedIds.add(id);
+
+                    float x = bb.getFloat();
+                    float y = bb.getFloat();
+                    float rot = bb.getFloat();
+                    int health = bb.getInt();
+                    int shield = bb.getInt();
                     
                     var entityTypes = io.github.animaexinani.game.nentities.EntityType.values();
                     if (typeOrdinal < 0 || typeOrdinal >= entityTypes.length) {
@@ -79,17 +84,19 @@ public class GameClient {
                         continue;
                     }
 
-                    float x = bb.getFloat();
-                    float y = bb.getFloat();
-                    float rot = bb.getFloat();
-                    int health = bb.getInt();
-                    int shield = bb.getInt();
+                    receivedIds.add(id);
 
                     var snap = new EntitySnapshot(
                             id, entityTypes[typeOrdinal], x, y, rot, health, shield
                     );
                     
                     if (localWorld.getEntity(id) == null) {
+                        var freshEntity = new io.github.animaexinani.game.nentities.ClientNetworkEntity(id, entityTypes[typeOrdinal]);
+                        freshEntity.setHealth(health);
+                        freshEntity.setShield(shield);
+                        var t = freshEntity.physicsBody().getTransform();
+                        t.setTranslation(x, y);
+                        t.setRotation(rot);
                         localWorld.spawnEntity(new io.github.animaexinani.game.nentities.ClientNetworkEntity(id, entityTypes[typeOrdinal]));
                     }
 

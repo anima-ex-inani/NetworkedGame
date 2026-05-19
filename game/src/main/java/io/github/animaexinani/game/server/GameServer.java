@@ -206,7 +206,6 @@ public class GameServer {
     // payload sizes
     private static final int HEADER_BYTES = 12;
     private static final int ENTITY_BYTES = 46;
-    private static final int MAX_UDP_PAYLOAD = 65_507;
 
 
     private void broadcast() {
@@ -216,7 +215,7 @@ public class GameServer {
             // get needed bytes
             int needed = HEADER_BYTES + ENTITY_BYTES*entities.size();
 
-            ByteBuffer bb = ByteBuffer.allocate(Math.min(needed, MAX_UDP_PAYLOAD));
+            ByteBuffer bb = ByteBuffer.allocate(needed);
             bb.putLong(snapshotSequence++);
             
             int countPos = bb.position();
@@ -224,12 +223,6 @@ public class GameServer {
 
             int written = 0;
             for (Entity entity : entities) {
-                // Stop if there is no room for another full entity record.
-                if (bb.remaining() < ENTITY_BYTES) {
-                    LOGGER.warning("Snapshot truncated: " + (entities.size() - written)
-                            + " entities dropped (buffer full). Lower MAX_ENTITIES.");
-                    break;
-                }
                 var t = entity.physicsBody().getTransform();
 
                 bb.putLong(entity.id().getMostSignificantBits());
@@ -277,6 +270,10 @@ public class GameServer {
      * addition to the world on the next {@code preUpdate}.
      */
     public void spawnEntity(Entity entity) {
+        if (playfield.entities().size() >= MAX_ENTITIES) {
+            LOGGER.warning("Entity cap reached (" + MAX_ENTITIES + ")");
+            return;
+        }
         if (entity instanceof Damageable damageable) {
             damageable.addDamageTakenListener((target, healthDamage, shieldDamage, lethal) -> {
                 if (lethal) {

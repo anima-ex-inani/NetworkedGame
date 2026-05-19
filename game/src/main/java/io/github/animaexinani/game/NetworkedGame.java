@@ -137,10 +137,16 @@ public final class NetworkedGame extends Application {
             Entity localPlayer = this.combinedWorld.getEntity(this.myPlayerId);
             
             if (localPlayer instanceof ClientNetworkEntity cp) {
+                var currentSize = this.mainWindow.clientSize();
+
+                float currentWidth = currentSize.width();
+                float currentHeight = currentSize.height();
+
                 float barWidth = 400f;
                 float barHeight = 20f;
-                float startX = (1920f - barWidth) / 2f;
-                float startY = 1000f; // Bottom center
+                
+                float startX = (currentWidth - barWidth) / 2f;
+                float startY = currentHeight - 80f; // Bottom center
 
                 // draw Hull with a red background
                 float hpPercent = Math.max(0, cp.health()) / 100_000f;
@@ -176,71 +182,82 @@ public final class NetworkedGame extends Application {
     public NetworkedGame(Mode mode, String serverHost, int serverPort) {
         super(OPTIONS);
         this.mode = mode;
-
-        // A window is always created; in SERVER mode it is present but nothing
-        // is drawn to it beyond the initial clear.
-        var windowOptions = new WindowOptions("Networked Game [" + mode + "]", 1920, 1080);
-        windowOptions.setResizable(true);
-        this.mainWindow = super.windowFactory().createWindow(windowOptions);
-
-        var clientSize = this.mainWindow.clientSize();
-        var sizeF = new SizeF(clientSize.width(), clientSize.height());
-
-        // Input system
-        var bindings = InputBindings.defaultBindings();
-        this.inputListener = new GameInputListener(bindings);
-        this.rebindingController = new RebindingController(bindings);
-        this.assetManager().registerLoader(new ResourceLoader());
-        this.eventRegistry().register(KeyboardListener.class, this.inputListener);
-        this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
-
+ 
+        // Window and input are only needed for rendering modes.
+        if (mode != Mode.SERVER) {
+            var windowOptions = new WindowOptions("Networked Game [" + mode + "]", 1920, 1080);
+            windowOptions.setResizable(true);
+            this.mainWindow = super.windowFactory().createWindow(windowOptions);
+ 
+            var bindings = InputBindings.defaultBindings();
+            this.inputListener = new GameInputListener(bindings);
+            this.rebindingController = new RebindingController(bindings);
+            this.assetManager().registerLoader(new ResourceLoader());
+            this.eventRegistry().register(KeyboardListener.class, this.inputListener);
+            this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
+        } else {
+            this.mainWindow = null;
+            this.inputListener = null;
+            this.rebindingController = null;
+        }
+ 
+        // Derive the logical world size from the window when available,
+        // or fall back to a fixed default for the headless server case.
+        final SizeF sizeF;
+        if (this.mainWindow != null) {
+            var clientSize = this.mainWindow.clientSize();
+            sizeF = new SizeF(clientSize.width(), clientSize.height());
+        } else {
+            sizeF = new SizeF(1920f, 1080f); // headless server default
+        }
+ 
         // --- Server setup (SERVER and LOCAL modes) ---------------------------
         if (mode == Mode.SERVER || mode == Mode.LOCAL) {
             List<Entity> serverEntities = new ArrayList<>();
-
+ 
             // Seed the world with a handful of asteroids.
             // Player ships are NOT pre-created here; they are spawned by
             // GameServer the first time a client's UUID is seen (see GameServer).
             Random rand = new Random();
             for (int i = 0; i < 5; i++) {
-                float x = rand.nextFloat() * clientSize.width();
-                float y = rand.nextFloat() * clientSize.height();
+                float x = rand.nextFloat() * sizeF.width();
+                float y = rand.nextFloat() * sizeF.height();
                 double vx = rand.nextDouble() * 100 - 50;
                 double vy = rand.nextDouble() * 100 - 50;
                 serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
             }
-
+ 
             UUID serverId = new UUID(0L, 0L);
-
+ 
             ServerNetworkEntity serverDummy =
                     new ServerNetworkEntity(serverId, EntityType.PLAYER);
             
             serverEntities.add(serverDummy);
-
+ 
             CombinedWorld serverWorld = new CombinedWorld.Builder()
                     .withEntities(serverEntities)
                     .withLocalPlayerId(serverId)
                     .withSize(sizeF)
                     .build();
-
+ 
             this.gameServer = new GameServer(serverWorld, serverPort);
             this.gameServer.start();
         } else {
             this.gameServer = null;
         }
-
+ 
         // --- Client setup (CLIENT and LOCAL modes) ---------------------------
         if (mode == Mode.CLIENT || mode == Mode.LOCAL) {
             // Generate a stable identity for this session. The server will
             // create a PlayerShip keyed to this UUID on first contact.
             this.myPlayerId = UUIDGenerator.generateV7Uuid();
-
+ 
             // The client world starts with a single dummy entity for the local
             // player so the renderer has something to track before the first
             // server snapshot arrives.
             ClientNetworkEntity localDummy =
                     new ClientNetworkEntity(this.myPlayerId, EntityType.PLAYER);
-
+ 
             this.combinedWorld = new CombinedWorld.Builder()
                     .withEntity(localDummy)
                     .withLocalPlayerId(this.myPlayerId)
@@ -271,7 +288,7 @@ public final class NetworkedGame extends Application {
                         return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), c);
                     })
                     .build();
-
+ 
             this.gameClient = new GameClient(this.combinedWorld, this.inputListener, myPlayerId);
             this.gameClient.connect(serverHost, serverPort);
         } else {
@@ -279,9 +296,10 @@ public final class NetworkedGame extends Application {
             this.gameClient = null;
             this.myPlayerId = null;
         }
-
+ 
         this.lastTime = System.nanoTime();
     }
+
 
     private ConvexPolygon createRect(float x, float y, float width, float height, Color color) {
         return new ConvexPolygon(new PointF[] {

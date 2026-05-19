@@ -329,37 +329,36 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     }
 
     public void interpolateVisuals(float frameTime) {
-        for (var entityData : this.entities.values()) {
+        synchronized(this.entities){
+            for (var entityData : this.entities.values()) {
+                if (entityData.entity instanceof ClientNetworkEntity ce) {
+                    boolean wasFlashing = ce.flashTimer > 0;
+                    if (wasFlashing) {
+                        ce.flashTimer -= frameTime;
+                    }
 
-            if (entityData.entity instanceof ClientNetworkEntity ce) {
-                boolean wasFlashing = ce.flashTimer > 0;
-                if (wasFlashing) {
-                    ce.flashTimer -= frameTime;
-                }
-                
-                // if they are actively flashing (or just stopped), rebuild their graphic to apply the color change!
-                if (wasFlashing) {
-                    var factory = this.visualFactories.get(ce.type());
-                    if (factory != null) {
-                        entityData.drawable = factory.apply(ce);
+                    if (wasFlashing) {
+                        var factory = this.visualFactories.get(ce.type());
+                        if (factory != null) {
+                            entityData.drawable = factory.apply(ce);
+                        }
                     }
                 }
-            }
 
-            if (entityData.drawable instanceof Transformable t) {
-                float currentX = t.translation().x();
-                float currentY = t.translation().y();
-                
-                // snap threashold: if distance is massive, instantly teleport
-                if (Math.abs(currentX - entityData.targetX) > 100 || Math.abs(currentY - entityData.targetY) > 100) {
-                    t.translation(new PointF(entityData.targetX, entityData.targetY));
-                } else {
-                    // otherwise, smoothly glide
-                    float newX = lerp(currentX, entityData.targetX, 0.3f);
-                    float newY = lerp(currentY, entityData.targetY, 0.3f);
-                    t.translation(new PointF(newX, newY));
+                if (entityData.drawable instanceof Transformable t) {
+                    float currentX = t.translation().x();
+                    float currentY = t.translation().y();
+                    
+                    if (Math.abs(currentX - entityData.targetX) > 100 || Math.abs(currentY - entityData.targetY) > 100) {
+                        t.translation(new PointF(entityData.targetX, entityData.targetY));
+                    } else {
+                        // otherwise, smoothly glide
+                        float newX = lerp(currentX, entityData.targetX, 0.3f);
+                        float newY = lerp(currentY, entityData.targetY, 0.3f);
+                        t.translation(new PointF(newX, newY));
+                    }
+                    t.rotation(entityData.targetRotation);
                 }
-                t.rotation(entityData.targetRotation);
             }
         }
     }
