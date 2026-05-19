@@ -23,8 +23,14 @@ public class StrikeFighter implements Ship, ScreenWrappable {
     private final List<DamageTakenEventListener> damageTakenListeners = new CopyOnWriteArrayList<>();
     private final List<ContactDamageDealtEventListener> contactDamageDealtListeners = new CopyOnWriteArrayList<>();
 
+    // state machine
+    private enum AIState { APPROACHING, STRAFING, RETREATING }
+    private AIState currentState = AIState.APPROACHING;
+    private int burstShotsFired = 0;
+    private Duration stateTimer = Duration.ZERO;
+
     private Duration fireCooldown = Duration.ZERO;
-    private static final Duration FIRE_RATE = Duration.ofMillis(400);
+    private static final Duration FIRE_RATE = Duration.ofMillis(75);
 
     private final ServerPlayfield playfield;
     private final io.github.animaexinani.engine.pool.BasicObjectPool<BasicBullet> bulletPool;
@@ -60,45 +66,77 @@ public class StrikeFighter implements Ship, ScreenWrappable {
         double currentAngle = this.body.getTransform().getRotationAngle();
         var myPos = this.body.getTransform().getTranslation();
 
-        // constant forward thrust fly like a plane
+        // 1. MOVEMENT: Constant forward thrust
         double thrust = 500.0;
         this.body.applyForce(new org.dyn4j.geometry.Vector2(Math.cos(currentAngle) * thrust, Math.sin(currentAngle) * thrust));
 
+        // Speed limit
         org.dyn4j.geometry.Vector2 velocity = this.body.getLinearVelocity();
-        double maxSpeed = 450.0; // keeps it fast, but well below the 1200 bullet speed
+        double maxSpeed = 450.0; 
         if (velocity.getMagnitude() > maxSpeed) {
             velocity.normalize();
             velocity.multiply(maxSpeed);
             this.body.setLinearVelocity(velocity);
         }
 
-        // slowly orbit the center of the screen (960, 540)
-        double angleToCenter = Math.atan2(540.0 - myPos.y, 960.0 - myPos.x);
-        // by targeting 90 degrees offset from the center, the ship flies in a circle!
-        double targetAngle = angleToCenter + (Math.PI / 2.0); 
-        
-        double angleDiff = targetAngle - currentAngle;
-        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff)); 
-        
-        this.body.setAngularVelocity(angleDiff * 1.5); // turns much slower than the drone
-
-        // attacking with cone of vision check
+        // state machine AI
         if (this.target != null && this.target.active()) {
             var targetPos = this.target.physicsBody().getTransform().getTranslation();
             double dx = targetPos.x - myPos.x;
             double dy = targetPos.y - myPos.y;
+            double distanceToTarget = Math.hypot(dx, dy);
             double angleToTarget = Math.atan2(dy, dx);
-            double distToTarget = Math.hypot(dx, dy);
-            
-            double targetAngleDiff = angleToTarget - currentAngle;
-            targetAngleDiff = Math.atan2(Math.sin(targetAngleDiff), Math.cos(targetAngleDiff)); 
-            
-            // if the player is within a ~30 degree cone in front of the ship, open fire!
-            if (Math.abs(targetAngleDiff) < 0.5 && distToTarget < 600) {
-                this.fireBullet(this.playfield);
+
+            switch (this.currentState) {
+                case APPROACHING:
+                    // turn towards player
+                    double angleDiff = angleToTarget - currentAngle;
+                    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff)); 
+                    this.body.setAngularVelocity(angleDiff * 2.5);
+
+                    // if close enough, start the strafing run
+                    if (distanceToTarget < 600) {
+                        this.currentState = AIState.STRAFING;
+                        this.burstShotsFired = 0;
+                    }
+                    break;
+
+                case STRAFING:
+                    // stop turning to keep flying in a straight line during the gun run
+                    this.body.setAngularVelocity(0);
+
+                    // fire rapidly (fireBullet automatically respects the 75ms FIRE_RATE cooldown)
+                    if (this.fireCooldown.isZero() || this.fireCooldown.isNegative()) {
+                        this.fireBullet(this.playfield);
+                        this.burstShotsFired++;
+                    }
+
+                    // Once 5 shots are fired, bail out
+                    if (this.burstShotsFired >= 5) {
+                        this.currentState = AIState.RETREATING;
+                        this.stateTimer = Duration.ofSeconds(2); // fly away for 2 seconds
+                    }
+                    break;
+
+                case RETREATING:
+                    // calculate the angle pointing directly AWAY from the player
+                    double retreatAngle = angleToTarget + Math.PI; 
+                    double retreatDiff = retreatAngle - currentAngle;
+                    retreatDiff = Math.atan2(Math.sin(retreatDiff), Math.cos(retreatDiff)); 
+                    
+                    // turn away
+                    this.body.setAngularVelocity(retreatDiff * 2.0);
+
+                    // count down the retreat timer
+                    this.stateTimer = this.stateTimer.minus(delta);
+                    if (this.stateTimer.isZero() || this.stateTimer.isNegative()) {
+                        this.currentState = AIState.APPROACHING; // go back in for another pass
+                    }
+                    break;
             }
         }
 
+        // decrement fire cooldown
         if (!this.fireCooldown.isZero() && !this.fireCooldown.isNegative()) {
             this.fireCooldown = this.fireCooldown.minus(delta);
         }

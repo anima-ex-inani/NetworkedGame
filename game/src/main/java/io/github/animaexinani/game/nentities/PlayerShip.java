@@ -34,7 +34,7 @@ public class PlayerShip implements Ship, ScreenWrappable {
     private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(500);
     private final BasicObjectPool<BasicBullet> bulletPool;
 
-    public static final double THRUST_POWER = 750.0;
+    public static final double THRUST_POWER = 3000.0;
     public static final double TURN_TORQUE = 1500.0;
     public static final double MAX_SPEED = 500.0;
 
