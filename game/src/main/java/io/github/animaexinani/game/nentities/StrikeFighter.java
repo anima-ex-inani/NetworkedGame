@@ -30,7 +30,7 @@ public class StrikeFighter implements Ship, ScreenWrappable {
     private Duration stateTimer = Duration.ZERO;
 
     private Duration fireCooldown = Duration.ZERO;
-    private static final Duration FIRE_RATE = Duration.ofMillis(75);
+    private static final Duration FIRE_RATE = Duration.ofMillis(100);
 
     private final ServerPlayfield playfield;
     private final io.github.animaexinani.engine.pool.BasicObjectPool<BasicBullet> bulletPool;
@@ -85,13 +85,13 @@ public class StrikeFighter implements Ship, ScreenWrappable {
         double currentAngle = this.body.getTransform().getRotationAngle();
         var myPos = this.body.getTransform().getTranslation();
 
-        // 1. MOVEMENT: Constant forward thrust
+        // constant forward thrust
         double thrust = 500.0;
         this.body.applyForce(new org.dyn4j.geometry.Vector2(Math.cos(currentAngle) * thrust, Math.sin(currentAngle) * thrust));
 
         // Speed limit
         org.dyn4j.geometry.Vector2 velocity = this.body.getLinearVelocity();
-        double maxSpeed = 450.0; 
+        double maxSpeed = 700.0; 
         if (velocity.getMagnitude() > maxSpeed) {
             velocity.normalize();
             velocity.multiply(maxSpeed);
@@ -191,7 +191,7 @@ public class StrikeFighter implements Ship, ScreenWrappable {
     @Override public PhysicsBody physicsBody() { return this.body; }
     @Override public boolean active() { return true; }
     @Override public boolean ignoresCollisionWith(Entity entity) { return entity.type().enemy(); } 
-    @Override public int contactDamage() { return 40_000; }
+    @Override public int contactDamage() { return 25_000; }
     @Override public int minimumContactDamage() { return 15_000; }
     @Override public float contactDamageMultiplier(double impulse) { return 1.0f; }
     @Override public boolean dealsContactDamageTo(Damageable target) { return target.type().player(); }

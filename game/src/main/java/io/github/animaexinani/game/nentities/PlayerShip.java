@@ -34,9 +34,9 @@ public class PlayerShip implements Ship, ScreenWrappable {
     private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(150);
     private final BasicObjectPool<BasicBullet> bulletPool;
 
-    // private Duration shieldRegenDelay = Duration.ZERO;
-    // private static final Duration SHIELD_DELAY = Duration.ofSeconds(3);
-    // private static final int SHIELD_REGEN_PER_TICK = 250; // adds about 15,000 shield per second at 60fps
+    private Duration shieldRegenDelay = Duration.ZERO;
+    private static final Duration SHIELD_DELAY = Duration.ofSeconds(3);
+    private static final int SHIELD_REGEN_PER_TICK = 250; // adds about 15,000 shield per second at 60fps
 
     public static final double THRUST_POWER = 3000.0;
     public static final double TURN_TORQUE = 1500.0;
@@ -179,7 +179,7 @@ public class PlayerShip implements Ship, ScreenWrappable {
             listener.onDamageTaken(this, healthDamage, shieldDamage, lethal);
         }
 
-        // this.shieldRegenDelay = SHIELD_DELAY;
+        this.shieldRegenDelay = SHIELD_DELAY;
 
         return lethal;
     }
@@ -203,19 +203,19 @@ public class PlayerShip implements Ship, ScreenWrappable {
             }
         }
 
-        // // shield regeneration
-        // if (!this.shieldRegenDelay.isZero() && !this.shieldRegenDelay.isNegative()) {
-        //     // tick down the 3-second delay
-        //     this.shieldRegenDelay = this.shieldRegenDelay.minus(delta);
-        //     if (this.shieldRegenDelay.isNegative()) {
-        //         this.shieldRegenDelay = Duration.ZERO;
-        //     }
-        // } else {
-        //     // Delay is zero, regenerate shield if it is not full
-        //     if (this.shield() < this.maxShield()) {
-        //         this.shield(this.shield() + SHIELD_REGEN_PER_TICK);
-        //     }
-        // }
+        // shield regeneration
+        if (!this.shieldRegenDelay.isZero() && !this.shieldRegenDelay.isNegative()) {
+            // tick down the 3-second delay
+            this.shieldRegenDelay = this.shieldRegenDelay.minus(delta);
+            if (this.shieldRegenDelay.isNegative()) {
+                this.shieldRegenDelay = Duration.ZERO;
+            }
+        } else {
+            // Delay is zero, regenerate shield if it is not full
+            if (this.shield() < this.maxShield()) {
+                this.shield(this.shield() + SHIELD_REGEN_PER_TICK);
+            }
+        }
 
         Vector2 velocity = this.body.getLinearVelocity();
         if (velocity.getMagnitude() > MAX_SPEED) {
@@ -244,15 +244,17 @@ public class PlayerShip implements Ship, ScreenWrappable {
         BasicBullet bullet = pooledBullet.get();
         bullet.activate(playfield, this, spawnX, spawnY, angle, 1500.0, () -> this.bulletPool.release(pooledBullet));
         
-        // gain 15% Shield on kill!
-        bullet.addDamageDealtListener((source, target, dmg, lethal) -> {
-            if (lethal && target.type().enemy()) {
-                this.shield(this.shield() + 15_000); 
-            }
-        });
+        // // gain 15% Shield on kill!
+        // bullet.addDamageDealtListener((source, target, dmg, lethal) -> {
+        //     if (lethal && target.type().enemy()) {
+        //         this.shield(this.shield() + 15_000); 
+        //     }
+        // });
 
         playfield.spawnEntity(bullet);
         this.fireCooldown = FIRE_COOLDOWN_RATE;
+
+        this.shieldRegenDelay = SHIELD_DELAY; // shield regenetation will stop if you shoot
     }
 
     public void processActions(Set<GameAction> actions, ServerPlayfield playfield) {
