@@ -20,8 +20,9 @@ public abstract class LazyTexture implements Texture {
 
     public @NotNull Texture getOrCreateNativeTexture(@NotNull Renderer renderer) {
         if (this.nativeTexture == null) {
-            this.nativeTexture = renderer.createTexture(this.textureSize(), this.pixelFormat(), this.pixelBuffer());
-            this.nativeTexture.setColorModifier(this.colorModifier);
+            var createdTexture = renderer.createTexture(this.textureSize(), this.pixelFormat(), this.pixelBuffer());
+            createdTexture.setColorModifier(this.colorModifier);
+            this.nativeTexture = createdTexture;
         }
         return this.nativeTexture;
     }
@@ -33,10 +34,11 @@ public abstract class LazyTexture implements Texture {
 
     @Override
     public void setColorModifier(@NotNull Color color) {
-        this.colorModifier = Objects.requireNonNull(color);
+        Objects.requireNonNull(color);
         if (this.nativeTexture != null) {
             this.nativeTexture.setColorModifier(color);
         }
+        this.colorModifier = color;
     }
 
     @Override
