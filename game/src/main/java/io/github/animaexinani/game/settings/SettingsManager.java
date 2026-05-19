@@ -32,7 +32,7 @@ public class SettingsManager {
             try {
                 loadedSettings = this.mapper.readValue(SETTINGS_PATH.toFile(), PlayerSettings.class);
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Failed to load settings from " + SETTINGS_PATH, e);
+                LOGGER.log(Level.SEVERE, e, () -> String.format("Failed to load settings from %s", SETTINGS_PATH));
                 loadedSettings = new PlayerSettings();
             }
         } else {
@@ -49,7 +49,7 @@ public class SettingsManager {
         try {
             this.mapper.writeValue(SETTINGS_PATH.toFile(), this.settings);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to save settings to " + SETTINGS_PATH, e);
+            LOGGER.log(Level.SEVERE, e, () -> String.format("Failed to save settings to %s", SETTINGS_PATH));
         }
     }
 
