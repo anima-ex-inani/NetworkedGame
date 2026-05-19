@@ -37,9 +37,10 @@ public class PlayState implements GameState {
      */
     public PlayState(Window window, FontFace fontFace) {
         this.window = window;
-        var clientSize = window.clientSize();
-        var centerX = clientSize.width() / 2.0f;
-        var centerY = clientSize.height() / 2.0f;
+        float width = window != null ? window.clientSize().width() : 1920.0f;
+        float height = window != null ? window.clientSize().height() : 1080.0f;
+        var centerX = width / 2.0f;
+        var centerY = height / 2.0f;
 
         // initialize the player ship
         this.playerShip = new PlayerShip();
@@ -56,15 +57,15 @@ public class PlayState implements GameState {
 
         // Add four more random asteroids
         for (int i = 0; i < 4; i++) {
-            float x = rand.nextFloat() * clientSize.width();
-            float y = rand.nextFloat() * clientSize.height();
+            float x = rand.nextFloat() * width;
+            float y = rand.nextFloat() * height;
             double vx = rand.nextDouble() * 100 - 50;
             double vy = rand.nextDouble() * 100 - 50;
             var asteroid = new Asteroid(EntityType.ASTEROID, x, y, vx, vy);
             initialEntities.add(asteroid);
         }
 
-        var sizeF = new SizeF(clientSize.width(), clientSize.height());
+        var sizeF = new SizeF(width, height);
         var worldBuilder = new CombinedWorld.Builder()
                 .withEntities(initialEntities)
                 .withLocalPlayerId(this.playerShip.id())
