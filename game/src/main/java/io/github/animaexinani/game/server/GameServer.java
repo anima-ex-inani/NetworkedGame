@@ -31,6 +31,15 @@ public class GameServer {
 
     private final Set<ClientConnection> clients = ConcurrentHashMap.newKeySet();
     private final Map<UUID, TimedInput> clientInputs = new ConcurrentHashMap<>();
+
+    /**
+     * Tracks which player UUIDs have already had a PlayerShip spawned for them,
+     * so we never create duplicates even if packets arrive out of order on startup.
+     */
+    private final Set<UUID> spawnedPlayers = ConcurrentHashMap.newKeySet();
+
+    private static final int MAX_ENTITIES = 64;
+
     private long lastSpawnTime = System.nanoTime();
 
     public GameServer(CombinedWorld playfield, int port) {
@@ -75,10 +84,26 @@ public class GameServer {
 
                 clientInputs.put(playerId, new TimedInput(actions, System.nanoTime()));
 
+                // Spawn a PlayerShip the very first time we hear from this client.
+                // spawnedPlayers guards against races if two packets arrive simultaneously.
+                if (spawnedPlayers.add(playerId)) {
+                    spawnPlayerShip(playerId);
+                }
+
             } catch (Exception e) {
                 if (running) LOGGER.log(Level.WARNING, "listen failed", e);
             }
         }
+    }
+
+    /**
+     * Creates and registers a {@link PlayerShip} for the given client UUID.
+     */
+    private void spawnPlayerShip(UUID playerId) {
+        PlayerShip ship = new PlayerShip(playerId);
+        ship.physicsBody().translate(960.0, 540.0);
+        this.spawnEntity(ship);
+        LOGGER.info("Spawned PlayerShip for new client " + playerId);
     }
 
     private void runLoop() {
@@ -93,36 +118,34 @@ public class GameServer {
             if (now - lastSpawnTime > 3_000_000_000L) { // every 3 seconds
                 lastSpawnTime = now;
                 
-                // pick a random edge of the screen
-                double margin = 100.0; 
-                
-                double spawnX;
-                double spawnY;
-                
-                if (Math.random() > 0.5) {
-                    // 50% chance to spawn on the TOP or BOTTOM inner edges
-                    spawnX = margin + (Math.random() * (1920 - (2 * margin))); // Random X inside margins
-                    spawnY = Math.random() > 0.5 ? margin : (1080 - margin);   // Fixed Top or Bottom Y
-                } else {
-                    // 50% chance to spawn on the LEFT or RIGHT inner edges
-                    spawnX = Math.random() > 0.5 ? margin : (1920 - margin);   // Fixed Left or Right X
-                    spawnY = margin + (Math.random() * (1080 - (2 * margin))); // Random Y inside margins
+
+                // only spawn drones if max entity is not reached
+                if (playfield.entities().size() < MAX_ENTITIES) {
+                    double margin = 100.0;
+                    double spawnX;
+                    double spawnY;
+
+                    if (Math.random() > 0.5) {
+                        spawnX = margin + (Math.random() * (1920 - (2 * margin)));
+                        spawnY = Math.random() > 0.5 ? margin : (1080 - margin);
+                    } else {
+                        spawnX = Math.random() > 0.5 ? margin : (1920 - margin);
+                        spawnY = margin + (Math.random() * (1080 - (2 * margin)));
+                    }
+
+                    ScoutDrone drone = new ScoutDrone(spawnX, spawnY);
+
+                    if (!clientInputs.isEmpty()) {
+                        UUID firstPlayer = clientInputs.keySet().iterator().next();
+                        drone.setTarget(playfield.getEntity(firstPlayer));
+                    }
+
+                    this.spawnEntity(drone);
                 }
-                
-                ScoutDrone drone = new ScoutDrone(spawnX, spawnY);
-                
-                // find a player to set as the drone's target
-                if (!clients.isEmpty()) {
-                    UUID firstPlayer = clientInputs.keySet().iterator().next();
-                    drone.setTarget(playfield.getEntity(firstPlayer));
-                }
-                
-                // spawn it with the death listener attached!
-                this.spawnEntity(drone);
             }
 
             processInputs();
-            playfield.preUpdate(delta); 
+            playfield.preUpdate(delta);
             playfield.update(delta);
             playfield.postUpdate(delta);
             broadcast();
@@ -159,15 +182,34 @@ public class GameServer {
         }
     }
 
+
+    // payload sizes
+    private static final int HEADER_BYTES = 12;
+    private static final int ENTITY_BYTES = 36;
+    private static final int MAX_UDP_PAYLOAD = 65_507;
+
+
     private void broadcast() {
         try {
             var entities = playfield.entities();
 
-            ByteBuffer bb = ByteBuffer.allocate(1400);
-            bb.putLong(snapshotSequence++);
-            bb.putInt(entities.size());
+            // get needed bytes
+            int needed = HEADER_BYTES + ENTITY_BYTES*entities.size();
 
+            ByteBuffer bb = ByteBuffer.allocate(Math.min(needed, MAX_UDP_PAYLOAD));
+            bb.putLong(snapshotSequence++);
+            
+            int countPos = bb.position();
+            bb.putInt(0);
+
+            int written = 0;
             for (Entity entity : entities) {
+                // Stop if there is no room for another full entity record.
+                if (bb.remaining() < ENTITY_BYTES) {
+                    LOGGER.warning("Snapshot truncated: " + (entities.size() - written)
+                            + " entities dropped (buffer full). Lower MAX_ENTITIES.");
+                    break;
+                }
                 var t = entity.physicsBody().getTransform();
 
                 bb.putLong(entity.id().getMostSignificantBits());
@@ -176,12 +218,16 @@ public class GameServer {
                 bb.putFloat((float) t.getTranslationX());
                 bb.putFloat((float) t.getTranslationY());
                 bb.putFloat((float) t.getRotationAngle());
+
                 int currentHp = 100;
                 if (entity instanceof LivingEntity living) {
                     currentHp = living.health();
                 }
                 bb.putInt(currentHp);
+                written++;
             }
+
+            bb.putInt(countPos, written);
 
             byte[] data = Arrays.copyOf(bb.array(), bb.position());
 
@@ -202,18 +248,19 @@ public class GameServer {
         if (socket != null) socket.close();
     }
 
+    /**
+     * Attaches a death-listener to damageable entities and queues them for
+     * addition to the world on the next {@code preUpdate}.
+     */
     public void spawnEntity(Entity entity) {
-        // change LivingEntity to Damageable here!
-        if (entity instanceof Damageable damageableEntity) {
-            damageableEntity.addDamageTakenListener((target, healthDamage, shieldDamage, lethal) -> {
+        if (entity instanceof Damageable damageable) {
+            damageable.addDamageTakenListener((target, healthDamage, shieldDamage, lethal) -> {
                 if (lethal) {
-                    System.out.println(target.type() + " was destroyed!");
+                    LOGGER.info(target.type() + " destroyed!");
                     this.playfield.despawnEntity(target.id());
                 }
             });
         }
-        
-        // add it to the world
         this.playfield.spawnEntity(entity);
     }
 }
