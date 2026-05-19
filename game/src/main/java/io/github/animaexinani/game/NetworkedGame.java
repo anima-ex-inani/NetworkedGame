@@ -136,11 +136,14 @@ public final class NetworkedGame extends Application {
 
         this.stateManager = new GameStateManager();
 
-        FontFace fontFace = null;
+        FontFace fontFace;
         try {
             fontFace = this.assetManager().load(new AssetKey<>(FontFace.class, "/test.ttf")).get();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to load test.ttf font", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to load UI font: interrupted", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new RuntimeException("Failed to load UI font", e);
         }
 
         // Initialize with MainMenuState
