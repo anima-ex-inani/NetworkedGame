@@ -1,5 +1,6 @@
 package io.github.animaexinani.engine.texture;
 
+import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.point.Point;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.size.Size;
@@ -28,4 +29,22 @@ public interface Texture extends AutoCloseable {
         var v = (float) point.y() / (float) size.height();
         return new PointF(u, v);
     }
+
+    /**
+     * Sets the color modifier for this texture.
+     * <p>
+     * Note: This property is ignored when rendering the texture via {@code renderGeometry}.
+     * </p>
+     *
+     * @param color The color modifier to set.
+     */
+    void setColorModifier(@NotNull Color color);
+
+    /**
+     * Gets the color modifier for this texture.
+     *
+     * @return The current color modifier.
+     */
+    @NotNull
+    Color getColorModifier();
 }

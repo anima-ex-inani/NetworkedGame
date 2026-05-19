@@ -1,50 +1,21 @@
 package io.github.animaexinani.engine.rendering.drawable;
 
-import io.github.animaexinani.engine.texture.Texture;
-import io.github.animaexinani.engine.vertex.Vertex;
+import io.github.animaexinani.engine.rendering.RenderContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Describes a renderable source of indexed vertex data.
+ * Describes an object that can be drawn to a rendering context.
  */
 public interface Drawable {
     /**
-     * Returns the number of indices available for rendering.
+     * Draws the object to the specified rendering context.
      *
-     * @return the total number of indices
+     * @param context the context to draw to
+     * 
+     * @implSpec Due to `context` being shared across all drawables, there is no
+     *           guarantee as to the initial state of the render context when
+     *           this function is called. You must initialize the context to
+     *           your expected state before you use it.
      */
-    int indexCount();
-
-    /**
-     * Returns the index value at the specified position.
-     *
-     * @param index the position of the index to retrieve
-     * @return the index value at the requested position
-     * @throws IndexOutOfBoundsException if {@code index} is out of range
-     */
-    int indexAt(int index);
-
-    /**
-     * Returns the number of vertices available for rendering.
-     *
-     * @return the total number of vertices
-     */
-    int vertexCount();
-
-    /**
-     * Returns the vertex at the specified position.
-     *
-     * @param index the position of the vertex to retrieve
-     * @return the vertex at the requested position
-     * @throws IndexOutOfBoundsException if {@code index} is out of range
-     */
-    @NotNull Vertex vertexAt(int index);
-
-    /**
-     * Returns the texture associated with this drawable, if any.
-     *
-     * @return the texture, or {@code null} if this drawable is untextured
-     */
-    @Nullable Texture texture();
+    void draw(@NotNull RenderContext context);
 }
