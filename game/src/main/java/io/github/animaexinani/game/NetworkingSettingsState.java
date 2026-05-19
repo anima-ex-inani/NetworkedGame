@@ -151,6 +151,7 @@ public class NetworkingSettingsState extends BaseMenuState {
 
         // Cancel Button
         this.components.add(this.createButton("Cancel", centerX + 160, 950, () -> {
+            this.settingsManager.setSettings(this.settingsManager.load());
             this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }

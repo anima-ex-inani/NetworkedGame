@@ -74,7 +74,20 @@ public class KeybindsSettingsState extends BaseMenuState {
         // Cancel Button
         this.components.add(this.createButton("Cancel", centerX + 160, 900, () -> {
             // Re-load settings to discard unsaved changes in memory
-            this.settingsManager.setSettings(this.settingsManager.load());
+            var reloaded = this.settingsManager.load();
+            this.settingsManager.setSettings(reloaded);
+            
+            // Revert engine bindings
+            var engineBindings = this.rebindingController.getBindings();
+            engineBindings.clear();
+            reloaded.getKeybinds().forEach((actionName, scancode) -> {
+                try {
+                    engineBindings.bind(scancode, GameAction.valueOf(actionName));
+                } catch (IllegalArgumentException e) {
+                    // Ignore unknown actions from disk
+                }
+            });
+
             this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }
