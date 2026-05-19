@@ -41,7 +41,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @NotNull Size framebufferSize() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             IntBuffer w = stack.mallocInt(1);
@@ -57,7 +57,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void renderGeometry(@NotNull Vertex @NotNull [] vertices, int @NotNull [] indices, @Nullable Texture texture) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -139,7 +139,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawPoint(@NotNull PointF p, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try {
             SdlOperationFailedException.throwOnFailure(
@@ -155,7 +155,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawPoints(@NotNull PointF @NotNull [] points, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlPoints = SDL_FPoint.malloc(points.length, stack);
@@ -175,7 +175,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawLine(@NotNull PointF p1, @NotNull PointF p2, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try {
             SdlOperationFailedException.throwOnFailure(
@@ -191,7 +191,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawLines(@NotNull PointF @NotNull [] points, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlPoints = SDL_FPoint.malloc(points.length, stack);
@@ -211,7 +211,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawRect(float x, float y, float width, float height, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var rect = SDL_FRect.malloc(stack);
@@ -232,7 +232,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawRects(@NotNull RectF @NotNull [] rects, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlRects = SDL_FRect.malloc(rects.length, stack);
@@ -257,7 +257,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void fillRect(float x, float y, float width, float height, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var rect = SDL_FRect.malloc(stack);
@@ -278,7 +278,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void fillRects(@NotNull RectF @NotNull [] rects, @NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlRects = SDL_FRect.malloc(rects.length, stack);
@@ -314,7 +314,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTexture(@NotNull Texture texture, @Nullable Rect src, @Nullable RectF dst) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -356,7 +356,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTexture(@NotNull Texture texture, @Nullable Rect src, @Nullable RectF dst, double angle, @Nullable PointF center, @NotNull FlipMode flipMode) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -412,7 +412,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTexture9Grid(@NotNull Texture texture, @Nullable Rect src, float leftWidth, float rightWidth, float topHeight, float bottomHeight, float scale, @Nullable RectF dst) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -454,7 +454,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTexture9GridTiled(@NotNull Texture texture, @Nullable Rect src, float leftWidth, float rightWidth, float topHeight, float bottomHeight, float scale, @Nullable RectF dst, float tileScale) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -496,7 +496,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTextureAffine(@NotNull Texture texture, @Nullable Rect src, @NotNull PointF origin, @NotNull PointF right, @NotNull PointF down) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -541,7 +541,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawTextureTiled(@NotNull Texture texture, @Nullable Rect src, float scale, @Nullable RectF dst) {
-        checkClosed();
+        this.checkClosed();
 
         SDL_Texture nativeTexture;
         if (texture instanceof LazyTexture lazyTex) {
@@ -583,7 +583,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void clipRect(@Nullable Rect rect) {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             SDL_Rect sdlRect = null;
@@ -604,7 +604,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @Nullable Rect clipRect() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlRect = SDL_Rect.malloc(stack);
@@ -617,7 +617,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @NotNull Rect viewport() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlRect = SDL_Rect.malloc(stack);
@@ -632,7 +632,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void drawColor(@NotNull Color color) {
-        checkClosed();
+        this.checkClosed();
 
         try {
             SdlOperationFailedException.throwOnFailure(
@@ -645,7 +645,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @NotNull Color drawColor() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var r = stack.mallocFloat(1);
@@ -663,7 +663,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void blendMode(@NotNull BlendMode blendMode) {
-        checkClosed();
+        this.checkClosed();
 
         int sdlBlendMode = switch (blendMode) {
             case NONE -> SDLBlendMode.SDL_BLENDMODE_NONE;
@@ -684,7 +684,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @NotNull BlendMode blendMode() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var sdlBlendMode = stack.mallocInt(1);
@@ -706,7 +706,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public void scale(@NotNull SizeF scale) {
-        checkClosed();
+        this.checkClosed();
 
         try {
             SdlOperationFailedException.throwOnFailure(
@@ -719,7 +719,7 @@ public final class SDLRenderContext implements RenderContext {
 
     @Override
     public @NotNull SizeF scale() {
-        checkClosed();
+        this.checkClosed();
 
         try (var stack = MemoryStack.stackPush()) {
             var scaleX = stack.mallocFloat(1);
