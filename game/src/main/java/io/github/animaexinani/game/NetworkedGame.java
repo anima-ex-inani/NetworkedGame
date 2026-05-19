@@ -113,23 +113,19 @@ public final class NetworkedGame extends Application {
 
         // actually create the InputSystem object in memory
         var settings = this.settingsManager.getSettings();
-        InputBindings bindings;
-        if (settings.getKeybinds().isEmpty()) {
-            bindings = InputBindings.defaultBindings();
-            // populate settings with defaults for next time
-            bindings.getAll().forEach((scancode, action) -> 
-                settings.getKeybinds().put(action.name(), scancode));
-            this.settingsManager.save();
-        } else {
-            bindings = new InputBindings();
-            settings.getKeybinds().forEach((actionName, scancode) -> {
-                try {
-                    bindings.bind(scancode, io.github.animaexinani.engine.input.GameAction.valueOf(actionName));
-                } catch (IllegalArgumentException e) {
-                    LOGGER.log(Level.WARNING, "Unknown game action in settings: " + actionName);
-                }
-            });
-        }
+        // Always start with default bindings, then override with custom bindings from settings
+        InputBindings bindings = InputBindings.defaultBindings();
+        settings.getKeybinds().forEach((actionName, scancode) -> {
+            try {
+                bindings.bind(scancode, io.github.animaexinani.engine.input.GameAction.valueOf(actionName));
+            } catch (IllegalArgumentException e) {
+                LOGGER.log(Level.WARNING, "Unknown game action in settings: " + actionName);
+            }
+        });
+        // Save complete bindings to settings to ensure file is always up-to-date
+        bindings.getAll().forEach((scancode, action) -> 
+            settings.getKeybinds().put(action.name(), scancode));
+        this.settingsManager.save();
 
         this.inputListener = new GameInputListener(bindings);
         this.rebindingController = new RebindingController(bindings);
