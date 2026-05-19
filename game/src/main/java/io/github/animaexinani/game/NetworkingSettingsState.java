@@ -18,7 +18,9 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +32,7 @@ public class NetworkingSettingsState extends BaseMenuState {
     private final UITextField portField;
     private String selectedInterface;
     private final List<UIButton> interfaceButtons = new ArrayList<>();
+    private final Map<UIButton, String> buttonToInternalName = new HashMap<>();
 
     public NetworkingSettingsState(Window window, GameStateManager stateManager, FontFace fontFace, EventRegistry eventRegistry, SettingsManager settingsManager, RebindingController rebindingController) {
         super(window, stateManager, fontFace, eventRegistry, settingsManager, rebindingController);
@@ -66,32 +69,30 @@ public class NetworkingSettingsState extends BaseMenuState {
         interfaceLabel.position(new PointF(centerX, 280));
         this.components.add(interfaceLabel);
 
-        // List Interfaces
-        List<String> interfaces = new ArrayList<>();
-        interfaces.add("all");
+        float interfaceY = 320;
+        
+        // "All Interfaces" option
+        this.addInterfaceButton("all", "All Interfaces", centerX, interfaceY);
+        interfaceY += 45;
+
+        // List Physical/Virtual Interfaces
         try {
             var nets = NetworkInterface.getNetworkInterfaces();
             for (var netint : Collections.list(nets)) {
-                if (!netint.isLoopback() || netint.getName().equals("lo")) {
-                    interfaces.add(netint.getName());
+                if (netint.isUp()) {
+                    this.addInterfaceButton(netint.getName(), netint.getDisplayName(), centerX, interfaceY);
+                    interfaceY += 45;
+                    if (interfaceY > 850) break; // Limit list to prevent overflowing screen
                 }
             }
         } catch (SocketException e) {
             LOGGER.log(Level.WARNING, "Failed to list network interfaces", e);
         }
-
-        float interfaceY = 320;
-        for (String iface : interfaces) {
-            UIButton btn = this.createInterfaceButton(iface, centerX, interfaceY);
-            this.interfaceButtons.add(btn);
-            this.components.add(btn);
-            interfaceY += 45;
-            if (interfaceY > 800) break; // Limit list
-        }
+        
         this.updateInterfaceButtons();
 
         // Apply Button
-        this.components.add(this.createButton("Apply", centerX - 160, 900, () -> {
+        this.components.add(this.createButton("Apply", centerX - 160, 950, () -> {
             try {
                 int port = Integer.parseInt(this.portField.text());
                 this.settingsManager.getSettings().getNetworking().setPreferredPort(port);
@@ -99,34 +100,38 @@ public class NetworkingSettingsState extends BaseMenuState {
                 this.settingsManager.save();
                 this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
             } catch (NumberFormatException e) {
-                // Should show error in UI really
+                // Ignore invalid port for now
             }
         }));
 
         // Cancel Button
-        this.components.add(this.createButton("Cancel", centerX + 160, 900, () -> {
+        this.components.add(this.createButton("Cancel", centerX + 160, 950, () -> {
             this.stateManager.transitionTo(new SettingsState(this.window, this.stateManager, this.fontFace, this.eventRegistry, this.settingsManager, this.rebindingController));
         }));
     }
 
-    private UIButton createInterfaceButton(String name, float x, float y) {
-        Text text = new Text(this.fontFace, name);
-        text.fontSize(20.0f);
+    private void addInterfaceButton(String internalName, String displayName, float x, float y) {
+        Text text = new Text(this.fontFace, displayName);
+        text.fontSize(18.0f);
         text.color(Color.WHITE);
         text.origin(TextOrigin.CENTER);
         
         UIButton button = new UIButton(text, () -> {
-            this.selectedInterface = name;
+            this.selectedInterface = internalName;
             this.updateInterfaceButtons();
         });
-        button.position(new PointF(x - 100, y - 15));
-        button.size(new SizeF(200, 30));
-        return button;
+        button.position(new PointF(x - 300, y - 15));
+        button.size(new SizeF(600, 30));
+        
+        this.interfaceButtons.add(button);
+        this.buttonToInternalName.put(button, internalName);
+        this.components.add(button);
     }
 
     private void updateInterfaceButtons() {
         for (UIButton btn : this.interfaceButtons) {
-            if (btn.text().text().equals(this.selectedInterface)) {
+            String internalName = this.buttonToInternalName.get(btn);
+            if (internalName != null && internalName.equals(this.selectedInterface)) {
                 btn.backgroundColor(Color.GREEN);
             } else {
                 btn.backgroundColor(Color.GRAY);
