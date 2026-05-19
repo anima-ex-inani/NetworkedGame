@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import io.github.animaexinani.engine.point.PointF;
 
-public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable {
+public class Asteroid implements LivingEntity, Damageable, DealsContactDamage, ScreenWrappable {
     private static final Collection<PointF> ASTEROID_LOCAL_POINTS = List.of(
             new PointF(20.0f, 0.0f),
             new PointF(10.0f, 15.0f),
@@ -169,5 +169,27 @@ public class Asteroid implements Damageable, DealsContactDamage, ScreenWrappable
         for (var listener : this.contactDamageDealtListeners) {
             listener.onContactDamageDealt(this, target, damage, lethal, impulse);
         }
+    }
+    @Override
+    public int health() {
+        return this.health;
+    }
+
+    @Override
+    public int maxHealth() {
+        return switch (this.type) {
+            case EntityType.ASTEROID -> 50_000;
+            default -> 1;
+        };
+    }
+
+    @Override
+    public int shield() {
+        return 0; // asteroids don't have shields
+    }
+
+    @Override
+    public int maxShield() {
+        return 0;
     }
 }

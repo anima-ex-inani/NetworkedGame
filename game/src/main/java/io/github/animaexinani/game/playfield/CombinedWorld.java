@@ -333,6 +333,20 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
     }
 
+    public void removeStaleEntities(Set<UUID> activeServerIds) {
+        synchronized (this.entities) {
+            // find all entity IDs in the client that are NOT in the server's list
+            List<UUID> toRemove = this.entities.keySet().stream()
+                .filter(id -> !activeServerIds.contains(id))
+                .toList();
+
+            // despawn them locally
+            for (UUID id : toRemove) {
+                this.internalDespawnEntity(id); 
+            }
+        }
+    }
+
     @Override
     public @NotNull Entity localPlayer() {
         EntityData playerData;

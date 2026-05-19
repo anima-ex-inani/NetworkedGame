@@ -62,30 +62,31 @@ public final class NetworkedGame extends Application {
         if (frameTime > 0.25f) frameTime = 0.25f;
         this.accumulator += frameTime;
 
-        // network/physics loop
+        // network Output Loop
         while (this.accumulator >= TIME_STEP) {
-            // client sends inputs to the UDP server asynchronously
             this.gameClient.sendInputs();
             this.accumulator -= TIME_STEP;
         }
 
-        // renderloop
-        // move our visual shapes to match the last server snapshot via the last server
+        // client Render Loop
+        // flush the spawn/despawn queues so new network entities appear
+        this.combinedWorld.preUpdate(java.time.Duration.ZERO); 
+        
+        // glide the dummy visuals toward the latest server snapshot
         this.combinedWorld.interpolateVisuals(frameTime);
 
-        // draw to the screen
+        // draw everything
         var renderer = this.mainWindow.getRenderer();
         renderer.clear(Color.BLACK);
-        
         this.combinedWorld.render(renderer);
-        
         renderer.present();
+        
         return true;
     }
 
     @Override
     public void close() {
-        // Shutdown network hooks and background execution loops
+        // shutdown network hooks and background execution loops
         if (this.gameServer != null) {
             this.gameServer.stop();
         }
@@ -118,54 +119,53 @@ public final class NetworkedGame extends Application {
         this.mainWindow = windowFactory.createWindow(windowOptions);
 
         var clientSize = this.mainWindow.clientSize();
-        var centerX = clientSize.width() / 2.0f;
-        var centerY = clientSize.height() / 2.0f;
+        var sizeF = new SizeF(clientSize.width(), clientSize.height());
 
-        // initialize the player ship
+        float centerX = clientSize.width() / 2.0f;
+        float centerY = clientSize.height() / 2.0f;
+
+        // create real world server
         this.playerShip = new PlayerShip();
         this.playerShip.physicsBody().translate(centerX, centerY);
 
-        List<Entity> initialEntities = new ArrayList<>();
-        initialEntities.add(this.playerShip);
+        List<Entity> serverEntities = new ArrayList<>();
+        serverEntities.add(this.playerShip);
 
-        // add test asteroid
-        var testAsteroid = new Asteroid(EntityType.ASTEROID, 200.0f, 200.0f, 60.0, 30.0);
-        initialEntities.add(testAsteroid);
-
+        // add server asteroids
         Random rand = new Random();
-
-        // Add four more random asteroids
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             float x = rand.nextFloat() * clientSize.width();
             float y = rand.nextFloat() * clientSize.height();
             double vx = rand.nextDouble() * 100 - 50;
             double vy = rand.nextDouble() * 100 - 50;
-            var asteroid = new Asteroid(EntityType.ASTEROID, x, y, vx, vy);
-            initialEntities.add(asteroid);
+            serverEntities.add(new Asteroid(EntityType.ASTEROID, x, y, vx, vy));
         }
 
-        var sizeF = new SizeF(clientSize.width(), clientSize.height());
-        var worldBuilder = new CombinedWorld.Builder()
-                .withEntities(initialEntities)
+        CombinedWorld serverWorld = new CombinedWorld.Builder()
+                .withEntities(serverEntities)
                 .withLocalPlayerId(this.playerShip.id())
                 .withSize(sizeF)
-                .withVisualFactory(EntityType.BULLET, entity -> {
-                    PointF[] bulletPoints = {
-                            new PointF(5.0f, 0.0f),
-                            new PointF(-2.0f, 2.5f),
-                            new PointF(-2.0f, -2.5f)
-                    };
-                    return new ConvexPolygon(bulletPoints, Color.WHITE);
-                })
-                .withVisualFactory(EntityType.ASTEROID, entity -> {
-                    var points = Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new);
-                    return new ConvexPolygon(points, new Color(0.6f, 0.6f, 0.6f, 1.0f));
-                })
-                .withVisualFactory(EntityType.PLAYER, entity -> {
-                    return new ConvexPolygon(PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN);
-                });
+                .build();
 
-        this.combinedWorld = worldBuilder.build();
+        // client only gets a dummy representation of the player to satisfy the builder
+        io.github.animaexinani.game.nentities.ClientNetworkEntity dummyPlayer = 
+            new io.github.animaexinani.game.nentities.ClientNetworkEntity(this.playerShip.id(), EntityType.PLAYER);
+
+        this.combinedWorld = new CombinedWorld.Builder()
+                .withEntity(dummyPlayer)
+                .withLocalPlayerId(this.playerShip.id())
+                .withSize(sizeF)
+                .withVisualFactory(EntityType.BULLET, entity -> new ConvexPolygon(
+                        new PointF[]{new PointF(5.0f, 0.0f), new PointF(-2.0f, 2.5f), new PointF(-2.0f, -2.5f)}, Color.WHITE))
+                .withVisualFactory(EntityType.ASTEROID, entity -> new ConvexPolygon(
+                        Asteroid.getAsteroidLocalPointsForType(EntityType.ASTEROID).toArray(PointF[]::new), new Color(0.6f, 0.6f, 0.6f, 1.0f)))
+                .withVisualFactory(EntityType.PLAYER, entity -> new ConvexPolygon(
+                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), Color.GREEN))
+                .withVisualFactory(EntityType.SCOUT_DRONE, entity -> new ConvexPolygon(
+                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(1.0f, 0.0f, 0.0f, 1.0f))) // Red
+                .withVisualFactory(EntityType.STRIKE_FIGHTER, entity -> new ConvexPolygon(
+                        PlayerShip.LOCAL_COORDS.toArray(PointF[]::new), new Color(1.0f, 0.0f, 1.0f, 1.0f))) // Magenta
+                .build();
 
         // actually create the InputSystem object in memory
         var bindings = InputBindings.defaultBindings();
@@ -178,11 +178,11 @@ public final class NetworkedGame extends Application {
         this.eventRegistry().register(KeyboardListener.class, this.inputListener);
         this.eventRegistry().register(KeyboardListener.class, this.rebindingController);
 
-        // Spin up authoritative UDP server instance bound to port 9000
-        this.gameServer = new GameServer(this.combinedWorld, 9000);
+        // spin up authoritative UDP server instance bound to port 9000
+        this.gameServer = new GameServer(serverWorld, 9000);
         this.gameServer.start();
 
-        // Connect UDP client to the local loopback server
+        // connect UDP client to the local loopback server
         this.gameClient = new GameClient(this.combinedWorld, this.inputListener, this.playerShip.id());
         this.gameClient.connect("127.0.0.1", 9000);
 

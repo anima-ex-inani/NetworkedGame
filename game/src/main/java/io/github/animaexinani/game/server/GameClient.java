@@ -3,6 +3,7 @@ package io.github.animaexinani.game.server;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,10 +62,14 @@ public class GameClient {
                 lastSequence = seq;
 
                 int count = bb.getInt();
+                
+                // set to monitor who is still alive
+                Set<UUID> receivedIds = new HashSet<>();
 
                 for (int i = 0; i < count; i++) {
                     UUID id = new UUID(bb.getLong(), bb.getLong());
                     int typeOrdinal = bb.getInt();
+                    receivedIds.add(id);
                     
                     var entityTypes = io.github.animaexinani.game.nentities.EntityType.values();
                     if (typeOrdinal < 0 || typeOrdinal >= entityTypes.length) {
@@ -82,9 +87,14 @@ public class GameClient {
                             entityTypes[typeOrdinal],
                             x, y, rot, health
                     );
+                    
+                    if (localWorld.getEntity(id) == null) {
+                        localWorld.spawnEntity(new io.github.animaexinani.game.nentities.ClientNetworkEntity(id, entityTypes[typeOrdinal]));
+                    }
 
                     localWorld.updateEntityTarget(snap);
                 }
+                localWorld.removeStaleEntities(receivedIds);
 
             } catch (Exception e) {
                 if (running) {
