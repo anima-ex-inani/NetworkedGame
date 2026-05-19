@@ -43,8 +43,14 @@ public class PlayerShip implements Ship, ScreenWrappable {
             new PointF(-15.0f, 15.0f),
             new PointF(-15.0f, -15.0f));
 
+            
     public PlayerShip() {
-        this.id = UUIDGenerator.generateV7Uuid();
+        this(UUIDGenerator.generateV7Uuid());
+    }
+
+
+    public PlayerShip(UUID id) {
+        this.id = id;
         this.damageTakenListeners = new CopyOnWriteArrayList<>();
         this.health = this.maxHealth();
         this.shield = this.maxShield();
