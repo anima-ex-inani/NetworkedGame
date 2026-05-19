@@ -2,6 +2,7 @@ package io.github.animaexinani.engine.ui;
 
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.font.Text;
+import io.github.animaexinani.engine.font.TextOrigin;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.ConvexPolygon;
 import io.github.animaexinani.engine.point.PointF;
@@ -43,7 +44,7 @@ public class UIButton extends UIComponent {
         renderer.draw(background);
 
         // Center the text
-        // Note: This assumes the text origin is handled correctly
+        this.label.origin(TextOrigin.CENTER);
         this.label.translation(new PointF(
             this.position().x() + this.size().width() / 2.0f,
             this.position().y() + this.size().height() / 2.0f
