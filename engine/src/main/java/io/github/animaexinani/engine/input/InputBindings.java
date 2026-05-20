@@ -34,6 +34,13 @@ public final class InputBindings {
         return Collections.unmodifiableMap(this.bindings);
     }
 
+    /**
+     * Clears all current bindings.
+     */
+    public void clear() {
+        this.bindings.clear();
+    }
+
     public static InputBindings defaultBindings() {
         var b = new InputBindings();
         b.bind(26, GameAction.MOVE_UP);     // W

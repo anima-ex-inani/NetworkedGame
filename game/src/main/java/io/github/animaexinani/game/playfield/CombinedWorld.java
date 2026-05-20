@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -23,14 +24,15 @@ import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.rendering.transformable.Transformable;
 import io.github.animaexinani.engine.size.SizeF;
-import io.github.animaexinani.game.collision.EntityCollisionListener;
 import io.github.animaexinani.game.collision.BulletDamageContactListener;
 import io.github.animaexinani.game.collision.ContactDamageContactListener;
+import io.github.animaexinani.game.collision.EntityCollisionListener;
+import io.github.animaexinani.game.nentities.ClientNetworkEntity;
 import io.github.animaexinani.game.nentities.Entity;
+import io.github.animaexinani.game.nentities.EntitySnapshot;
 import io.github.animaexinani.game.nentities.EntityType;
 import io.github.animaexinani.game.nentities.PlayerShip;
 import io.github.animaexinani.game.nentities.ScreenWrappable;
-import io.github.animaexinani.game.nentities.Ship;
 
 /**
  * A combined client and server-side representation of the game's playfield.
@@ -44,6 +46,11 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     static final class EntityData {
         private final @NotNull Entity entity;
         private @Nullable Drawable drawable;
+
+        // interpolation variables
+        public float targetX = 0f;
+        public float targetY = 0f;
+        public float targetRotation = 0f;
 
         public EntityData(@NotNull Entity entity, @Nullable Drawable drawable) {
             this.entity = Objects.requireNonNull(entity);
@@ -135,9 +142,6 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             if (this.localPlayerId == null) {
                 throw new IllegalStateException("Local player ID must be set");
             }
-            if (this.size == null) {
-                throw new IllegalStateException("Size must be set");
-            }
 
             var world = new CombinedWorld(this.entities, this.localPlayerId, this.size);
             this.visualFactories.forEach(world::registerVisualFactory);
@@ -187,7 +191,7 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
             this.physicsWorld.addBody(entity.physicsBody());
         }
 
-        if (!this.entities.containsKey(localPlayerId)) {
+         if (!this.entities.containsKey(localPlayerId)) {
             throw new IllegalArgumentException("Local player ID not found in player entities");
         }
         this.size = size;
@@ -291,13 +295,93 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
         }
     }
 
+    public void updateEntityTarget(EntitySnapshot snap) {
+        synchronized (this.entities) {
+            var data = this.entities.get(snap.id());
+            if (data != null) {
+                data.targetX = snap.x();
+                data.targetY = snap.y();
+                data.targetRotation = snap.rotation();
+
+                // damage detection
+                if (data.entity instanceof ClientNetworkEntity ce) {
+                    // check shield damage
+                    if (snap.shield() < ce.shield()) {
+                        ce.flashTimer = 0.25f;
+                        ce.flashColor = new io.github.animaexinani.engine.color.Color(0.0f, 0.5f, 1.0f, 1.0f); // Blue
+                    } 
+                    // check Hull damage
+                    else if (snap.health() < ce.health()) {
+                        ce.flashTimer = 0.25f;
+                        ce.flashColor = new io.github.animaexinani.engine.color.Color(1.0f, 0.0f, 0.0f, 1.0f); // Red
+                    }
+                    
+                    ce.setHealth(snap.health());
+                    ce.setShield(snap.shield());
+                }
+            }
+        }
+    }
+
+    // a simple Lerp function
+    float lerp(float current, float target, float speed) {
+        return current + (target - current) * speed;
+    }
+
+    public void interpolateVisuals(float frameTime) {
+        synchronized(this.entities){
+            for (var entityData : this.entities.values()) {
+                if (entityData.entity instanceof ClientNetworkEntity ce) {
+                    boolean wasFlashing = ce.flashTimer > 0;
+                    if (wasFlashing) {
+                        ce.flashTimer -= frameTime;
+                    }
+
+                    if (wasFlashing) {
+                        var factory = this.visualFactories.get(ce.type());
+                        if (factory != null) {
+                            entityData.drawable = factory.apply(ce);
+                        }
+                    }
+                }
+
+                if (entityData.drawable instanceof Transformable t) {
+                    float currentX = t.translation().x();
+                    float currentY = t.translation().y();
+                    
+                    if (Math.abs(currentX - entityData.targetX) > 100 || Math.abs(currentY - entityData.targetY) > 100) {
+                        t.translation(new PointF(entityData.targetX, entityData.targetY));
+                    } else {
+                        // otherwise, smoothly glide
+                        float newX = this.lerp(currentX, entityData.targetX, 0.3f);
+                        float newY = this.lerp(currentY, entityData.targetY, 0.3f);
+                        t.translation(new PointF(newX, newY));
+                    }
+                    t.rotation(entityData.targetRotation);
+                }
+            }
+        }
+    }
+
+    public void removeStaleEntities(Set<UUID> activeServerIds) {
+        synchronized (this.entities) {
+            // find all entity IDs in the client that are NOT in the server's list
+            List<UUID> toRemove = this.entities.keySet().stream()
+                .filter(id -> !activeServerIds.contains(id))
+                .toList();
+
+            // despawn them locally
+            for (UUID id : toRemove) {
+                this.internalDespawnEntity(id); 
+            }
+        }
+    }
+
     @Override
     public @NotNull Entity localPlayer() {
         EntityData playerData;
-
         synchronized (this.entities) {
             playerData = this.entities.get(this.localPlayerId);
-
         }
 
         if (playerData == null) {
@@ -370,23 +454,12 @@ public class CombinedWorld implements ClientPlayfield, ServerPlayfield {
     @Override
     public void handleInput(@NotNull GameInputListener input, @NotNull Duration delta) {
         var player = this.localPlayer();
-        var body = player.physicsBody();
-
-        if (input.isHeld(GameAction.MOVE_UP)) {
-            double angle = body.getTransform().getRotationAngle();
-            Vector2 force = new Vector2(Math.cos(angle), Math.sin(angle)).multiply(PlayerShip.THRUST_POWER);
-            body.applyForce(force);
-        }
-        if (input.isHeld(GameAction.MOVE_LEFT)) {
-            body.applyTorque(-PlayerShip.TURN_TORQUE);
-        }
-        if (input.isHeld(GameAction.MOVE_RIGHT)) {
-            body.applyTorque(PlayerShip.TURN_TORQUE);
-        }
-        if (input.isHeld(GameAction.ATTACK)) {
-            if (player instanceof Ship ship) {
-                ship.fireBullet(this);
-            }
+        if (player instanceof PlayerShip ship) {
+            // Grab the keys currently held down on the local keyboard
+            Set<GameAction> heldActions = input.getHeldActions();
+            
+            // Pass them to the ship
+            ship.processActions(heldActions, this); 
         }
     }
 

@@ -15,6 +15,7 @@ dyn4j = { module = "org.dyn4j:dyn4j", version.ref = "dyn4j" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+jackson-toml = { module = "tools.jackson.dataformat:jackson-dataformat-toml", version = "3.1.3" }
 
 [bundles]
 lwjgl = ["lwjgl", "lwjgl-sdl", "lwjgl-freetype"]

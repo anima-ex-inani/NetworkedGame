@@ -3,6 +3,7 @@ package io.github.animaexinani.game.nentities;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,6 +15,7 @@ import org.dyn4j.geometry.Polygon;
 import org.dyn4j.geometry.Vector2;
 import org.jetbrains.annotations.NotNull;
 
+import io.github.animaexinani.engine.input.GameAction;
 import io.github.animaexinani.engine.point.PointF;
 import io.github.animaexinani.engine.pool.BasicObjectPool;
 import io.github.animaexinani.engine.pool.PooledObject;
@@ -29,10 +31,14 @@ public class PlayerShip implements Ship, ScreenWrappable {
     private final List<ContactDamageDealtEventListener> contactDamageDealtListeners = new CopyOnWriteArrayList<>();
 
     private Duration fireCooldown;
-    private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(500);
+    private static final Duration FIRE_COOLDOWN_RATE = Duration.ofMillis(150);
     private final BasicObjectPool<BasicBullet> bulletPool;
 
-    public static final double THRUST_POWER = 750.0;
+    private Duration shieldRegenDelay = Duration.ZERO;
+    private static final Duration SHIELD_DELAY = Duration.ofSeconds(3);
+    private static final int SHIELD_REGEN_PER_TICK = 250; // adds about 15,000 shield per second at 60fps
+
+    public static final double THRUST_POWER = 3000.0;
     public static final double TURN_TORQUE = 1500.0;
     public static final double MAX_SPEED = 500.0;
 
@@ -41,8 +47,14 @@ public class PlayerShip implements Ship, ScreenWrappable {
             new PointF(-15.0f, 15.0f),
             new PointF(-15.0f, -15.0f));
 
+            
     public PlayerShip() {
-        this.id = UUIDGenerator.generateV7Uuid();
+        this(UUIDGenerator.generateV7Uuid());
+    }
+
+
+    public PlayerShip(UUID id) {
+        this.id = id;
         this.damageTakenListeners = new CopyOnWriteArrayList<>();
         this.health = this.maxHealth();
         this.shield = this.maxShield();
@@ -167,6 +179,8 @@ public class PlayerShip implements Ship, ScreenWrappable {
             listener.onDamageTaken(this, healthDamage, shieldDamage, lethal);
         }
 
+        this.shieldRegenDelay = SHIELD_DELAY;
+
         return lethal;
     }
 
@@ -186,6 +200,20 @@ public class PlayerShip implements Ship, ScreenWrappable {
             this.fireCooldown = this.fireCooldown.minus(delta);
             if (this.fireCooldown.isNegative()) {
                 this.fireCooldown = Duration.ZERO;
+            }
+        }
+
+        // shield regeneration
+        if (!this.shieldRegenDelay.isZero() && !this.shieldRegenDelay.isNegative()) {
+            // tick down the 3-second delay
+            this.shieldRegenDelay = this.shieldRegenDelay.minus(delta);
+            if (this.shieldRegenDelay.isNegative()) {
+                this.shieldRegenDelay = Duration.ZERO;
+            }
+        } else {
+            // Delay is zero, regenerate shield if it is not full
+            if (this.shield() < this.maxShield()) {
+                this.shield(this.shield() + SHIELD_REGEN_PER_TICK);
             }
         }
 
@@ -215,8 +243,36 @@ public class PlayerShip implements Ship, ScreenWrappable {
         PooledObject<BasicBullet> pooledBullet = this.bulletPool.acquire();
         BasicBullet bullet = pooledBullet.get();
         bullet.activate(playfield, this, spawnX, spawnY, angle, 1500.0, () -> this.bulletPool.release(pooledBullet));
+        
+        // // gain 15% Shield on kill!
+        // bullet.addDamageDealtListener((source, target, dmg, lethal) -> {
+        //     if (lethal && target.type().enemy()) {
+        //         this.shield(this.shield() + 15_000); 
+        //     }
+        // });
 
         playfield.spawnEntity(bullet);
         this.fireCooldown = FIRE_COOLDOWN_RATE;
+
+        this.shieldRegenDelay = SHIELD_DELAY; // shield regenetation will stop if you shoot
+    }
+
+    public void processActions(Set<GameAction> actions, ServerPlayfield playfield) {
+        if (actions.contains(GameAction.MOVE_UP)) {
+            double angle = this.body.getTransform().getRotationAngle();
+            double forceX = StrictMath.cos(angle) * THRUST_POWER;
+            double forceY = StrictMath.sin(angle) * THRUST_POWER;
+            Vector2 force = new Vector2(forceX, forceY);
+            this.body.applyForce(force);
+        }
+        if (actions.contains(GameAction.MOVE_LEFT)) {
+            this.body.applyTorque(-TURN_TORQUE);
+        }
+        if (actions.contains(GameAction.MOVE_RIGHT)) {
+            this.body.applyTorque(TURN_TORQUE);
+        }
+        if (actions.contains(GameAction.ATTACK)) {
+            this.fireBullet(playfield);
+        }
     }
 }

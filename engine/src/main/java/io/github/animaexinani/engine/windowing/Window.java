@@ -13,4 +13,14 @@ public interface Window extends AutoCloseable {
     Renderer getRenderer();
 
     Size clientSize();
+
+    /**
+     * Starts text input for this window.
+     */
+    void startTextInput();
+
+    /**
+     * Stops text input for this window.
+     */
+    void stopTextInput();
 }

@@ -2,7 +2,6 @@ package io.github.animaexinani.engine.internal.video;
 
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,26 +9,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.github.animaexinani.engine.color.Color;
 import io.github.animaexinani.engine.internal.GlobalCleaner;
 import io.github.animaexinani.engine.internal.SdlOperationFailedException;
-import io.github.animaexinani.engine.point.PointF;
-import io.github.animaexinani.engine.rectangle.Rect;
-import io.github.animaexinani.engine.rectangle.RectF;
-import io.github.animaexinani.engine.rendering.BlendMode;
-import io.github.animaexinani.engine.rendering.FlipMode;
 import io.github.animaexinani.engine.rendering.RenderContext;
 import io.github.animaexinani.engine.rendering.Renderer;
 import io.github.animaexinani.engine.rendering.RenderingOperationFailedException;
 import io.github.animaexinani.engine.rendering.drawable.Drawable;
 import io.github.animaexinani.engine.size.Size;
-import io.github.animaexinani.engine.size.SizeF;
-import io.github.animaexinani.engine.texture.LazyTexture;
 import io.github.animaexinani.engine.texture.PixelFormat;
 import io.github.animaexinani.engine.texture.Texture;
 import io.github.animaexinani.engine.texture.TextureCreationException;
 import io.github.animaexinani.engine.internal.render.SDLRenderContext;
 import io.github.animaexinani.engine.windowing.Window;
-import io.github.animaexinani.engine.vertex.Vertex;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.sdl.*;
 import org.lwjgl.system.MemoryStack;
 
@@ -190,6 +180,22 @@ public final class WindowWithRenderer implements Window, Renderer {
         this.nativeState = new NativeState(windowHandle, rendererHandle);
         this.cleanable = GlobalCleaner.register(this, this.nativeState);
         this.context = new SDLRenderContext(this, this.nativeState.rendererHandle, this.nativeState.cleaned);
+    }
+
+    @Override
+    public void startTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to start text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StartTextInput(this.nativeState.windowHandle));
+    }
+
+    @Override
+    public void stopTextInput() {
+        if (this.nativeState.cleaned.getAcquire()) {
+            throw new IllegalStateException("Attempted to stop text input on a closed window");
+        }
+        SdlOperationFailedException.throwOnFailure(SDLKeyboard.SDL_StopTextInput(this.nativeState.windowHandle));
     }
 
     @Override

@@ -16,7 +16,11 @@ import org.lwjgl.sdl.SDL_Event;
 
 import io.github.animaexinani.engine.EventRegistry;
 import io.github.animaexinani.engine.listeners.KeyboardListener;
+import io.github.animaexinani.engine.listeners.MouseDownListener;
+import io.github.animaexinani.engine.listeners.MouseMoveListener;
+import io.github.animaexinani.engine.listeners.MouseUpListener;
 import io.github.animaexinani.engine.listeners.QuitEventListener;
+import io.github.animaexinani.engine.listeners.TextInputListener;
 import io.github.animaexinani.engine.events.KeyEvent;
 
 public final class EventDispatcher implements EventRegistry, AutoCloseable {
@@ -106,6 +110,26 @@ public final class EventDispatcher implements EventRegistry, AutoCloseable {
                     // 2. Package it as a RELEASE event and send it out!
                     var keyEvent = new KeyEvent(scancode, KeyEvent.Action.RELEASE);
                     keyListeners.forEach(l -> l.onKeyEvent(keyEvent));
+                }
+                case SDLEvents.SDL_EVENT_MOUSE_BUTTON_DOWN -> {
+                    var mouseDownListeners = this.getListenersOfType(MouseDownListener.class);
+                    var buttonEvent = this.nativeState.event.button();
+                    mouseDownListeners.forEach(l -> l.onMouseDown(buttonEvent.button(), buttonEvent.x(), buttonEvent.y()));
+                }
+                case SDLEvents.SDL_EVENT_MOUSE_BUTTON_UP -> {
+                    var mouseUpListeners = this.getListenersOfType(MouseUpListener.class);
+                    var buttonEvent = this.nativeState.event.button();
+                    mouseUpListeners.forEach(l -> l.onMouseUp(buttonEvent.button(), buttonEvent.x(), buttonEvent.y()));
+                }
+                case SDLEvents.SDL_EVENT_MOUSE_MOTION -> {
+                    var mouseMoveListeners = this.getListenersOfType(MouseMoveListener.class);
+                    var motionEvent = this.nativeState.event.motion();
+                    mouseMoveListeners.forEach(l -> l.onMouseMove(motionEvent.x(), motionEvent.y()));
+                }
+                case SDLEvents.SDL_EVENT_TEXT_INPUT -> {
+                    var textInputListeners = this.getListenersOfType(TextInputListener.class);
+                    var textInputEvent = this.nativeState.event.text();
+                    textInputListeners.forEach(l -> l.onTextInput(textInputEvent.textString()));
                 }
 
                 default -> {

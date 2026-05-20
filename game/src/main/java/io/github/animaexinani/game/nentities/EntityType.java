@@ -21,7 +21,11 @@ public enum EntityType {
     /**
      * The entity refers to a bullet.
      */
-    BULLET;
+    BULLET,
+
+    SCOUT_DRONE,   
+
+    STRIKE_FIGHTER;
 
     /**
      * Checks if the entity type refers to a player entity.
@@ -60,7 +64,6 @@ public enum EntityType {
      * @return Currently always returns false until enemies are implemented
      */
     public boolean enemy() {
-        // TODO: Change the implementation when enemies are added
-        return false;
+        return this == SCOUT_DRONE || this == STRIKE_FIGHTER;
     }
 }

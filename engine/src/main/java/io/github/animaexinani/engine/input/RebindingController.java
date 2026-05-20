@@ -48,6 +48,10 @@ public final class RebindingController implements KeyboardListener {
         this.callback = callback;
     }
 
+    public @NotNull InputBindings getBindings() {
+        return this.bindings;
+    }
+
     @Override
     public void onKeyEvent(@NotNull KeyEvent event) {
         if (this.pendingAction == null) return;
