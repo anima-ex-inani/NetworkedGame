@@ -49,13 +49,14 @@ jobs:
           echo "MAIN_JAR=$MAIN_JAR" >> $GITHUB_ENV
 
       - name: Create App Image with jpackage
-        run: >-
-          jpackage --type app-image
-            --dest dist
-            --name NetworkedGame
-            --input game/build/install/game/lib
-            --main-jar ${{ env.MAIN_JAR }}
-            --main-class io.github.animaexinani.game.NetworkedGame
+        shell: bash
+        run: |-
+          jpackage --type app-image \
+            --dest dist \
+            --name NetworkedGame \
+            --input game/build/install/game/lib \
+            --main-jar ${{ env.MAIN_JAR }} \
+            --main-class io.github.animaexinani.game.NetworkedGame \
             --java-options "--enable-native-access=ALL-UNNAMED"
 
       - name: Package Distribution (Windows)
